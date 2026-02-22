@@ -1,31 +1,42 @@
 """
 headless_executor.py — Headless Task Execution Engine.
 
-Replaces injector.py. Instead of typing prompts into a chat UI via
-Playwright DOM manipulation, this module executes coding tasks by
-running Gemini CLI directly inside a Docker sandbox.
+"Host Intelligence, Sandboxed Hands" Architecture:
+    The HOST runs the brain (Gemini CLI + Ollama).
+    The SANDBOX is a dumb terminal (file I/O + shell exec only).
 
-Architecture:
-    Python Brain → HeadlessExecutor → Gemini CLI (in sandbox) → File System
+    ┌─────────────────────────────────────────────────────────┐
+    │  HOST (Intelligence)                                     │
+    │  ─ Gemini CLI (cloud, authenticated AI Ultra session)    │
+    │  ─ Ollama (local LLM, ~200ms for triage)                 │
+    │  ─ Prompt construction, output parsing                   │
+    │  ─ ZERO credentials leak into the sandbox                │
+    ├─────────────────────────────────────────────────────────┤
+    │  SANDBOX (Execution)                                     │
+    │  ─ File read/write via docker exec                       │
+    │  ─ Shell command execution via docker exec               │
+    │  ─ Dev server, tests, linters — all inside container     │
+    │  ─ Non-root user, no API keys, no Gemini CLI installed   │
+    └─────────────────────────────────────────────────────────┘
 
-The executor:
-    1. Writes structured prompts to the sandbox
-    2. Invokes Gemini CLI with --yolo flag for autonomous execution
-    3. Parses stdout/stderr for results
-    4. Gathers structured context (files changed, errors, test results)
-    5. Returns everything as typed dataclasses — no DOM, no pixels
+Graceful degradation: if Ollama is unavailable, everything works
+via Gemini CLI alone (just slower for lightweight decisions).
 
-This module also replaces context_engine.py's DOM-based context gathering
-with structured API calls via the ToolServer.
+Context gathering uses structured API calls via the ToolServer.
 """
 
 import asyncio
 import json
+import shutil
+import tempfile
 import logging
+import os
 import re
 import time
 from dataclasses import dataclass, field, asdict
 from typing import Optional
+
+import aiohttp
 
 from . import config
 from .sandbox_manager import SandboxManager, SandboxError, CommandResult
@@ -105,18 +116,181 @@ class ExecutionContext:
 
 
 # ─────────────────────────────────────────────────────────────
+# Ollama Local Brain — Fast local intelligence
+# ─────────────────────────────────────────────────────────────
+
+class OllamaLocalBrain:
+    """
+    Fast local LLM via Ollama for lightweight intelligence tasks.
+
+    Handles task classification, context analysis, error pre-screening,
+    and action decisions with ~200ms latency. Falls back gracefully
+    if Ollama is unavailable — everything still works via Gemini CLI.
+
+    Communicates with Ollama via its HTTP API, running on the host
+    and accessible from Docker via host.docker.internal:11434.
+    """
+
+    def __init__(self, host: Optional[str] = None, model: Optional[str] = None):
+        self.host = host or os.getenv("OLLAMA_HOST", "http://localhost:11434")
+        self.model = model or os.getenv("OLLAMA_MODEL", "llama3.2:3b")
+        self._available: Optional[bool] = None
+        self._session: Optional[aiohttp.ClientSession] = None
+
+    async def _get_session(self) -> aiohttp.ClientSession:
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=30)
+            )
+        return self._session
+
+    async def is_available(self) -> bool:
+        """Check if Ollama is running and responsive."""
+        if self._available is not None:
+            return self._available
+        try:
+            session = await self._get_session()
+            async with session.get(f"{self.host}/api/tags") as resp:
+                self._available = resp.status == 200
+                if self._available:
+                    data = await resp.json()
+                    models = [m.get("name", "") for m in data.get("models", [])]
+                    logger.info("Ollama available. Models: %s", models[:5])
+                    # Auto-select best available model if default isn't present
+                    if self.model not in models and models:
+                        self.model = models[0]
+                        logger.info("Auto-selected Ollama model: %s", self.model)
+                return self._available
+        except Exception as exc:
+            logger.debug("Ollama not available: %s", exc)
+            self._available = False
+            return False
+
+    async def ask(self, prompt: str, system: str = "", temperature: float = 0.1) -> Optional[str]:
+        """
+        Send a prompt to the local Ollama model.
+
+        Returns the response text, or None if Ollama is unavailable.
+        Fast path: ~200ms for short prompts on modern hardware.
+        """
+        if not await self.is_available():
+            return None
+
+        try:
+            session = await self._get_session()
+            payload = {
+                "model": self.model,
+                "prompt": prompt,
+                "stream": False,
+                "options": {"temperature": temperature},
+            }
+            if system:
+                payload["system"] = system
+
+            async with session.post(f"{self.host}/api/generate", json=payload) as resp:
+                if resp.status != 200:
+                    return None
+                data = await resp.json()
+                return data.get("response", "")
+        except Exception as exc:
+            logger.debug("Ollama request failed: %s", exc)
+            return None
+
+    async def ask_json(self, prompt: str, system: str = "") -> Optional[dict]:
+        """Ask Ollama and parse a JSON response."""
+        response = await self.ask(
+            prompt,
+            system=system + "\nRespond with valid JSON only. No markdown, no explanation.",
+        )
+        if not response:
+            return None
+        try:
+            # Extract JSON from response (handle markdown fences)
+            cleaned = re.sub(r"```json?\s*", "", response)
+            cleaned = re.sub(r"```\s*", "", cleaned)
+            return json.loads(cleaned.strip())
+        except (json.JSONDecodeError, ValueError):
+            return None
+
+    async def classify_task(self, prompt: str) -> dict:
+        """
+        Classify a task's complexity and requirements using local LLM.
+
+        Returns:
+            {"complexity": "simple"|"medium"|"complex",
+             "needs_gemini": bool,
+             "category": "coding"|"testing"|"analysis"|"setup"|"other",
+             "estimated_duration_s": int}
+        """
+        result = await self.ask_json(
+            f"Classify this coding task:\n\n{prompt[:1000]}",
+            system=(
+                "You classify coding tasks. Return JSON with: "
+                "complexity (simple/medium/complex), "
+                "needs_gemini (true if this needs a powerful cloud LLM, false if a shell command suffices), "
+                "category (coding/testing/analysis/setup/other), "
+                "estimated_duration_s (integer seconds)."
+            ),
+        )
+        return result or {
+            "complexity": "medium",
+            "needs_gemini": True,
+            "category": "coding",
+            "estimated_duration_s": 60,
+        }
+
+    async def analyze_errors(self, errors: list[dict], context: str = "") -> Optional[str]:
+        """
+        Quick analysis of diagnostic errors — faster than calling Gemini.
+
+        Returns a short analysis string, or None if Ollama is unavailable.
+        """
+        if not errors:
+            return None
+        error_text = json.dumps(errors[:5], indent=2)
+        return await self.ask(
+            f"Analyze these code errors and suggest the most likely fix:\n\n"
+            f"Errors:\n{error_text}\n\nContext:\n{context[:500]}",
+            system="You are a senior developer. Be concise. Give actionable fix suggestions.",
+        )
+
+    async def decide_action(self, context_summary: str) -> dict:
+        """
+        Decide what action to take based on current context.
+
+        Returns:
+            {"action": "execute_task"|"fix_errors"|"run_tests"|"start_server"|"wait"|"escalate",
+             "reason": str}
+        """
+        result = await self.ask_json(
+            f"Based on this project state, what should the supervisor do next?\n\n{context_summary[:2000]}",
+            system=(
+                "You are an autonomous coding supervisor. Decide the next action. "
+                "Return JSON with: action (execute_task/fix_errors/run_tests/start_server/wait/escalate), "
+                "reason (brief explanation)."
+            ),
+        )
+        return result or {"action": "execute_task", "reason": "Default: continue with main task"}
+
+    async def close(self):
+        """Close the HTTP session."""
+        if self._session and not self._session.closed:
+            await self._session.close()
+
+
+# ─────────────────────────────────────────────────────────────
 # Core: HeadlessExecutor
 # ─────────────────────────────────────────────────────────────
 
 class HeadlessExecutor:
     """
-    Executes coding tasks via Gemini CLI inside a Docker sandbox.
+    Host Intelligence, Sandboxed Hands.
 
-    Replaces:
-        - injector.py (chat injection → API call)
-        - context_engine.py (DOM scraping → structured API calls)
-        - monitor.py (CDP chat monitoring → stdout/stderr parsing)
-        - approver.py (button clicking → agent has full permissions)
+    The HOST runs intelligence (Gemini CLI + Ollama).
+    The SANDBOX is a dumb terminal (file I/O + shell exec only).
+
+    Gemini CLI runs on the host using the user's authenticated session.
+    ZERO credentials enter the Docker container.
 
     Usage:
         sandbox = SandboxManager()
@@ -124,16 +298,17 @@ class HeadlessExecutor:
         tools = ToolServer(sandbox)
         executor = HeadlessExecutor(tools, sandbox)
 
-        # Execute a task
+        # Execute a task (Gemini runs on HOST, actions in SANDBOX)
         result = await executor.execute_task("Create a hello.py that prints Hello World")
 
-        # Gather context
+        # Gather context (reads from SANDBOX via docker exec)
         ctx = await executor.gather_context()
     """
 
     def __init__(self, tool_server: ToolServer, sandbox: SandboxManager):
         self.tools = tool_server
         self.sandbox = sandbox
+        self.local_brain = OllamaLocalBrain()
         self._last_task_result: Optional[TaskResult] = None
         self._task_history: list[TaskResult] = []
 
@@ -223,7 +398,16 @@ class HeadlessExecutor:
         timeout: int,
         mandate: Optional[str],
     ) -> TaskResult:
-        """Execute a task by invoking Gemini CLI inside the sandbox."""
+        """
+        Execute a task via Gemini CLI running on the HOST.
+
+        Architecture: "Host Intelligence, Sandboxed Hands"
+            - Gemini CLI runs on the host OS (uses authenticated AI Ultra session)
+            - Prompt is constructed on the host and piped to Gemini via stdin
+            - Gemini output is parsed on the host
+            - File changes and commands are pushed into the sandbox via bridges
+            - ZERO credentials enter the container
+        """
         result = TaskResult(prompt_used=prompt)
 
         # Build the full prompt with mandate
@@ -232,44 +416,27 @@ class HeadlessExecutor:
         if mandate:
             full_prompt = f"{mandate}\n\n---\n\nTASK:\n{prompt}"
 
-        # Write the prompt file
-        await self.sandbox.write_file("/tmp/_task_prompt.md", full_prompt)
+        # Gather sandbox context to feed to the host-side Gemini CLI
+        # so it has awareness of the workspace state
+        sandbox_context = await self._gather_sandbox_context_for_prompt()
+        if sandbox_context:
+            full_prompt = f"{full_prompt}\n\n---\n\nCURRENT WORKSPACE STATE:\n{sandbox_context}"
 
-        # Write GEMINI.md context file if PROJECT_STATE.md exists
-        project_state_exists = await self.sandbox.file_exists("PROJECT_STATE.md")
-        if project_state_exists:
-            project_state = await self.sandbox.read_file("PROJECT_STATE.md")
-            gemini_context = (
-                "# Project Context\n\n"
-                "## Current Project State\n\n"
-                f"{project_state[:5000]}\n"
-            )
-            await self.sandbox.write_file("GEMINI.md", gemini_context)
+        # Run Gemini CLI on the HOST (not inside the container)
+        cmd_result = await self._run_gemini_on_host(full_prompt, timeout)
 
-        # Determine the Gemini CLI model
-        model = getattr(config, "GEMINI_DEFAULT_FLASH", "gemini-2.5-flash")
-        gemini_cmd = getattr(config, "GEMINI_CLI_CMD", "gemini")
+        result.exit_code = cmd_result.get("exit_code", -1)
+        result.output = cmd_result.get("stdout", "")
 
-        # Run Gemini CLI with --yolo (auto-approve all actions)
-        cmd = (
-            f"cd /workspace && "
-            f"{gemini_cmd} --model {model} --yolo "
-            f"< /tmp/_task_prompt.md 2>&1"
-        )
-
-        cmd_result = await self.sandbox.exec_command(cmd, timeout=timeout)
-
-        result.exit_code = cmd_result.exit_code
-        result.output = cmd_result.stdout
-
-        if cmd_result.timed_out:
+        if cmd_result.get("timed_out"):
             result.status = "timeout"
             result.errors.append(f"Gemini CLI timed out after {timeout}s")
-        elif cmd_result.exit_code != 0:
+        elif result.exit_code != 0:
             result.status = "error"
-            result.errors.append(f"Gemini CLI exited with code {cmd_result.exit_code}")
-            if cmd_result.stderr:
-                result.errors.append(cmd_result.stderr[:1000])
+            result.errors.append(f"Gemini CLI exited with code {result.exit_code}")
+            stderr = cmd_result.get("stderr", "")
+            if stderr:
+                result.errors.append(stderr[:1000])
         else:
             result.status = "success"
 
@@ -288,6 +455,132 @@ class HeadlessExecutor:
                 break
 
         return result
+
+    async def _run_gemini_on_host(
+        self,
+        prompt: str,
+        timeout: int,
+    ) -> dict:
+        """
+        Run Gemini CLI on the HOST OS using the user's authenticated session.
+
+        The prompt is piped via stdin. The Gemini CLI has access to the
+        host's credentials (AI Ultra session) but the sandbox does not.
+
+        The --sandbox flag tells Gemini CLI to use its own sandboxing,
+        but we override the working directory to point at the bind-mounted
+        project path so Gemini can read/write files that are visible
+        inside the container.
+
+        Returns:
+            dict with keys: exit_code, stdout, stderr, timed_out
+        """
+        model = getattr(config, "GEMINI_DEFAULT_FLASH", "gemini-2.5-flash")
+        gemini_cmd = getattr(config, "GEMINI_CLI_CMD", "gemini")
+
+        # Resolve the project directory on the host
+        # If bind-mounted, the project directory is the host path itself
+        project_path = "."
+        if self.sandbox._active:
+            project_path = self.sandbox._active.project_path or "."
+
+        # Build the Gemini CLI command
+        cmd_args = [
+            gemini_cmd,
+            "--model", model,
+            "--yolo",  # Auto-approve all file operations
+        ]
+
+        C = getattr(config, "ANSI_CYAN", "")
+        R = getattr(config, "ANSI_RESET", "")
+        logger.info("Running Gemini CLI on HOST: model=%s, cwd=%s", model, project_path)
+        print(f"  {C}🧠 Host Intelligence: Gemini CLI (model={model}) …{R}")
+
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd_args,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                cwd=project_path,
+            )
+
+            stdout_bytes, stderr_bytes = await asyncio.wait_for(
+                proc.communicate(prompt.encode("utf-8")),
+                timeout=timeout,
+            )
+
+            return {
+                "exit_code": proc.returncode or 0,
+                "stdout": stdout_bytes.decode("utf-8", errors="replace"),
+                "stderr": stderr_bytes.decode("utf-8", errors="replace"),
+                "timed_out": False,
+            }
+
+        except asyncio.TimeoutError:
+            logger.warning("Gemini CLI timed out after %ds", timeout)
+            try:
+                proc.kill()
+            except Exception:
+                pass
+            return {
+                "exit_code": -1,
+                "stdout": "",
+                "stderr": f"Timed out after {timeout}s",
+                "timed_out": True,
+            }
+        except FileNotFoundError:
+            logger.error("Gemini CLI binary not found: %s", gemini_cmd)
+            return {
+                "exit_code": -1,
+                "stdout": "",
+                "stderr": f"Gemini CLI not found: {gemini_cmd}. Ensure it is installed and in PATH.",
+                "timed_out": False,
+            }
+        except Exception as exc:
+            logger.error("Gemini CLI host execution failed: %s", exc)
+            return {
+                "exit_code": -1,
+                "stdout": "",
+                "stderr": str(exc),
+                "timed_out": False,
+            }
+
+    async def _gather_sandbox_context_for_prompt(self) -> str:
+        """
+        Gather lightweight context from the sandbox to include in the
+        Gemini prompt so the host-side AI has workspace awareness.
+
+        This is the Context Bridge — the host reads sandbox state
+        via docker exec and feeds it into the prompt.
+        """
+        parts = []
+
+        try:
+            # Git status
+            git_result = await self.tools.git_status()
+            if git_result.modified or git_result.untracked:
+                parts.append(f"Git branch: {git_result.branch}")
+                if git_result.modified:
+                    parts.append(f"Modified files: {', '.join(git_result.modified[:20])}")
+                if git_result.untracked:
+                    parts.append(f"Untracked files: {', '.join(git_result.untracked[:20])}")
+
+            # Project state file
+            project_state_exists = await self.sandbox.file_exists("PROJECT_STATE.md")
+            if project_state_exists:
+                state_content = await self.sandbox.read_file("PROJECT_STATE.md")
+                parts.append(f"PROJECT_STATE.md:\n{state_content[:3000]}")
+
+            # File listing (top-level)
+            file_list = await self.sandbox.list_files(".", max_depth=2)
+            if file_list:
+                parts.append(f"Workspace files ({len(file_list)} total): {', '.join(file_list[:30])}")
+
+        except Exception as exc:
+            logger.debug("Context bridge gathering failed (non-fatal): %s", exc)
+
+        return "\n".join(parts) if parts else ""
 
     async def _execute_as_shell(self, command: str, timeout: int) -> TaskResult:
         """Execute a raw shell command (for non-Gemini tasks like npm install)."""

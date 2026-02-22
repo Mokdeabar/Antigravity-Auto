@@ -1,15 +1,14 @@
 """
 tool_server.py — MCP-Compatible Tool Interface.
 
-Provides structured JSON tool calls that replace all DOM-based interactions.
-Every tool returns a well-defined dictionary — no parsing pixels, no scraping
-xterm rows, no walking iframe trees.
-
-This is the API surface that the supervisor brain uses to interact with the
-coding agent's workspace. Each method maps to a single, deterministic operation.
+Provides structured JSON tool calls for the "Host Intelligence, Sandboxed Hands"
+architecture. The HOST reads from / writes to the sandbox via docker exec bridges.
+Every tool returns a well-defined dictionary — deterministic, no DOM parsing.
 
 Architecture:
-    Python Brain → ToolServer → SandboxManager → Docker exec → Result (JSON)
+    Host Brain → ToolServer → SandboxManager → Docker exec → Result (JSON)
+                                   ↕
+                             PathTranslator (host paths ↔ container paths)
 
 Tool categories:
     - File operations:  file_read, file_write, file_list, file_delete
@@ -22,14 +21,73 @@ Tool categories:
 import asyncio
 import json
 import logging
+import os
 import re
 from dataclasses import dataclass, field, asdict
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 from typing import Optional
 
 from .sandbox_manager import SandboxManager, SandboxError
 
 logger = logging.getLogger("supervisor.tool_server")
+
+
+# ─────────────────────────────────────────────────────────────
+# Path Translator — host ↔ sandbox path mapping
+# ─────────────────────────────────────────────────────────────
+
+class PathTranslator:
+    """
+    Bidirectional path mapping between the host filesystem and the
+    sandbox container workspace.
+
+    Host:      C:\\Users\\user\\project\\src\\main.py   (or /home/user/project/src/main.py)
+    Sandbox:   /workspace/src/main.py
+
+    This prevents confusion when the AI references container paths
+    that don't exist on the host, or vice versa.
+    """
+
+    def __init__(self, host_project_path: str, sandbox_workspace: str = "/workspace"):
+        self._host_root = str(Path(host_project_path).resolve())
+        self._sandbox_root = sandbox_workspace
+
+    @property
+    def host_root(self) -> str:
+        return self._host_root
+
+    @property
+    def sandbox_root(self) -> str:
+        return self._sandbox_root
+
+    def host_to_sandbox(self, host_path: str) -> str:
+        """Convert a host filesystem path to a sandbox container path."""
+        resolved = str(Path(host_path).resolve())
+        # Normalize separators for comparison
+        norm_host = self._host_root.replace("\\", "/")
+        norm_path = resolved.replace("\\", "/")
+        if norm_path.startswith(norm_host):
+            relative = norm_path[len(norm_host):].lstrip("/")
+            return f"{self._sandbox_root}/{relative}" if relative else self._sandbox_root
+        # Already a sandbox-style path or unrelated — return as-is
+        return host_path
+
+    def sandbox_to_host(self, sandbox_path: str) -> str:
+        """Convert a sandbox container path to a host filesystem path."""
+        if sandbox_path.startswith(self._sandbox_root):
+            relative = sandbox_path[len(self._sandbox_root):].lstrip("/")
+            return str(Path(self._host_root) / relative) if relative else self._host_root
+        # Not a sandbox path — return as-is
+        return sandbox_path
+
+    def is_sandbox_path(self, path: str) -> bool:
+        """Check if a path looks like a sandbox container path."""
+        return path.startswith(self._sandbox_root) or path.startswith("/workspace")
+
+    def is_host_path(self, path: str) -> bool:
+        """Check if a path looks like a host filesystem path."""
+        norm = path.replace("\\", "/")
+        return norm.startswith(self._host_root.replace("\\", "/"))
 
 
 # ─────────────────────────────────────────────────────────────

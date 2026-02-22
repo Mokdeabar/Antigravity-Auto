@@ -1,0 +1,85 @@
+# Supervisor AI — Sandbox Execution Environment
+# "Host Intelligence, Sandboxed Hands" architecture.
+# This container is a DUMB TERMINAL — it executes commands and hosts files.
+# The Gemini CLI runs on the HOST using the user's authenticated session.
+# ZERO credentials or AI tools are installed inside this container.
+#
+# Build:  docker build -t supervisor-sandbox .
+# Size:   ~300MB
+
+FROM debian:bookworm-slim AS base
+
+LABEL maintainer="Supervisor AI" \
+    description="Sandboxed execution environment — no credentials, no AI tools"
+
+# Prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    NODE_ENV=development
+
+# ── System packages ──────────────────────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Python (project runtime)
+    python3 \
+    python3-pip \
+    python3-venv \
+    python3-dev \
+    # Node.js prerequisites
+    curl \
+    ca-certificates \
+    gnupg \
+    # Build essentials (needed for native node modules and C extensions)
+    build-essential \
+    # Git (for git operations inside the sandbox)
+    git \
+    # Process utilities
+    procps \
+    # Network utilities (for port checking)
+    iproute2 \
+    net-tools \
+    # Text utilities
+    jq \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── Node.js 20 LTS via NodeSource ────────────────────────────
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── Python dev tools (for linting/testing inside sandbox) ─────
+RUN pip3 install --no-cache-dir --break-system-packages \
+    pyflakes \
+    flake8 \
+    pytest \
+    black \
+    && pip3 cache purge 2>/dev/null || true
+
+# ── npm global dev tools (for linting/serving) ───────────────
+RUN npm install -g \
+    eslint \
+    typescript \
+    serve \
+    && npm cache clean --force
+
+# ── Non-root sandbox user ────────────────────────────────────
+# SECURITY: Container runs as non-root to prevent privilege escalation
+# if a malicious package is downloaded or a rogue command is executed.
+RUN useradd -m -s /bin/bash -d /home/sandbox sandbox
+
+# ── Workspace setup ──────────────────────────────────────────
+RUN mkdir -p /workspace && chown sandbox:sandbox /workspace
+WORKDIR /workspace
+
+# ── Git configuration ────────────────────────────────────────
+RUN git config --global --add safe.directory /workspace \
+    && git config --global user.email "supervisor@ai.local" \
+    && git config --global user.name "Supervisor AI"
+
+# Switch to non-root user
+USER sandbox
+
+# Default command — keep the container alive for exec commands
+CMD ["sleep", "infinity"]

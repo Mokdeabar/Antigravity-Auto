@@ -1,3 +1,14 @@
-playwright>=1.40.0
+# Supervisor AI V35 — Host Intelligence + Command Centre
+# Core
+aiohttp>=3.9.0
+
+# V35 Command Centre (API Bridge + WebSocket Glass Brain)
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+websockets>=13.0
+
+# Analysis
 beautifulsoup4>=4.12.0
-pyperclip>=1.8.0
+
+# Optional: Visual QA screenshot compression
+# Pillow>=10.0.0

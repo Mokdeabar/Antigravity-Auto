@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supervisor AI — V35 Command Centre</title>
+    <meta name="description" content="Autonomous AI Command Centre — Glass Brain, Live Preview, Instruction Queue">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        /* ═══════════════════════════════════════════════════════════
+           V35 COMMAND CENTRE — Design System
+           ═══════════════════════════════════════════════════════════ */
+
+        :root {
+            --bg-primary: #0a0a12;
+            --bg-secondary: #111122;
+            --bg-card: #161629;
+            --bg-card-hover: #1c1c3a;
+            --bg-glass: rgba(22, 22, 41, 0.75);
+            --bg-input: #0d0d1a;
+
+            --border: rgba(99, 102, 241, 0.15);
+            --border-glow: rgba(99, 102, 241, 0.35);
+            --border-success: rgba(16, 185, 129, 0.3);
+
+            --text-primary: #e8e8f0;
+            --text-secondary: #8888aa;
+            --text-dim: #555570;
+
+            --accent-indigo: #6366f1;
+            --accent-cyan: #22d3ee;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-purple: #a855f7;
+            --accent-pink: #ec4899;
+
+            --gradient-hero: linear-gradient(135deg, #6366f1 0%, #22d3ee 50%, #10b981 100%);
+            --gradient-card: linear-gradient(180deg, rgba(99, 102, 241, 0.08) 0%, transparent 100%);
+
+            --shadow-glow: 0 0 30px rgba(99, 102, 241, 0.12);
+            --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+
+            --radius: 12px;
+            --radius-lg: 16px;
+            --radius-sm: 8px;
+
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+
+            --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            font-size: 14px;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -200px;
+            left: -200px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.06) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -200px;
+            right: -200px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(34, 211, 238, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── Shared ────────────────────────────────────────── */
+
+        .header {
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(20px);
+            background: rgba(10, 10, 18, 0.8);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo {
+            font-size: 1.4rem;
+            font-weight: 800;
+            background: var(--gradient-hero);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .version-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--accent-indigo);
+            padding: 3px 8px;
+            border-radius: 20px;
+            border: 1px solid rgba(99, 102, 241, 0.25);
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-red);
+            transition: var(--transition);
+        }
+
+        .status-dot.connected {
+            background: var(--accent-emerald);
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            background: var(--gradient-card);
+            flex-shrink: 0;
+        }
+
+        .panel-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-title .icon {
+            font-size: 1rem;
+        }
+
+        /* ══════════════════════════════════════════════════════
+           SCREEN 1: PROJECT LAUNCHER
+           ══════════════════════════════════════════════════════ */
+
+        .launcher-screen {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .launcher-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 24px;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .launcher-hero {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        .launcher-hero h1 {
+            font-size: 2.4rem;
+            font-weight: 900;
+            background: var(--gradient-hero);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+        }
+
+        .launcher-hero p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            max-width: 480px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+
+        /* ── Create New Project ─────────────────────────────── */
+
+        .create-section {
+            width: 100%;
+            display: flex;
+            gap: 10px;
+            margin-bottom: 32px;
+        }
+
+        .create-input {
+            flex: 1;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            font-family: var(--font-sans);
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .create-input::placeholder {
+            color: var(--text-dim);
+        }
+
+        .create-input:focus {
+            border-color: var(--accent-indigo);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        .create-btn {
+            background: var(--accent-indigo);
+            border: none;
+            border-radius: var(--radius);
+            padding: 12px 24px;
+            font-family: var(--font-sans);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .create-btn:hover {
+            background: #5558e6;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+        }
+
+        /* ── Project Grid ──────────────────────────────────── */
+
+        .projects-label {
+            width: 100%;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            margin-bottom: 16px;
+            padding-left: 4px;
+        }
+
+        .projects-grid {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 14px;
+        }
+
+        .project-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 18px 20px;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .project-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gradient-hero);
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .project-card:hover {
+            border-color: var(--border-glow);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .project-card:hover::before {
+            opacity: 1;
+        }
+
+        .project-card.has-session {
+            border-color: var(--border-success);
+        }
+
+        .project-card.has-session::before {
+            background: linear-gradient(90deg, var(--accent-emerald), var(--accent-cyan));
+            opacity: 0.6;
+        }
+
+        .project-card.selected {
+            border-color: var(--accent-indigo);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25), var(--shadow-glow);
+        }
+
+        .project-name {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .project-meta {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .project-meta .files {
+            color: var(--text-secondary);
+        }
+
+        .project-goal {
+            margin-top: 8px;
+            font-size: 0.78rem;
+            color: var(--accent-cyan);
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .session-badge {
+            font-size: 0.6rem;
+            font-weight: 700;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-emerald);
+            padding: 2px 7px;
+            border-radius: 10px;
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+
+        /* ── Launch Panel ──────────────────────────────────── */
+
+        .launch-panel {
+            width: 100%;
+            margin-top: 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .launch-panel.visible {
+            display: flex;
+        }
+
+        .launch-panel h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .launch-field label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+        }
+
+        .launch-field input,
+        .launch-field textarea {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            font-family: var(--font-sans);
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            outline: none;
+            transition: var(--transition);
+            resize: vertical;
+        }
+
+        .launch-field input:focus,
+        .launch-field textarea:focus {
+            border-color: var(--accent-indigo);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+        }
+
+        .launch-field textarea {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            min-height: 60px;
+        }
+
+        .launch-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn-launch {
+            background: var(--accent-emerald);
+            border: none;
+            border-radius: var(--radius);
+            padding: 10px 28px;
+            font-family: var(--font-sans);
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-launch:hover {
+            background: #0fa07a;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-launch:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-cancel {
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 10px 20px;
+            font-family: var(--font-sans);
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-cancel:hover {
+            border-color: var(--text-dim);
+            color: var(--text-primary);
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ══════════════════════════════════════════════════════
+           SCREEN 2: DASHBOARD (shown after engine starts)
+           ══════════════════════════════════════════════════════ */
+
+        .dashboard-screen {
+            position: relative;
+            z-index: 1;
+            display: none;
+            grid-template-rows: auto 1fr auto;
+            min-height: 100vh;
+        }
+
+        .dashboard-screen.active {
+            display: grid;
+        }
+
+        .main {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            grid-template-rows: auto 1fr;
+            gap: 16px;
+            padding: 16px 24px;
+            max-height: calc(100vh - 56px - 72px);
+        }
+
+        /* ── Status Bar ────────────────────────────────────── */
+
+        .status-bar {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gradient-hero);
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-glow);
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-dim);
+        }
+
+        .stat-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stat-value.success {
+            color: var(--accent-emerald);
+        }
+
+        .stat-value.warning {
+            color: var(--accent-amber);
+        }
+
+        .stat-value.error {
+            color: var(--accent-red);
+        }
+
+        .stat-value.info {
+            color: var(--accent-cyan);
+        }
+
+        /* ── Glass Brain ───────────────────────────────────── */
+
+        .glass-brain {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .terminal {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 16px;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            line-height: 1.55;
+            background: var(--bg-input);
+            min-height: 0;
+            scroll-behavior: smooth;
+        }
+
+        .terminal::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .terminal::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .terminal::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.2);
+            border-radius: 3px;
+        }
+
+        .terminal::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.4);
+        }
+
+        .log-line {
+            padding: 1px 0;
+            word-break: break-word;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .log-line .ts {
+            color: var(--text-dim);
+        }
+
+        .log-line .level-INFO {
+            color: var(--accent-cyan);
+        }
+
+        .log-line .level-WARNING {
+            color: var(--accent-amber);
+        }
+
+        .log-line .level-ERROR {
+            color: var(--accent-red);
+        }
+
+        .log-line .level-DEBUG {
+            color: var(--text-dim);
+        }
+
+        .log-line .msg {
+            color: var(--text-primary);
+        }
+
+        /* ── Sidebar ───────────────────────────────────────── */
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-height: 0;
+        }
+
+        .preview-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 200px;
+        }
+
+        .preview-iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background: #111;
+        }
+
+        .preview-placeholder {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .preview-placeholder .icon {
+            font-size: 2.5rem;
+            opacity: 0.4;
+        }
+
+        .council-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            padding: 12px 16px;
+        }
+
+        .agent-chip {
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 6px 8px;
+            border-radius: var(--radius-sm);
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.12);
+            color: var(--text-secondary);
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .agent-chip.active {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: var(--accent-emerald);
+        }
+
+        /* ── Footer ────────────────────────────────────────── */
+
+        .footer {
+            padding: 12px 24px;
+            border-top: 1px solid var(--border);
+            background: rgba(10, 10, 18, 0.9);
+            backdrop-filter: blur(20px);
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .instruction-input {
+            flex: 1;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            font-family: var(--font-sans);
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .instruction-input::placeholder {
+            color: var(--text-dim);
+        }
+
+        .instruction-input:focus {
+            border-color: var(--accent-indigo);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        .send-btn {
+            background: var(--accent-indigo);
+            border: none;
+            border-radius: var(--radius);
+            padding: 12px 24px;
+            font-family: var(--font-sans);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .send-btn:hover {
+            background: #5558e6;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+        }
+
+        .send-btn:active {
+            transform: translateY(0);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .queue-indicator {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            padding: 4px 0 0 4px;
+        }
+
+        /* ── Responsive ────────────────────────────────────── */
+        @media (max-width: 900px) {
+            .main {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr auto;
+            }
+
+            .sidebar {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .preview-panel {
+                min-height: 250px;
+            }
+        }
+
+        /* ── Toast ──────────────────────────────────────────── */
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: var(--radius);
+            padding: 12px 24px;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            box-shadow: var(--shadow-card);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ══════════════════════════════════════════════════════
+         SCREEN 1: PROJECT LAUNCHER
+         ══════════════════════════════════════════════════════ -->
+    <div class="launcher-screen" id="launcher-screen">
+        <header class="header">
+            <div class="header-left">
+                <span class="logo">⚡ Supervisor AI</span>
+                <span class="version-badge">V35</span>
+            </div>
+            <div class="connection-status">
+                <span class="status-dot" id="conn-dot-launcher"></span>
+                <span id="conn-text-launcher">Connecting…</span>
+            </div>
+        </header>
+
+        <div class="launcher-body">
+            <div class="launcher-hero">
+                <h1>Command Centre</h1>
+                <p>Select a project to continue, or create a new one. The AI will build autonomously while you watch.
+                </p>
+            </div>
+
+            <!-- Create New -->
+            <div class="create-section">
+                <input type="text" class="create-input" id="new-project-name" placeholder="New project name…"
+                    autocomplete="off">
+                <button class="create-btn" onclick="createProject()">+ Create</button>
+            </div>
+
+            <div class="projects-label" id="projects-label">Loading projects…</div>
+            <div class="projects-grid" id="projects-grid">
+                <div class="loading-spinner">⏳ Scanning experiments folder…</div>
+            </div>
+
+            <!-- Launch Panel (appears when a project is selected) -->
+            <div class="launch-panel" id="launch-panel">
+                <h3><span>🚀</span> <span id="launch-project-name">—</span></h3>
+                <div class="launch-field">
+                    <label>Goal</label>
+                    <input type="text" id="launch-goal" placeholder="What should the AI build or do?">
+                </div>
+                <div class="launch-field">
+                    <label>Pre-flight Instructions (optional)</label>
+                    <textarea id="launch-instructions"
+                        placeholder="Any specific instructions before the AI starts…"></textarea>
+                </div>
+                <div class="launch-actions">
+                    <button class="btn-cancel" onclick="cancelLaunch()">Cancel</button>
+                    <button class="btn-launch" id="btn-launch" onclick="launchProject()">▶ Launch</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         SCREEN 2: DASHBOARD
+         ══════════════════════════════════════════════════════ -->
+    <div class="dashboard-screen" id="dashboard-screen">
+        <header class="header">
+            <div class="header-left">
+                <span class="logo">⚡ Supervisor AI</span>
+                <span class="version-badge">V35</span>
+            </div>
+            <div class="connection-status">
+                <span class="status-dot" id="conn-dot"></span>
+                <span id="conn-text">Connecting…</span>
+            </div>
+        </header>
+
+        <main class="main">
+            <div class="status-bar">
+                <div class="stat-card">
+                    <span class="stat-label">Status</span>
+                    <span class="stat-value info" id="s-status">—</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Active Model</span>
+                    <span class="stat-value" id="s-model">—</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Container</span>
+                    <span class="stat-value" id="s-container">—</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Uptime</span>
+                    <span class="stat-value" id="s-uptime">—</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Loop</span>
+                    <span class="stat-value" id="s-loop">—</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Ollama</span>
+                    <span class="stat-value" id="s-ollama">—</span>
+                </div>
+                <div class="stat-card" style="grid-column: span 2;">
+                    <span class="stat-label">Goal</span>
+                    <span class="stat-value" id="s-goal" style="font-size:0.85rem;font-weight:400;">—</span>
+                </div>
+            </div>
+
+            <div class="glass-brain">
+                <div class="panel-header">
+                    <span class="panel-title"><span class="icon">🧠</span> Glass Brain</span>
+                    <span style="font-size:0.7rem;color:var(--text-dim)" id="log-count">0 entries</span>
+                </div>
+                <div class="terminal" id="terminal"></div>
+            </div>
+
+            <div class="sidebar">
+                <div class="preview-panel">
+                    <div class="panel-header">
+                        <span class="panel-title"><span class="icon">👁️</span> Live Preview</span>
+                        <span style="font-size:0.7rem;color:var(--text-dim)" id="preview-status">offline</span>
+                    </div>
+                    <div id="preview-container">
+                        <div class="preview-placeholder">
+                            <span class="icon">🖥️</span>
+                            <span>Waiting for dev server…</span>
+                            <span style="font-size:0.75rem;">Preview appears automatically when port is allocated</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;">
+                    <div class="panel-header">
+                        <span class="panel-title"><span class="icon">🏛️</span> Agent Council</span>
+                    </div>
+                    <div class="council-grid">
+                        <div class="agent-chip" id="agent-diagnostician">🔍 Diag</div>
+                        <div class="agent-chip" id="agent-fixer">🔧 Fixer</div>
+                        <div class="agent-chip" id="agent-tester">🧪 Tester</div>
+                        <div class="agent-chip" id="agent-auditor">📋 Auditor</div>
+                        <div class="agent-chip" id="agent-perf">⚡ Perf</div>
+                        <div class="agent-chip" id="agent-security">🛡️ Security</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="input-container">
+                <input type="text" class="instruction-input" id="instruction-input"
+                    placeholder="Type an instruction for the AI… (e.g. 'Change the button color to red')"
+                    autocomplete="off">
+                <button class="send-btn" id="send-btn" onclick="sendInstruction()">
+                    <span>Send</span> ⏎
+                </button>
+            </div>
+            <div class="queue-indicator" id="queue-indicator"></div>
+        </footer>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         JavaScript — Full Project Launcher + Dashboard Client
+         ═══════════════════════════════════════════════════════ -->
+    <script>
+        (() => {
+            'use strict';
+
+            // ── API Base — auto-detect server vs file:// ──────
+            const _isFile = location.protocol === 'file:';
+            const API_HOST = _isFile ? 'localhost:8420' : location.host;
+            const API_BASE = _isFile ? 'http://localhost:8420' : '';
+            const WS_URL = `${_isFile ? 'ws:' : (location.protocol === 'https:' ? 'wss:' : 'ws:')}//${API_HOST}/ws`;
+
+            // ── State ──────────────────────────────────────────
+            let ws = null;
+            let reconnectDelay = 2000;
+            const MAX_RECONNECT = 30000;
+            let logCount = 0;
+            const MAX_LOG_LINES = 500;
+            let currentScreen = 'launcher'; // 'launcher' | 'dashboard'
+            let selectedProject = null;
+            let serverReachable = false;
+            let wsRetryCount = 0;
+
+            const $ = id => document.getElementById(id);
+
+            // ── Screen Management ──────────────────────────────
+            function showScreen(screen) {
+                currentScreen = screen;
+                $('launcher-screen').style.display = screen === 'launcher' ? 'flex' : 'none';
+                $('dashboard-screen').classList.toggle('active', screen === 'dashboard');
+            }
+
+            // ── Toast ──────────────────────────────────────────
+            function showToast(msg) {
+                const t = $('toast');
+                t.textContent = msg;
+                t.classList.add('show');
+                setTimeout(() => t.classList.remove('show'), 3000);
+            }
+
+            // ── WebSocket ──────────────────────────────────────
+            function connect() {
+                ws = new WebSocket(WS_URL);
+
+                ws.onopen = () => {
+                    setConnected(true);
+                    serverReachable = true;
+                    wsRetryCount = 0;
+                    reconnectDelay = 2000;
+                    if (currentScreen === 'dashboard') {
+                        addLogLine('INFO', '🔌 Connected to Supervisor AI');
+                    }
+                    // Reload projects if on launcher
+                    if (currentScreen === 'launcher') loadProjects();
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleMessage(data);
+                    } catch (e) {
+                        console.error('WS parse error:', e);
+                    }
+                };
+
+                ws.onclose = () => {
+                    setConnected(false);
+                    serverReachable = false;
+                    wsRetryCount++;
+                    reconnectDelay = Math.min(reconnectDelay * 1.5, MAX_RECONNECT);
+                    setTimeout(connect, reconnectDelay);
+                };
+
+                ws.onerror = () => ws.close();
+            }
+
+            function setConnected(ok) {
+                // Update both screens
+                ['conn-dot-launcher', 'conn-dot'].forEach(id => {
+                    const el = $(id);
+                    if (el) el.classList.toggle('connected', ok);
+                });
+                const label = ok ? 'Connected' : (wsRetryCount > 1 ? `Server offline — start with: python -m supervisor` : 'Connecting…');
+                ['conn-text-launcher', 'conn-text'].forEach(id => {
+                    const el = $(id);
+                    if (el) el.textContent = label;
+                });
+            }
+
+            // ── Message Handler ────────────────────────────────
+            function handleMessage(data) {
+                if (data.type === 'init') {
+                    updateState(data.state);
+                    if (data.logs) {
+                        data.logs.forEach(log => addLogLine(log.level, log.msg, log.ts));
+                    }
+                    return;
+                }
+
+                if (data.type === 'state') {
+                    updateState(data);
+                    return;
+                }
+
+                if (data.type === 'instruction_queued') {
+                    addLogLine('INFO', `📬 Queued: "${data.instruction.text}"`);
+                    return;
+                }
+
+                if (data.msg) {
+                    addLogLine(data.level || 'INFO', data.msg, data.ts);
+                }
+            }
+
+            // ── State Update ───────────────────────────────────
+            function updateState(s) {
+                if (!s) return;
+
+                $('s-status').textContent = s.status || '—';
+                $('s-status').className = 'stat-value ' + statusClass(s.status);
+                $('s-model').textContent = s.active_model || '—';
+                $('s-container').textContent = s.container_id ? s.container_id.substring(0, 12) : '—';
+                $('s-uptime').textContent = formatUptime(s.uptime_s || 0);
+                $('s-loop').textContent = s.loop_count || '0';
+                $('s-goal').textContent = s.goal || '—';
+
+                const ollamaEl = $('s-ollama');
+                ollamaEl.textContent = s.ollama_online ? 'ONLINE' : 'OFFLINE';
+                ollamaEl.className = 'stat-value ' + (s.ollama_online ? 'success' : 'warning');
+
+                updatePreview(s.preview_running, s.preview_port);
+
+                const qi = $('queue-indicator');
+                qi.textContent = s.queue_size > 0 ? `📋 ${s.queue_size} instruction(s) in queue` : '';
+            }
+
+            function statusClass(status) {
+                switch (status) {
+                    case 'monitoring': return 'success';
+                    case 'executing': return 'info';
+                    case 'initializing': return 'warning';
+                    case 'error': return 'error';
+                    case 'stopped': return 'error';
+                    default: return '';
+                }
+            }
+
+            function formatUptime(seconds) {
+                if (seconds < 60) return `${Math.round(seconds)}s`;
+                if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
+                return `${(seconds / 3600).toFixed(1)}h`;
+            }
+
+            // ── Preview ────────────────────────────────────────
+            let currentPreviewPort = 0;
+
+            function updatePreview(running, port) {
+                const container = $('preview-container');
+                const statusEl = $('preview-status');
+
+                if (running && port > 0) {
+                    statusEl.textContent = `localhost:${port}`;
+                    statusEl.style.color = 'var(--accent-emerald)';
+
+                    if (port !== currentPreviewPort) {
+                        currentPreviewPort = port;
+                        container.innerHTML = `<iframe class="preview-iframe" src="http://localhost:${port}" title="Live Preview"></iframe>`;
+                        addLogLine('INFO', `👁️ Preview updated → localhost:${port}`);
+                    }
+                } else {
+                    statusEl.textContent = 'offline';
+                    statusEl.style.color = 'var(--text-dim)';
+                    if (currentPreviewPort !== 0) {
+                        currentPreviewPort = 0;
+                        container.innerHTML = `
+                        <div class="preview-placeholder">
+                            <span class="icon">🖥️</span>
+                            <span>Waiting for dev server…</span>
+                            <span style="font-size:0.75rem;">Preview appears automatically when port is allocated</span>
+                        </div>`;
+                    }
+                }
+            }
+
+            // ── Logs ───────────────────────────────────────────
+            function addLogLine(level, message, ts) {
+                logCount++;
+                const terminal = $('terminal');
+                if (!terminal) return;
+
+                const line = document.createElement('div');
+                line.className = 'log-line';
+                const time = ts ? new Date(ts * 1000).toLocaleTimeString() : new Date().toLocaleTimeString();
+                line.innerHTML = `<span class="ts">[${time}]</span> <span class="level-${level}">${level}</span> <span class="msg">${escapeHtml(message)}</span>`;
+                terminal.appendChild(line);
+
+                while (terminal.children.length > MAX_LOG_LINES) {
+                    terminal.removeChild(terminal.firstChild);
+                }
+
+                terminal.scrollTop = terminal.scrollHeight;
+                $('log-count').textContent = `${logCount} entries`;
+            }
+
+            function escapeHtml(str) {
+                const d = document.createElement('div');
+                d.textContent = str;
+                return d.innerHTML;
+            }
+
+            // ── Send Instruction ───────────────────────────────
+            async function sendInstruction() {
+                const input = $('instruction-input');
+                const text = input.value.trim();
+                if (!text) return;
+
+                $('send-btn').disabled = true;
+                input.value = '';
+
+                try {
+                    const res = await fetch(`${API_BASE}/api/instruct`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ instruction: text }),
+                    });
+                    if (res.ok) {
+                        addLogLine('INFO', `📤 Sent: "${text}"`);
+                    } else {
+                        const err = await res.json();
+                        addLogLine('ERROR', `Failed: ${err.error || res.statusText}`);
+                    }
+                } catch (e) {
+                    addLogLine('ERROR', `Network error: ${e.message}`);
+                } finally {
+                    $('send-btn').disabled = false;
+                    input.focus();
+                }
+            }
+            window.sendInstruction = sendInstruction;
+
+            $('instruction-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendInstruction();
+                }
+            });
+
+            // ═════════════════════════════════════════════════════
+            // PROJECT LAUNCHER LOGIC
+            // ═════════════════════════════════════════════════════
+
+            async function loadProjects() {
+                try {
+                    const res = await fetch(`${API_BASE}/api/projects`);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const data = await res.json();
+
+                    renderProjects(data.projects);
+                } catch (e) {
+                    $('projects-grid').innerHTML = `<div class="loading-spinner">
+                        <div style="font-size:1.5rem;margin-bottom:12px;">🔌</div>
+                        <div>Supervisor engine not running</div>
+                        <div style="margin-top:8px;font-size:0.78rem;color:var(--text-dim);line-height:1.5;">
+                            Start the engine first:<br>
+                            <code style="background:var(--bg-primary);padding:4px 10px;border-radius:6px;margin-top:6px;display:inline-block;color:var(--accent-cyan);font-family:var(--font-mono);">
+                                python -m supervisor --goal "your goal" -p ./project
+                            </code><br>
+                            <span style="margin-top:8px;display:inline-block;">Then open <b>http://localhost:8420</b></span>
+                        </div>
+                    </div>`;
+                }
+            }
+
+            function renderProjects(projects) {
+                const grid = $('projects-grid');
+                $('projects-label').textContent = `${projects.length} project${projects.length !== 1 ? 's' : ''} found`;
+
+                if (projects.length === 0) {
+                    grid.innerHTML = `<div class="loading-spinner">No projects yet. Create one above!</div>`;
+                    return;
+                }
+
+                grid.innerHTML = projects.map(p => {
+                    const sessionBadge = p.has_session ? `<span class="session-badge">ACTIVE SESSION</span>` : '';
+                    const goalLine = p.goal ? `<div class="project-goal">📌 ${escapeHtml(p.goal)}</div>` : '';
+                    const lastActive = p.last_active ? formatTimeAgo(p.last_active) : '';
+                    const metaLine = [
+                        p.file_count > 0 ? `<span class="files">${p.file_count} files</span>` : '',
+                        lastActive ? `<span>${lastActive}</span>` : '',
+                    ].filter(Boolean).join(' · ');
+
+                    return `
+                    <div class="project-card ${p.has_session ? 'has-session' : ''}"
+                         data-path="${escapeHtml(p.path)}"
+                         data-name="${escapeHtml(p.name)}"
+                         data-goal="${escapeHtml(p.goal || '')}"
+                         onclick="selectProject(this)">
+                        <div class="project-name">${escapeHtml(p.name)} ${sessionBadge}</div>
+                        <div class="project-meta">${metaLine}</div>
+                        ${goalLine}
+                    </div>`;
+                }).join('');
+            }
+
+            function formatTimeAgo(ts) {
+                const seconds = Math.floor(Date.now() / 1000 - ts);
+                if (seconds < 60) return 'just now';
+                if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+                if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+                return `${Math.floor(seconds / 86400)}d ago`;
+            }
+
+            function selectProject(card) {
+                // Deselect all
+                document.querySelectorAll('.project-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+
+                selectedProject = {
+                    path: card.dataset.path,
+                    name: card.dataset.name,
+                    goal: card.dataset.goal,
+                };
+
+                // Show launch panel
+                const panel = $('launch-panel');
+                panel.classList.add('visible');
+                $('launch-project-name').textContent = selectedProject.name;
+                $('launch-goal').value = selectedProject.goal || '';
+                $('launch-goal').placeholder = `What should the AI do in "${selectedProject.name}"?`;
+
+                // Focus goal if empty
+                if (!selectedProject.goal) {
+                    setTimeout(() => $('launch-goal').focus(), 100);
+                }
+
+                // Scroll to panel
+                panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            window.selectProject = selectProject;
+
+            function cancelLaunch() {
+                selectedProject = null;
+                $('launch-panel').classList.remove('visible');
+                document.querySelectorAll('.project-card').forEach(c => c.classList.remove('selected'));
+            }
+            window.cancelLaunch = cancelLaunch;
+
+            async function launchProject() {
+                if (!selectedProject) return;
+                const goal = $('launch-goal').value.trim();
+                if (!goal) {
+                    showToast('⚠️ Please enter a goal');
+                    $('launch-goal').focus();
+                    return;
+                }
+
+                const instructions = $('launch-instructions').value.trim();
+                $('btn-launch').disabled = true;
+                $('btn-launch').textContent = '⏳ Launching…';
+
+                try {
+                    const res = await fetch(`${API_BASE}/api/projects/launch`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            project_path: selectedProject.path,
+                            goal: goal,
+                            instructions: instructions,
+                        }),
+                    });
+
+                    if (res.ok) {
+                        showToast(`🚀 Launched: ${selectedProject.name}`);
+                        showScreen('dashboard');
+                    } else {
+                        const err = await res.json();
+                        showToast(`⚠️ ${err.error || 'Launch failed'}`);
+                    }
+                } catch (e) {
+                    showToast(`❌ Network error: ${e.message}`);
+                } finally {
+                    $('btn-launch').disabled = false;
+                    $('btn-launch').textContent = '▶ Launch';
+                }
+            }
+            window.launchProject = launchProject;
+
+            async function createProject() {
+                const input = $('new-project-name');
+                const name = input.value.trim();
+                if (!name) {
+                    showToast('⚠️ Enter a project name');
+                    input.focus();
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`${API_BASE}/api/projects/create`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name }),
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        showToast(`✅ Created: ${data.name}`);
+                        input.value = '';
+                        loadProjects();
+                    } else {
+                        const err = await res.json();
+                        showToast(`⚠️ ${err.error}`);
+                    }
+                } catch (e) {
+                    showToast(`❌ ${e.message}`);
+                }
+            }
+            window.createProject = createProject;
+
+            $('new-project-name').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    createProject();
+                }
+            });
+
+            // ── Periodic state poll (fallback when WS is down) ─
+            setInterval(async () => {
+                if (ws && ws.readyState === WebSocket.OPEN) return;
+                try {
+                    const res = await fetch(`${API_BASE}/api/state`);
+                    if (res.ok) updateState(await res.json());
+                } catch (e) { /* silent */ }
+            }, 5000);
+
+            // ── Init ───────────────────────────────────────────
+            connect();
+            loadProjects();
+
+        })();
+    </script>
+</body>
+
+</html>

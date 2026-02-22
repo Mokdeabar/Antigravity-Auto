@@ -1,7 +1,0 @@
-{
-    "chat_input": "div[contenteditable='true'][role='textbox']",
-    "chat_message": ".interactive-result-editor, .interactive-item-container, [class*='chat-message'][class*='agent'], [class*='chat-message'][class*='assistant'], [data-role='assistant'], [class*='response'][class*='message'], [class*='message'][class*='agent'], [class*='message'][class*='assistant']",
-    "chat_message_fallback": "[class*='chat'] [class*='message']:not([class*='user']), [class*='message'], [class*='chat-entry']",
-    "send_button": "button[class*='send'], button[aria-label*='send' i], button[aria-label*='Send'], button[title*='Send'], a.monaco-button[class*='primary']",
-    "approval_button": "button[class*='approve'], button[class*='accept'], button[class*='allow'], a.monaco-button[class*='primary']"
-}

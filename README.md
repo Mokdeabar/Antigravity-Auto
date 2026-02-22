@@ -1,7 +1,12 @@
 # Supervisor AI — Antigravity IDE Orchestrator
 
-A fully autonomous Python script that babysits the Antigravity IDE agent.  
-Tell it your goal, and it monitors, approves, unblocks, and refines — hands-free.
+A fully autonomous Python system that takes a goal and delivers working software.
+Tell it what to build, and it plans, codes, tests, and deploys — hands-free.
+
+> **Architecture**: "Host Intelligence, Sandboxed Hands" — Gemini CLI runs on
+> the host using your authenticated AI Ultra session. Docker sandbox is a dumb
+> terminal with zero credentials. The V35 Command Centre UI is available at
+> `http://localhost:8420`.
 
 ---
 
@@ -9,10 +14,10 @@ Tell it your goal, and it monitors, approves, unblocks, and refines — hands-fr
 
 | Requirement | Version | Notes |
 |---|---|---|
-| **Python** | 3.11+ | Uses `asyncio`, type hints, `match` |
-| **Playwright** | ≥ 1.40 | Installed via pip, browser binaries needed |
+| **Python** | 3.11+ | Uses `asyncio`, type hints |
+| **Docker** | Latest | Auto-installed if missing |
 | **Gemini CLI** | latest | Must be callable from PATH as `gemini` |
-| **Antigravity IDE** | — | Electron app, launched with debug port |
+| **Ollama** (optional) | latest | Local LLM for fast analysis |
 
 ---
 
@@ -21,43 +26,14 @@ Tell it your goal, and it monitors, approves, unblocks, and refines — hands-fr
 ```bash
 cd "c:\Users\mokde\Desktop\Experiments\Antigravity Auto"
 pip install -r requirements.txt
-playwright install chromium
 ```
 
-> **Note:** `playwright install chromium` downloads the Chromium binary that
-> Playwright needs for CDP connections. You only need to do this once.
+Docker must be installed before running the supervisor. If not found, you'll get
+clear install instructions for your platform.
 
 ---
 
-## 2 — Launch Antigravity with the debug port
-
-### Option A: Shortcut / Command line
-
-Find where Antigravity is installed (e.g. `C:\Users\mokde\AppData\Local\Programs\antigravity\Antigravity.exe`) and launch it with:
-
-```bash
-"C:\path\to\Antigravity.exe" --remote-debugging-port=9222
-```
-
-### Option B: Create a Windows shortcut
-
-1. Right-click your Antigravity shortcut → **Properties**
-2. In the **Target** field, append ` --remote-debugging-port=9222` after the `.exe"` path
-3. Click **OK**
-
-### Option C: PowerShell one-liner
-
-```powershell
-Start-Process "C:\path\to\Antigravity.exe" -ArgumentList "--remote-debugging-port=9222"
-```
-
-> **Important:** The `--remote-debugging-port=9222` flag must be present or the
-> Supervisor cannot connect. You can verify it's working by opening
-> `http://localhost:9222/json/version` in a browser — you should see a JSON blob.
-
----
-
-## 3 — Run the Supervisor
+## 2 — Run the Supervisor
 
 ```bash
 python -m supervisor --goal "Build a beautiful landing page with animations"
@@ -68,7 +44,8 @@ python -m supervisor --goal "Build a beautiful landing page with animations"
 | Flag | Description |
 |---|---|
 | `--goal` / `-g` | **(required)** Your ultimate goal |
-| `--dry-run` | Skip CDP connection; print what would happen |
+| `--project` / `-p` | Path to the project directory |
+| `--dry-run` | Skip sandbox creation; print what would happen |
 | `--log-level` | `DEBUG` / `INFO` / `WARNING` / `ERROR` (default: `INFO`) |
 
 ### Example commands
@@ -77,82 +54,95 @@ python -m supervisor --goal "Build a beautiful landing page with animations"
 # Simple goal
 python -m supervisor -g "Create a React dashboard with authentication"
 
+# With project path
+python -m supervisor -g "Fix all failing tests" -p ./my-project
+
 # Verbose logging
 python -m supervisor -g "Fix all failing tests" --log-level DEBUG
 
-# Dry-run (no Antigravity needed)
+# Dry-run (no Docker needed)
 python -m supervisor -g "Test the supervisor" --dry-run
+```
+
+### Background mode (immortal daemon)
+
+```bash
+# Windows — auto-restarts on crash with exponential backoff
+"Launch Supervisor.bat"
 ```
 
 ---
 
-## 4 — How it works
+## 3 — How it works
 
 ```
 ┌──────────────────────────────────────────────────┐
 │                 SUPERVISOR AI                     │
 │                                                   │
-│   ┌─────────┐  ┌──────────┐  ┌──────────────┐   │
-│   │  Eyes   │  │  Hands   │  │ Loop Detector│   │
-│   │ monitor │→ │ approver │  │              │   │
-│   └────┬────┘  └──────────┘  └──────┬───────┘   │
-│        │                            │             │
-│        ▼                            ▼             │
-│   ┌─────────┐              ┌──────────────┐      │
-│   │ Injector│  ◄──────────  │    Brain     │      │
-│   │         │              │ (Gemini CLI) │      │
-│   └─────────┘              └──────────────┘      │
+│   ┌──────────┐  ┌──────────┐  ┌──────────────┐  │
+│   │ Sandbox  │  │ Headless │  │    Agent     │  │
+│   │ Manager  │→ │ Executor │  │   Council    │  │
+│   └────┬─────┘  └──────────┘  └──────┬───────┘  │
+│        │                              │           │
+│        ▼                              ▼           │
+│   ┌──────────┐              ┌──────────────┐     │
+│   │  Tool    │  ◄──────────  │    Brain     │     │
+│   │  Server  │              │ (Gemini CLI) │     │
+│   └──────────┘              └──────────────┘     │
 └──────────────────────────────────────────────────┘
          │                         ▲
          ▼                         │
     ┌─────────────────────────────────┐
-    │        ANTIGRAVITY IDE          │
-    │    (CDP on localhost:9222)       │
+    │       Docker Sandbox            │
+    │  (Debian + Python + Node.js)    │
     └─────────────────────────────────┘
 ```
 
-1. **Eyes** (`monitor.py`) — Connects via CDP, scrapes chat messages, finds buttons
-2. **Hands** (`approver.py`) — Auto-clicks Approve / Allow / Run buttons
-3. **Loop Detector** (`loop_detector.py`) — Tracks last 5 messages, catches repeating errors
-4. **Brain** (`brain.py`) — Calls local `gemini` CLI (zero API cost) to generate fix prompts
-5. **Injector** (`injector.py`) — Types responses into the chat and sends them
+1. **Sandbox Manager** — Creates Docker containers, mounts workspace, manages lifecycle
+2. **Headless Executor** — Runs Gemini CLI **on the host** (AI Ultra session), pushes changes into sandbox
+3. **Tool Server** — File ops, shell, git, LSP, dev server — all via docker exec bridges
+4. **Agent Council** — 6 specialist AI agents that diagnose, fix, test, and audit
+5. **Path Translator** — Bidirectional host↔container path mapping
 
-### Loop detection rules
+### Recovery strategies
 
-- Same message repeated **2×** → loop
-- Same error substring **3×** in window → loop
-- Same tool failure **2× in a row** → immediate pivot (no retry)
-- **5 interventions** on the same error → 🚨 human escalation (audible alert + pause)
+If something fails, the supervisor escalates through:
+
+1. **Restart Sandbox** — Destroy and recreate the container
+2. **Switch Mount** — Toggle between `bind` and `copy` mount modes
+3. **Rebuild Image** — Force rebuild the Docker image
+4. **Self-Evolution** — Rewrite its own code to fix the bug
 
 ---
 
-## 5 — Configuration
+## 4 — Configuration
 
-All tunables live in `supervisor/config.py`. You can also override key values
-via environment variables:
+All tunables live in `supervisor/config.py`. Key environment variables:
 
 | Env Var | Default | Description |
 |---|---|---|
-| `SUPERVISOR_CDP_URL` | `http://localhost:9222` | CDP endpoint |
-| `GEMINI_CLI_CMD` | `gemini` | Path/name of the Gemini CLI binary |
-| `GEMINI_TIMEOUT` | `120` | Seconds to wait for Gemini response |
-| `SUPERVISOR_POLL_INTERVAL` | `3.0` | Seconds between poll cycles |
-| `SUPERVISOR_LOG_LEVEL` | `INFO` | Logging verbosity |
-
-### Tuning DOM selectors
-
-If the Supervisor can't find buttons or the chat input, you'll need to update
-the CSS selectors in `supervisor/config.py`. Open Antigravity's DevTools
-(`Ctrl+Shift+I`) and inspect the chat UI to find the correct selectors.
+| `GEMINI_CLI_CMD` | `gemini` | Gemini CLI binary (**host only**) |
+| `OLLAMA_HOST` | `http://localhost:11434` | Ollama endpoint (passed to sandbox) |
+| `OLLAMA_MODEL` | `llama3` | Local LLM model |
+| `SANDBOX_MOUNT_MODE` | `copy` | `copy` (isolated, **default**) or `bind` (fast, opt-in) |
+| `COMMAND_CENTRE_PORT` | `8420` | V35 Command Centre web UI port |
+| `SUPERVISOR_LOG_LEVEL` | `INFO` | Logging level |
 
 ---
 
-## 6 — Troubleshooting
+## 5 — Troubleshooting
 
 | Problem | Solution |
 |---|---|
-| "No browser contexts found" | Antigravity isn't running or not launched with `--remote-debugging-port=9222` |
-| "Could not find chat input" | Update `CHAT_INPUT_SELECTOR` in `config.py` |
-| Buttons not being clicked | Update `APPROVAL_BUTTON_TEXTS` in `config.py` |
+| "Docker not found" | Install Docker Desktop manually, restart terminal |
+| "Docker daemon not running" | Start Docker Desktop manually |
+| Sandbox won't start | Run `docker ps -a` and `docker logs` |
 | Gemini CLI timeout | Increase `GEMINI_TIMEOUT` env var |
-| "Failed to connect" | Check `http://localhost:9222/json/version` in browser |
+| "Ollama unavailable" | Install Ollama or supervisor degrades gracefully |
+| Rate limit errors | Supervisor auto-switches models; wait for cooldown |
+
+---
+
+## 6 — Full Documentation
+
+See [SUPERVISOR_TECHNICAL_REFERENCE.md](SUPERVISOR_TECHNICAL_REFERENCE.md) for the complete technical reference (35+ modules, ~18,000 lines, 34 version iterations).

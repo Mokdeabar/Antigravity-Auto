@@ -325,8 +325,8 @@ class AgentCouncil:
     async def convene(
         self,
         issue: Issue,
-        page,
-        context,
+        page=None,
+        context=None,
         action_callbacks: dict = None,
     ) -> Resolution:
         """
@@ -334,10 +334,10 @@ class AgentCouncil:
 
         Args:
             issue:           The Issue to resolve
-            page:            Playwright page object
-            context:         Browser context for frame traversal
+            page:            Optional — sandbox or page reference
+            context:         Optional — execution context
             action_callbacks: Dict mapping action names to async callables
-                             for executing physical actions (REINJECT, etc.)
+                             for executing physical actions
 
         Returns:
             Resolution with diagnosis, actions taken, and success status
@@ -372,11 +372,13 @@ class AgentCouncil:
             print(f"  {C}📚 Found {len(past_issues)} similar past issues in KB{R}")
 
         # ── Fresh screenshot + logs ───────────────────────
-        screenshot_path = issue.screenshot_path or str(config.SCREENSHOT_PATH)
-        try:
-            await page.screenshot(path=screenshot_path)
-        except Exception as exc:
-            logger.warning("🏛️  Could not take screenshot: %s", exc)
+        screenshot_path = issue.screenshot_path or str(getattr(config, 'SCREENSHOT_PATH', _SUPERVISOR_DIR / 'ide_state.png'))
+        # V8: Screenshot capture is now optional — handled by sandbox or skipped in headless mode
+        if page and hasattr(page, 'screenshot'):
+            try:
+                await page.screenshot(path=screenshot_path)
+            except Exception as exc:
+                logger.warning("🏛️  Could not take screenshot: %s", exc)
 
         logs = issue.logs or _read_recent_logs(50)
 
@@ -477,12 +479,13 @@ class AgentCouncil:
 
             # ── Phase 4: TESTER validates ─────────────────
             if action_result.get("status") in ("SUCCESS", "EXECUTED"):
-                # Take a new screenshot to verify
-                try:
-                    await asyncio.sleep(3.0)
-                    await page.screenshot(path=screenshot_path)
-                except Exception:
-                    pass
+                # Take a new screenshot to verify (if page supports it)
+                if page and hasattr(page, 'screenshot'):
+                    try:
+                        await asyncio.sleep(3.0)
+                        await page.screenshot(path=screenshot_path)
+                    except Exception:
+                        pass
 
                 tester_result = await self._call_tester(
                     issue, diagnosis, recommended_action,
@@ -817,11 +820,13 @@ class AgentCouncil:
 
             elif action == "SCREENSHOT":
                 print(f"  {C}📸 Taking fresh screenshot …{R}")
-                try:
-                    await page.screenshot(path=str(config.SCREENSHOT_PATH))
-                    return {"status": "EXECUTED", "page": page}
-                except Exception as exc:
-                    return {"status": f"ERROR: {exc}", "page": page}
+                if page and hasattr(page, 'screenshot'):
+                    try:
+                        await page.screenshot(path=str(getattr(config, 'SCREENSHOT_PATH', _SUPERVISOR_DIR / 'ide_state.png')))
+                        return {"status": "EXECUTED", "page": page}
+                    except Exception as exc:
+                        return {"status": f"ERROR: {exc}", "page": page}
+                return {"status": "SKIPPED_HEADLESS", "page": page}
 
             elif action == "RESTART_HOST":
                 print(f"  {config.ANSI_RED}🫀 Executing: Defibrillator restart …{R}")
@@ -985,7 +990,7 @@ class AgentCouncil:
                 arbiter = MergeArbiter(project_cwd, manager)
                 researcher = ExternalResearcher()
                 verifier = AutonomousVerifier(manager, project_cwd)
-                visual_qa = VisualQAEngine()
+                visual_qa = VisualQAEngine(sandbox_manager=None)  # V8: pass sandbox when available
                 compliance = ComplianceGateway(manager, project_cwd)
                 test_cmd = os.getenv("TEST_COMMAND", "python -m tests.mock_repo_tests")
                 dev_cmd = os.getenv("DEV_SERVER_CMD", "npm run dev")

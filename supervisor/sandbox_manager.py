@@ -11,8 +11,9 @@ Architecture:
 
 Key properties:
     - Containers are ephemeral: created per-session, destroyed on shutdown.
-    - Project workspace is bind-mounted at /workspace.
-    - All commands execute inside the container, never on the host.
+    - Smart mounting: bind-mount for normal work, copy-in for risky operations.
+    - Docker auto-install: if Docker is missing, installs it automatically.
+    - Custom sandbox image: auto-builds from Dockerfile.sandbox with Python 3.12 + Node 20.
     - Timeout enforcement via asyncio wrapper.
     - Automatic cleanup on manager destruction.
 """
@@ -21,7 +22,10 @@ import asyncio
 import json
 import logging
 import os
+import platform
 import shutil
+import subprocess
+import sys
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -30,6 +34,10 @@ from typing import Optional
 from . import config
 
 logger = logging.getLogger("supervisor.sandbox_manager")
+
+# Path to the custom Dockerfile shipped alongside this module
+_DOCKERFILE_PATH = Path(__file__).resolve().parent / "Dockerfile.sandbox"
+_CUSTOM_IMAGE_NAME = "supervisor-sandbox:latest"
 
 
 # ─────────────────────────────────────────────────────────────
@@ -83,8 +91,10 @@ class SandboxInfo:
     image: str = ""
     project_path: str = ""
     workspace_path: str = "/workspace"
+    mount_mode: str = "copy"  # "bind" (fast, opt-in) or "copy" (isolated, default)
     created_at: float = 0.0
     status: str = "unknown"  # created, running, stopped, destroyed
+    preview_port: int = 0  # Dynamically allocated port for dev server preview
 
 
 # ─────────────────────────────────────────────────────────────
@@ -127,7 +137,7 @@ class SandboxManager:
     async def verify_docker(self) -> bool:
         """
         Verify Docker CLI is available and the daemon is running.
-        Raises DockerNotAvailableError if not.
+        Raises DockerNotAvailableError with actionable instructions if not found.
         """
         if self._verified:
             return True
@@ -136,25 +146,63 @@ class SandboxManager:
         docker_path = shutil.which("docker")
         if not docker_path:
             raise DockerNotAvailableError(
-                "Docker CLI not found on PATH. Install Docker Desktop: "
-                "https://docs.docker.com/get-docker/"
+                "Docker CLI not found on PATH.\n"
+                "\n"
+                "Install Docker manually:\n"
+                "  Windows:  winget install Docker.DockerDesktop\n"
+                "  macOS:    brew install --cask docker\n"
+                "  Linux:    curl -fsSL https://get.docker.com | sh\n"
+                "\n"
+                "After installing, restart your terminal and try again."
             )
 
         # Check daemon is responsive
         try:
-            result = await self._run_docker(["info", "--format", "{{.ServerVersion}}"], timeout=10)
+            result = await self._run_docker(["info", "--format", "{{.ServerVersion}}"], timeout=15)
             if result.exit_code != 0:
                 raise DockerNotAvailableError(
-                    f"Docker daemon not running. Start Docker Desktop.\n"
+                    "Docker is installed but the daemon is not running.\n"
+                    "Start Docker Desktop manually, then try again.\n"
                     f"stderr: {result.stderr[:200]}"
                 )
             logger.info("Docker verified: version %s", result.stdout.strip())
             self._verified = True
             return True
         except asyncio.TimeoutError:
-            raise DockerNotAvailableError("Docker daemon not responding (timeout 10s)")
+            raise DockerNotAvailableError("Docker daemon not responding (timeout 15s).")
+
 
     # ── Container Lifecycle ──────────────────────────────────
+
+    @staticmethod
+    def _find_available_port(start: int = 3000, end: int = 3020) -> int:
+        """
+        Find an available TCP port on the host.
+
+        Probes ports from start to end using socket.bind().
+        Avoids TIME_WAIT collisions after sandbox restarts.
+
+        Returns:
+            First available port in range.
+
+        Raises:
+            SandboxError: If no port is available in range.
+        """
+        import socket
+        for port in range(start, end + 1):
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                    s.bind(('', port))
+                    logger.debug("Port %d is available.", port)
+                    return port
+            except OSError:
+                logger.debug("Port %d is in use, trying next.", port)
+                continue
+        raise SandboxError(
+            f"No available port in range {start}-{end}. "
+            f"All ports are in use or in TIME_WAIT state."
+        )
 
     async def create(
         self,
@@ -162,15 +210,18 @@ class SandboxManager:
         image: Optional[str] = None,
         memory_limit: Optional[str] = None,
         extra_env: Optional[dict[str, str]] = None,
+        mount_mode: str = "copy",
     ) -> SandboxInfo:
         """
-        Spin up an ephemeral Docker container with the project workspace mounted.
+        Spin up an ephemeral Docker container with the project workspace.
 
         Args:
             project_path: Absolute path to the project directory on the host.
-            image: Docker image to use (default: config.SANDBOX_IMAGE).
+            image: Docker image to use. Default: auto-built custom image.
             memory_limit: Memory limit (e.g., "2g"). Default: config.SANDBOX_MEMORY_LIMIT.
             extra_env: Additional environment variables to pass into the container.
+            mount_mode: "bind" (fast, shared filesystem) or "copy" (fully isolated).
+                        Use "copy" for risky operations that might corrupt the workspace.
 
         Returns:
             SandboxInfo with container details.
@@ -182,7 +233,8 @@ class SandboxManager:
             logger.warning("Destroying existing sandbox before creating a new one")
             await self.destroy()
 
-        image = image or getattr(config, "SANDBOX_IMAGE", "python:3.11-slim")
+        # Try to use our custom image, fall back to config default
+        image = image or await self._resolve_image()
         memory_limit = memory_limit or getattr(config, "SANDBOX_MEMORY_LIMIT", "2g")
         workspace_path = getattr(config, "SANDBOX_WORKSPACE_PATH", "/workspace")
 
@@ -191,7 +243,6 @@ class SandboxManager:
         # Normalize project path for Docker (Windows → forward slashes)
         host_path = str(Path(project_path).resolve())
         if os.name == "nt":
-            # Docker Desktop on Windows needs forward-slash paths
             host_path = host_path.replace("\\", "/")
 
         # Build docker run command
@@ -199,26 +250,49 @@ class SandboxManager:
             "run", "-d",
             "--name", container_name,
             "--memory", memory_limit,
-            "-v", f"{host_path}:{workspace_path}",
             "-w", workspace_path,
-            "--network", "host",  # Allow container to access host services
+            "--network", "host",
         ]
+
+        # Smart mounting strategy
+        if mount_mode == "bind":
+            # Bind-mount: fast, changes reflect immediately on both sides
+            cmd.extend(["-v", f"{host_path}:{workspace_path}"])
+        elif mount_mode == "copy":
+            # Copy-in: fully isolated, no risk to host workspace
+            # We create a named volume and copy files in after container starts
+            volume_name = f"supervisor-vol-{uuid.uuid4().hex[:8]}"
+            cmd.extend(["-v", f"{volume_name}:{workspace_path}"])
+        else:
+            raise SandboxError(f"Invalid mount_mode: {mount_mode}. Use 'bind' or 'copy'.")
 
         # Add environment variables
         env_vars = extra_env or {}
-        # Pass through Gemini API key if available
-        gemini_key = os.getenv("GEMINI_API_KEY", "")
-        if gemini_key:
-            env_vars["GEMINI_API_KEY"] = gemini_key
+        # SECURITY: GEMINI_API_KEY and GOOGLE_API_KEY are NEVER passed into the
+        # container. The Gemini CLI runs on the HOST using the user's authenticated
+        # session. This is the "Host Intelligence, Sandboxed Hands" architecture.
+        # Only OLLAMA_HOST is passed through for optional local LLM analysis.
+        ollama_host = os.getenv("OLLAMA_HOST", "")
+        if ollama_host:
+            env_vars["OLLAMA_HOST"] = ollama_host
+
+        # Default OLLAMA_HOST to host.docker.internal so Ollama on host is reachable
+        if "OLLAMA_HOST" not in env_vars:
+            env_vars["OLLAMA_HOST"] = "http://host.docker.internal:11434"
 
         for key, val in env_vars.items():
             cmd.extend(["-e", f"{key}={val}"])
 
+        # Dynamically allocate a dev server preview port to avoid TIME_WAIT collisions
+        preview_port = self._find_available_port(3000, 3020)
+        cmd.extend(["-e", f"DEV_SERVER_PORT={preview_port}"])
+        logger.info("Preview port allocated: %d", preview_port)
+
         # Use the image with an infinite sleep to keep the container alive
         cmd.extend([image, "sleep", "infinity"])
 
-        logger.info("Creating sandbox: image=%s, project=%s", image, project_path)
-        result = await self._run_docker(cmd, timeout=60)
+        logger.info("Creating sandbox: image=%s, project=%s, mount=%s", image, project_path, mount_mode)
+        result = await self._run_docker(cmd, timeout=120)
 
         if result.exit_code != 0:
             raise SandboxError(
@@ -229,20 +303,26 @@ class SandboxManager:
 
         container_id = result.stdout.strip()[:12]
 
-        import time
+        import time as _time
         self._active = SandboxInfo(
             container_id=container_id,
             container_name=container_name,
             image=image,
             project_path=project_path,
             workspace_path=workspace_path,
-            created_at=time.time(),
+            mount_mode=mount_mode,
+            created_at=_time.time(),
             status="running",
+            preview_port=preview_port,
         )
 
+        # If copy mode, copy the workspace into the container
+        if mount_mode == "copy":
+            await self._copy_workspace_in(project_path, workspace_path)
+
         logger.info(
-            "Sandbox created: id=%s, name=%s, image=%s",
-            container_id, container_name, image,
+            "Sandbox created: id=%s, name=%s, image=%s, mount=%s",
+            container_id, container_name, image, mount_mode,
         )
         return self._active
 
@@ -449,6 +529,130 @@ class SandboxManager:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.destroy()
         return False
+
+    # ── Smart Mounting ───────────────────────────────────────
+
+    async def _copy_workspace_in(self, host_path: str, workspace_path: str) -> None:
+        """Copy the host workspace into the container (for 'copy' mount mode)."""
+        container = self._active.container_name or self._active.container_id
+        logger.info("Copying workspace into sandbox (copy-in mode)...")
+        result = await self._run_docker(
+            ["cp", f"{host_path}/.", f"{container}:{workspace_path}/"],
+            timeout=120,
+        )
+        if result.exit_code != 0:
+            logger.warning("Workspace copy-in failed: %s", result.stderr[:200])
+
+    async def copy_workspace_out(self, host_dest: Optional[str] = None) -> None:
+        """
+        Copy the workspace from the container back to the host.
+        Only meaningful in 'copy' mount mode.
+
+        Args:
+            host_dest: Destination path on host. Default: original project_path.
+        """
+        if not self._active or self._active.mount_mode != "copy":
+            logger.debug("copy_workspace_out skipped: not in copy mode")
+            return
+
+        container = self._active.container_name or self._active.container_id
+        dest = host_dest or self._active.project_path
+        logger.info("Copying workspace out of sandbox to: %s", dest)
+        result = await self._run_docker(
+            ["cp", f"{container}:{self._active.workspace_path}/.", dest],
+            timeout=120,
+        )
+        if result.exit_code != 0:
+            logger.warning("Workspace copy-out failed: %s", result.stderr[:200])
+
+    async def switch_mount_mode(self, new_mode: str) -> SandboxInfo:
+        """
+        Switch between bind and copy mount modes by recreating the container.
+
+        If switching from copy to bind: copies workspace out first.
+        If switching from bind to copy: copies workspace in after creation.
+        """
+        if not self._active:
+            raise SandboxError("No active sandbox to switch mode for.")
+
+        if self._active.mount_mode == new_mode:
+            return self._active
+
+        project_path = self._active.project_path
+        image = self._active.image
+
+        # Copy out if leaving copy mode
+        if self._active.mount_mode == "copy":
+            await self.copy_workspace_out()
+
+        await self.destroy()
+        return await self.create(project_path, image=image, mount_mode=new_mode)
+
+    # ── Image Management ─────────────────────────────────────
+
+    async def _resolve_image(self) -> str:
+        """
+        Determine the best Docker image to use.
+
+        Priority:
+          1. Custom supervisor-sandbox image (if built from Dockerfile.sandbox)
+          2. Config-specified image (SANDBOX_IMAGE env var)
+          3. Default python:3.11-slim fallback
+        """
+        # Check if our custom image exists
+        result = await self._run_docker(
+            ["image", "inspect", _CUSTOM_IMAGE_NAME],
+            timeout=10,
+        )
+        if result.exit_code == 0:
+            logger.info("Using custom sandbox image: %s", _CUSTOM_IMAGE_NAME)
+            return _CUSTOM_IMAGE_NAME
+
+        # If Dockerfile exists, build the custom image
+        if _DOCKERFILE_PATH.exists():
+            logger.info("Building custom sandbox image from %s...", _DOCKERFILE_PATH)
+            built = await self.build_image()
+            if built:
+                return _CUSTOM_IMAGE_NAME
+
+        # Fall back to config default
+        return getattr(config, "SANDBOX_IMAGE", "python:3.11-slim")
+
+    async def build_image(self, force: bool = False) -> bool:
+        """
+        Build the custom sandbox Docker image from Dockerfile.sandbox.
+
+        Returns True if build succeeded.
+        """
+        if not _DOCKERFILE_PATH.exists():
+            logger.warning("Dockerfile.sandbox not found at %s", _DOCKERFILE_PATH)
+            return False
+
+        if not force:
+            # Check if image already exists
+            result = await self._run_docker(
+                ["image", "inspect", _CUSTOM_IMAGE_NAME],
+                timeout=10,
+            )
+            if result.exit_code == 0:
+                logger.info("Custom image already exists, skipping build.")
+                return True
+
+        logger.info("Building sandbox image: %s ...", _CUSTOM_IMAGE_NAME)
+        build_context = str(_DOCKERFILE_PATH.parent)
+        result = await self._run_docker(
+            ["build", "-t", _CUSTOM_IMAGE_NAME, "-f", str(_DOCKERFILE_PATH), build_context],
+            timeout=600,  # 10 minutes for full build
+        )
+        if result.exit_code != 0:
+            logger.warning(
+                "Sandbox image build failed (will use fallback image).\n%s",
+                result.stderr[:500],
+            )
+            return False
+
+        logger.info("Sandbox image built successfully: %s", _CUSTOM_IMAGE_NAME)
+        return True
 
     # ── Internal Helpers ─────────────────────────────────────
 

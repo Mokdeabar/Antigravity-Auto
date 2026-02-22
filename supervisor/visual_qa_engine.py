@@ -1,33 +1,26 @@
 """
-visual_qa_engine.py — V23 Multimodal Visual QA Engine
+visual_qa_engine.py — V24 Multimodal Visual QA Engine (Headless Sandbox).
 
 Gives the agent eyes. After code passes V22 TDD, frontend tasks undergo
-a Visual Phase: the engine boots a dev server, renders the page in a
-headless Playwright browser, captures a 720p screenshot, and routes it
-to the Gemini vision model for a strict pass/fail visual QA check.
-
-If the vision model detects overlapping elements, invisible text, broken
-layouts, or missing components, the node is failed and the visual critique
-is fed back to the CLI Worker for correction.
+a Visual Phase: the engine boots a dev server inside the sandbox, captures
+a screenshot via headless Chromium, and routes it to Gemini's vision model
+for pixel-level QA.
 
 Pipeline:
-  1. Detect UI node (keyword match on description)
-  2. Boot dev server (npm run dev) in detached subprocess
-  3. Poll localhost until 200 OK
-  4. Launch Playwright headless, inject animation-disabling CSS
-  5. Capture full-page screenshot, compress to 720p
-  6. Route screenshot + objective to Gemini 3.1 Pro vision
-  7. Parse strict boolean verdict
+  1. Detect if the node is a UI/frontend node
+  2. Install Chromium snapshot tools inside sandbox (puppeteer/chrome-headless-shell)
+  3. Boot dev server via sandbox exec
+  4. Capture full-page screenshot via headless Chrome
+  5. Compress screenshot to 720p
+  6. Route to Gemini vision model for analysis
+  7. Parse JSON verdict (PASS|FAIL with critique)
+  8. Tear down dev server
 """
 
-import asyncio
-import base64
 import io
 import logging
 import os
 import re
-import signal
-import subprocess
 import time
 from pathlib import Path
 from typing import Optional, Tuple
@@ -39,14 +32,13 @@ UI_KEYWORDS = [
     "component", "frontend", "view", "page", "layout", "ui",
     "button", "form", "modal", "dialog", "sidebar", "navbar",
     "header", "footer", "card", "dashboard", "chart", "table",
-    "css", "style", "theme", "responsive", "animation", "menu",
-    "checkout", "login", "signup", "profile", "settings",
-    "html", "template", "render", "display", "screen",
+    "responsive", "css", "style", "animation", "render", "html",
+    "react", "vue", "svelte", "next", "vite", "tailwind",
 ]
 
-# CSS injected to disable animations and transitions for stable screenshots
+# CSS injected to freeze animations for consistent screenshots
 FREEZE_CSS = """
-*, *::before, *::after {
+* {
     animation-duration: 0s !important;
     animation-delay: 0s !important;
     transition-duration: 0s !important;
@@ -63,109 +55,44 @@ POLL_INTERVAL_S = 1.0
 
 class VisualQAEngine:
     """
-    Renders frontend code in a headless browser and validates it
-    visually via the Gemini vision model.
+    Renders frontend code in a headless browser inside the Docker sandbox
+    and validates it visually via the Gemini vision model.
     """
 
     VISION_PROMPT = (
         "You are a strict UI Quality Assurance inspector. Analyze this screenshot "
-        "of a web application against the given requirement.\n\n"
-        "CHECK FOR:\n"
-        "1. Invisible text (same color as background)\n"
-        "2. Overlapping or clipped elements\n"
-        "3. Broken layouts or misaligned components\n"
-        "4. Missing UI elements mentioned in the requirement\n"
+        "of a web application and check for:\n"
+        "1. Visual bugs (overlapping elements, text clipping, invisible text)\n"
+        "2. Broken layouts (elements outside viewport, misaligned grids)\n"
+        "3. Missing assets (broken images, missing icons)\n"
+        "4. Accessibility issues (low contrast, tiny text)\n"
         "5. Blank or empty pages\n"
-        "6. Console-style error messages rendered on screen\n\n"
-        "Output strict JSON:\n"
-        '{"pass": true/false, "critique": "one-sentence explanation"}'
+        "\n"
+        "Reply with ONLY a JSON object:\n"
+        '{"verdict": "PASS" or "FAIL", "issues": ["issue1", ...], '
+        '"score": 0-100, "summary": "brief overall assessment"}'
     )
 
-    def __init__(self, gemini_advisor=None):
+    def __init__(self, sandbox_manager=None, gemini_advisor=None):
         """
         Args:
-            gemini_advisor: An object with an `analyze_image(path, prompt)` method,
-                            or None to use the Gemini CLI fallback.
+            sandbox_manager: SandboxManager for running commands inside container.
+            gemini_advisor: Object with analyze_image(path, prompt) method,
+                           or None to use the Gemini CLI fallback.
         """
-        self._advisor = gemini_advisor
-        self._server_proc = None
-
-    # ────────────────────────────────────────────────
-    # UI Node Detection
-    # ────────────────────────────────────────────────
+        self._sandbox = sandbox_manager
+        self._gemini = gemini_advisor
+        self._screenshot_dir = Path(os.getenv(
+            "VISUAL_QA_DIR",
+            str(Path(__file__).parent / "_visual_qa_screenshots")
+        ))
+        self._screenshot_dir.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
     def is_ui_node(description: str) -> bool:
         """Check if a node description contains frontend/UI keywords."""
-        lower = description.lower()
-        return any(kw in lower for kw in UI_KEYWORDS)
-
-    # ────────────────────────────────────────────────
-    # Dev Server Management
-    # ────────────────────────────────────────────────
-
-    def start_dev_server(
-        self,
-        cwd: str,
-        cmd: str = "npm run dev",
-        port: int = 3000,
-    ) -> Tuple[bool, str]:
-        """
-        Boot a local development server in a detached subprocess.
-        Returns (success, url_or_error).
-        """
-        try:
-            self._server_proc = subprocess.Popen(
-                cmd.split(),
-                cwd=cwd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                creationflags=getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0),
-            )
-            url = f"http://localhost:{port}"
-            logger.info("🖥️ Dev server started (PID %d) at %s", self._server_proc.pid, url)
-            return True, url
-        except FileNotFoundError:
-            return False, f"Command not found: {cmd}"
-        except Exception as e:
-            return False, f"Failed to start dev server: {e}"
-
-    async def wait_for_server(self, url: str, timeout: int = MAX_SERVER_WAIT_S) -> bool:
-        """Poll the dev server until it returns 200 OK."""
-        import urllib.request
-        import urllib.error
-
-        start = time.time()
-        while time.time() - start < timeout:
-            try:
-                resp = urllib.request.urlopen(url, timeout=3)
-                if resp.status == 200:
-                    logger.info("🖥️ Dev server ready at %s", url)
-                    return True
-            except (urllib.error.URLError, ConnectionError, OSError):
-                pass
-            await asyncio.sleep(POLL_INTERVAL_S)
-
-        logger.warning("🖥️ Dev server did not respond within %ds.", timeout)
-        return False
-
-    def stop_dev_server(self):
-        """Terminate the detached dev server."""
-        if self._server_proc:
-            try:
-                self._server_proc.terminate()
-                self._server_proc.wait(timeout=5)
-            except Exception:
-                try:
-                    self._server_proc.kill()
-                except Exception:
-                    pass
-            self._server_proc = None
-            logger.info("🖥️ Dev server stopped.")
-
-    # ────────────────────────────────────────────────
-    # Screenshot Capture
-    # ────────────────────────────────────────────────
+        desc_lower = description.lower()
+        return any(kw in desc_lower for kw in UI_KEYWORDS)
 
     async def capture_screenshot(
         self,
@@ -173,74 +100,105 @@ class VisualQAEngine:
         output_path: str,
     ) -> Tuple[bool, str]:
         """
-        Launch Playwright headless browser, inject freeze CSS,
-        capture a full-page screenshot compressed to 720p.
+        Capture a screenshot using headless Chrome inside the sandbox.
         Returns (success, screenshot_path_or_error).
         """
+        if not self._sandbox:
+            return False, "No sandbox manager configured"
+
+        # Use a Node.js one-liner with puppeteer-core or chrome-headless-shell
+        # First check if chrome-headless-shell or chromium is available
+        screenshot_script = f"""
+const {{ execSync }} = require('child_process');
+let browser_path = '';
+try {{
+    browser_path = execSync('which chromium || which google-chrome || which chrome-headless-shell', {{encoding: 'utf8'}}).trim();
+}} catch(e) {{
+    console.error('NO_BROWSER');
+    process.exit(1);
+}}
+
+// Use puppeteer-core if available, otherwise use basic CDP
+(async () => {{
+    try {{
+        const puppeteer = require('puppeteer-core');
+        const browser = await puppeteer.launch({{
+            executablePath: browser_path,
+            headless: 'new',
+            args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
+        }});
+        const page = await browser.newPage();
+        await page.setViewport({{ width: {SCREENSHOT_WIDTH}, height: {SCREENSHOT_HEIGHT} }});
+        await page.goto('{url}', {{ waitUntil: 'networkidle2', timeout: 20000 }});
+        
+        // Inject freeze CSS
+        await page.addStyleTag({{ content: `{FREEZE_CSS}` }});
+        await new Promise(r => setTimeout(r, 500));
+        
+        await page.screenshot({{ path: '/tmp/screenshot.png', fullPage: true }});
+        await browser.close();
+        console.log('SCREENSHOT_OK');
+    }} catch(e) {{
+        console.error('SCREENSHOT_FAIL: ' + e.message);
+        process.exit(1);
+    }}
+}})();
+"""
         try:
-            from playwright.async_api import async_playwright
-        except ImportError:
-            return False, "Playwright not installed. Install with: pip install playwright && playwright install chromium"
+            # Write the screenshot script to the sandbox
+            await self._sandbox.exec_command(
+                f"cat > /tmp/capture.js << 'SCRIPT_EOF'\n{screenshot_script}\nSCRIPT_EOF",
+                timeout=10,
+            )
 
-        try:
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
-                page = await browser.new_page(
-                    viewport={"width": SCREENSHOT_WIDTH, "height": SCREENSHOT_HEIGHT}
-                )
+            # Install puppeteer-core if not present
+            await self._sandbox.exec_command(
+                "npm list puppeteer-core 2>/dev/null || npm install --no-save puppeteer-core 2>/dev/null",
+                timeout=30,
+            )
 
-                # Navigate and wait for network idle
-                await page.goto(url, wait_until="networkidle", timeout=20000)
+            # Run the capture script
+            result = await self._sandbox.exec_command(
+                "node /tmp/capture.js",
+                timeout=30,
+            )
 
-                # Inject freeze CSS to disable animations
-                await page.add_style_tag(content=FREEZE_CSS)
-                await page.wait_for_timeout(500)  # Brief settle after CSS injection
+            if result.exit_code != 0:
+                return False, f"Screenshot capture failed: {result.stderr[:300]}"
 
-                # Capture screenshot
-                screenshot_bytes = await page.screenshot(full_page=True, type="png")
-                await browser.close()
+            # Copy screenshot out from sandbox
+            await self._sandbox.copy_file_out(
+                "/tmp/screenshot.png", output_path
+            )
 
-            # Compress to 720p using PIL if available
-            compressed = self._compress_screenshot(screenshot_bytes)
-
-            # Save to disk
-            out = Path(output_path)
-            out.parent.mkdir(parents=True, exist_ok=True)
-            out.write_bytes(compressed)
-
-            logger.info("📸 Screenshot captured: %s (%d KB)", out.name, len(compressed) // 1024)
-            return True, str(out)
+            logger.info("📸  Screenshot captured: %s", output_path)
+            return True, output_path
 
         except Exception as exc:
-            return False, f"Screenshot capture failed: {exc}"
+            return False, f"Screenshot error: {exc}"
 
-    @staticmethod
-    def _compress_screenshot(png_bytes: bytes) -> bytes:
+    def _compress_screenshot(self, png_bytes: bytes) -> bytes:
         """Compress screenshot to 720p width for token-efficient vision analysis."""
         try:
             from PIL import Image
-
             img = Image.open(io.BytesIO(png_bytes))
+            w, h = img.size
+            if w > SCREENSHOT_WIDTH:
+                ratio = SCREENSHOT_WIDTH / w
+                new_size = (SCREENSHOT_WIDTH, int(h * ratio))
+                img = img.resize(new_size, Image.LANCZOS)
 
-            # Resize to 720p width, maintaining aspect ratio
-            target_width = 1280
-            if img.width > target_width:
-                ratio = target_width / img.width
-                new_height = int(img.height * ratio)
-                img = img.resize((target_width, new_height), Image.LANCZOS)
-
-            # Save as JPEG with quality 80 for size reduction
-            buf = io.BytesIO()
-            img.save(buf, format="JPEG", quality=80, optimize=True)
-            return buf.getvalue()
+            out = io.BytesIO()
+            img.save(out, format="PNG", optimize=True)
+            logger.info(
+                "📸  Compressed screenshot: %dx%d → %dx%d (%d bytes)",
+                w, h, img.width, img.height, out.tell(),
+            )
+            return out.getvalue()
 
         except ImportError:
-            # PIL not available, return original PNG
+            logger.warning("📸  Pillow not installed — skipping compression.")
             return png_bytes
-
-    # ────────────────────────────────────────────────
-    # Gemini Vision QA
-    # ────────────────────────────────────────────────
 
     async def analyze_screenshot(
         self,
@@ -251,20 +209,19 @@ class VisualQAEngine:
         Route the screenshot to Gemini vision for UI quality analysis.
         Returns (passes_qa, critique_or_success_msg).
         """
-        import json
+        prompt = (
+            f"{self.VISION_PROMPT}\n\n"
+            f"The UI objective was: {objective}\n"
+        )
 
-        # Try using the Gemini advisor's image analysis if available
-        if self._advisor and hasattr(self._advisor, "analyze_image"):
+        if self._gemini and hasattr(self._gemini, 'analyze_image'):
             try:
-                result = await self._advisor.analyze_image(
-                    screenshot_path,
-                    f"UI REQUIREMENT: {objective[:500]}\n\n{self.VISION_PROMPT}"
-                )
+                result = await self._gemini.analyze_image(screenshot_path, prompt)
                 return self._parse_vision_result(result)
             except Exception as exc:
-                logger.warning("Vision advisor failed: %s. Trying CLI fallback.", exc)
+                logger.warning("📸  Gemini advisor vision failed: %s", exc)
 
-        # Fallback: use Gemini CLI with file attachment
+        # Fallback: use Gemini CLI
         return await self._gemini_cli_vision(screenshot_path, objective)
 
     async def _gemini_cli_vision(
@@ -273,54 +230,48 @@ class VisualQAEngine:
         objective: str,
     ) -> Tuple[bool, str]:
         """Use the Gemini CLI to analyze a screenshot."""
-        import json
-
-        prompt = (
-            f"UI REQUIREMENT: {objective[:500]}\n\n{self.VISION_PROMPT}"
-        )
-
         try:
-            proc = await asyncio.create_subprocess_exec(
-                "gemini", "-f", screenshot_path, "-e", prompt,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
+            from .gemini_advisor import call_gemini_with_file
+
+            prompt = (
+                f"{self.VISION_PROMPT}\n\n"
+                f"The UI objective was: {objective}\n"
             )
-            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=60)
-            raw = stdout.decode("utf-8", errors="replace").strip()
 
-            if not raw:
-                return False, "Gemini vision returned empty response."
-
-            return self._parse_vision_result(raw)
+            result = await call_gemini_with_file(
+                screenshot_path, prompt, timeout=60
+            )
+            if result:
+                return self._parse_vision_result(result)
+            return False, "Gemini CLI returned empty result"
 
         except Exception as exc:
-            return False, f"Gemini CLI vision failed: {exc}"
+            return False, f"Gemini CLI vision error: {exc}"
 
-    @staticmethod
-    def _parse_vision_result(raw: str) -> Tuple[bool, str]:
+    def _parse_vision_result(self, raw: str) -> Tuple[bool, str]:
         """Parse the vision model's JSON response."""
         import json
-
         try:
-            # Extract JSON from potential markdown wrapping
-            json_match = re.search(r'\{[^}]+\}', raw)
+            # Extract JSON from response
+            json_match = re.search(r'\{[^{}]*"verdict"[^{}]*\}', raw, re.DOTALL)
             if json_match:
                 data = json.loads(json_match.group())
-                passes = data.get("pass", False)
-                critique = data.get("critique", "No explanation provided.")
-                return passes, critique
-        except (json.JSONDecodeError, AttributeError):
-            pass
+                verdict = data.get("verdict", "FAIL").upper()
+                summary = data.get("summary", "")
+                issues = data.get("issues", [])
+                score = data.get("score", 0)
 
-        # Fallback: keyword detection
-        lower = raw.lower()
-        if "pass" in lower and "fail" not in lower:
-            return True, raw[:200]
-        return False, raw[:200]
+                if verdict == "PASS" and score >= 60:
+                    return True, f"PASS (score: {score}): {summary}"
+                else:
+                    critique = f"FAIL (score: {score}): {summary}"
+                    if issues:
+                        critique += "\nIssues: " + "; ".join(issues[:5])
+                    return False, critique
+        except Exception as exc:
+            logger.warning("📸  Could not parse vision result: %s", exc)
 
-    # ────────────────────────────────────────────────
-    # Full Visual QA Pipeline
-    # ────────────────────────────────────────────────
+        return False, f"Unparseable vision result: {raw[:200]}"
 
     async def run_visual_qa(
         self,
@@ -333,43 +284,62 @@ class VisualQAEngine:
     ) -> Tuple[bool, str]:
         """
         Complete Visual QA pipeline:
-        1. Boot dev server
+        1. Boot dev server in sandbox
         2. Poll until ready
-        3. Capture screenshot
+        3. Capture screenshot via sandbox headless Chrome
         4. Route to Gemini vision
         5. Return verdict
         """
-        screenshot_dir = Path(cwd) / ".ag-memory" / "screenshots"
-        screenshot_path = str(screenshot_dir / f"vqa_{node_id}.jpg")
+        if not self._sandbox:
+            return False, "No sandbox manager — cannot run visual QA"
 
-        # Step 1: Boot server
-        server_ok, server_result = self.start_dev_server(cwd, dev_cmd, port)
-        if not server_ok:
-            return False, f"Dev server failed: {server_result}"
+        if not self.is_ui_node(objective):
+            return True, "Not a UI node — visual QA skipped"
 
-        url = f"http://localhost:{port}{url_path}"
+        logger.info("📸  Starting Visual QA for node '%s': %s", node_id, objective[:60])
+        screenshot_path = str(self._screenshot_dir / f"{node_id}.png")
 
+        # 1. Start dev server in sandbox
         try:
-            # Step 2: Wait for server
-            ready = await self.wait_for_server(url)
-            if not ready:
-                return False, "Dev server did not become ready."
+            server_result = await self._sandbox.exec_command(
+                f"cd {cwd} && nohup {dev_cmd} &",
+                timeout=10,
+            )
+        except Exception as exc:
+            return False, f"Failed to start dev server: {exc}"
 
-            # Step 3: Capture screenshot
-            sc_ok, sc_result = await self.capture_screenshot(url, screenshot_path)
-            if not sc_ok:
-                return False, f"Screenshot failed: {sc_result}"
+        # 2. Wait for server
+        url = f"http://localhost:{port}{url_path}"
+        server_ready = False
+        for _ in range(MAX_SERVER_WAIT_S):
+            try:
+                check = await self._sandbox.exec_command(
+                    f"curl -s -o /dev/null -w '%{{http_code}}' {url}",
+                    timeout=5,
+                )
+                if check.stdout.strip() == "200":
+                    server_ready = True
+                    break
+            except Exception:
+                pass
+            await __import__('asyncio').sleep(POLL_INTERVAL_S)
 
-            # Step 4: Vision QA
-            passes, critique = await self.analyze_screenshot(screenshot_path, objective)
+        if not server_ready:
+            return False, f"Dev server did not respond at {url} within {MAX_SERVER_WAIT_S}s"
 
-            if passes:
-                logger.info("👁️ Visual QA PASSED for [%s]", node_id)
-                return True, f"Visual QA passed: {critique}"
-            else:
-                logger.warning("👁️ Visual QA FAILED for [%s]: %s", node_id, critique)
-                return False, f"Visual QA failed: {critique}"
+        # 3. Capture screenshot
+        ok, result = await self.capture_screenshot(url, screenshot_path)
+        if not ok:
+            return False, f"Screenshot capture failed: {result}"
 
-        finally:
-            # Step 5: Always stop the server
-            self.stop_dev_server()
+        # 4. Analyze with Gemini vision
+        passes, critique = await self.analyze_screenshot(screenshot_path, objective)
+
+        # 5. Cleanup dev server
+        try:
+            await self._sandbox.exec_command(f"pkill -f '{dev_cmd}' || true", timeout=5)
+        except Exception:
+            pass
+
+        logger.info("📸  Visual QA result: %s — %s", "PASS" if passes else "FAIL", critique[:80])
+        return passes, critique
