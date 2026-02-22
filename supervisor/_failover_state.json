@@ -1,0 +1,19 @@
+{
+  "cooldowns": {
+    "auto": 1771588055.5467565,
+    "gemini-3.1-pro-preview": 1771588119.6219141,
+    "gemini-3-pro-preview": 1771588628.3123655,
+    "gemini-2.5-pro": 1771588805.7247245
+  },
+  "failures": {
+    "auto": 3,
+    "gemini-3.1-pro-preview": 3,
+    "gemini-3-pro-preview": 3,
+    "gemini-2.5-pro": 3
+  },
+  "successes": {
+    "gemini-3-pro-preview": 1,
+    "gemini-2.5-pro": 2
+  },
+  "timestamp": "2026-02-20T11:35:05.726943+00:00"
+}

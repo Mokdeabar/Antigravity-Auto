@@ -1,0 +1,1362 @@
+{
+  ".ag-tools\\cmd-dump\\out\\extension.js": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "activate",
+        "line": 8
+      },
+      {
+        "name": "deactivate",
+        "line": 31
+      }
+    ]
+  },
+  ".ag-tools\\cmd-dump\\src\\extension.ts": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "activate",
+        "line": 5
+      },
+      {
+        "name": "deactivate",
+        "line": 33
+      }
+    ]
+  },
+  "supervisor\\agent_council.py": {
+    "classes": [
+      {
+        "name": "Issue",
+        "line": 138
+      },
+      {
+        "name": "Resolution",
+        "line": 164
+      },
+      {
+        "name": "AgentCouncil",
+        "line": 310
+      }
+    ],
+    "functions": [
+      {
+        "name": "_read_recent_logs",
+        "line": 183
+      },
+      {
+        "name": "_read_module_source",
+        "line": 195
+      },
+      {
+        "name": "_read_all_module_sources",
+        "line": 206
+      },
+      {
+        "name": "_ask_agent",
+        "line": 230
+      }
+    ],
+    "dependencies": [
+      "gemini_advisor",
+      "json",
+      "pathlib",
+      "ast",
+      "typing",
+      "time",
+      "local_orchestrator",
+      "asyncio",
+      "logging"
+    ]
+  },
+  "supervisor\\agent_manager.py": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "open_agent_manager",
+        "line": 28
+      },
+      {
+        "name": "close_agent_manager",
+        "line": 53
+      },
+      {
+        "name": "new_agent_session",
+        "line": 65
+      },
+      {
+        "name": "list_agents",
+        "line": 114
+      },
+      {
+        "name": "switch_to_agent",
+        "line": 150
+      },
+      {
+        "name": "run_command_palette_action",
+        "line": 180
+      },
+      {
+        "name": "setup_mdns",
+        "line": 221
+      },
+      {
+        "name": "open_simple_browser",
+        "line": 238
+      },
+      {
+        "name": "open_file",
+        "line": 260
+      }
+    ],
+    "dependencies": [
+      "typing",
+      "logging",
+      "playwright.async_api",
+      "asyncio"
+    ]
+  },
+  "supervisor\\approver.py": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "auto_approve",
+        "line": 17
+      }
+    ],
+    "dependencies": [
+      "logging",
+      "playwright.async_api",
+      "asyncio"
+    ]
+  },
+  "supervisor\\bootstrap.py": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "bootstrap_workspace",
+        "line": 17
+      }
+    ],
+    "dependencies": [
+      "pathlib",
+      "logging",
+      "datetime"
+    ]
+  },
+  "supervisor\\brain.py": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "_build_prompt",
+        "line": 32
+      },
+      {
+        "name": "consult_gemini",
+        "line": 158
+      }
+    ],
+    "dependencies": [
+      "textwrap",
+      "gemini_advisor",
+      "logging"
+    ]
+  },
+  "supervisor\\chat_handler.py": {
+    "classes": [
+      {
+        "name": "ChatHandler",
+        "line": 19
+      }
+    ],
+    "functions": [],
+    "dependencies": [
+      "sys",
+      "time",
+      "logging",
+      "context_engine"
+    ]
+  },
+  "supervisor\\cli_worker.py": {
+    "classes": [
+      {
+        "name": "CLIWorker",
+        "line": 15
+      }
+    ],
+    "functions": [],
+    "dependencies": [
+      "typing",
+      "logging",
+      "subprocess",
+      "asyncio"
+    ]
+  },
+  "supervisor\\command_resolver.py": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "_load_commands",
+        "line": 35
+      },
+      {
+        "name": "reload_commands",
+        "line": 71
+      },
+      {
+        "name": "is_valid_command",
+        "line": 177
+      },
+      {
+        "name": "resolve_command",
+        "line": 182
+      },
+      {
+        "name": "find_command",
+        "line": 253
+      },
+      {
+        "name": "suggest_commands",
+        "line": 265
+      },
+      {
+        "name": "validate_and_warn",
+        "line": 275
+      },
+      {
+        "name": "get_stats",
+        "line": 309
+      }
+    ],
+    "dependencies": [
+      "difflib",
+      "pathlib",
+      "typing",
+      "logging"
+    ]
+  },
+  "supervisor\\config.py": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "set_project_path",
+        "line": 33
+      },
+      {
+        "name": "get_state_dir",
+        "line": 38
+      },
+      {
+        "name": "get_gemini_cli_cmd",
+        "line": 223
+      },
+      {
+        "name": "_load_selectors",
+        "line": 268
+      },
+      {
+        "name": "_build_approval_xpath",
+        "line": 321
+      }
+    ],
+    "dependencies": [
+      "json",
+      "os",
+      "pathlib"
+    ]
+  },
+  "supervisor\\context_engine.py": {
+    "classes": [
+      {
+        "name": "MessageInfo",
+        "line": 35
+      },
+      {
+        "name": "DiffReport",
+        "line": 46
+      },
+      {
+        "name": "ServerInfo",
+        "line": 55
+      },
+      {
+        "name": "ProgressInfo",
+        "line": 64
+      },
+      {
+        "name": "ContextSnapshot",
+        "line": 74
+      },
+      {
+        "name": "PresenceTracker",
+        "line": 862
+      }
+    ],
+    "functions": [
+      {
+        "name": "gather_context",
+        "line": 146
+      },
+      {
+        "name": "_deep_chat_scrape",
+        "line": 235
+      },
+      {
+        "name": "_classify_message",
+        "line": 329
+      },
+      {
+        "name": "_parse_diff_blocks",
+        "line": 382
+      },
+      {
+        "name": "_read_terminal_output",
+        "line": 425
+      },
+      {
+        "name": "_check_dev_server",
+        "line": 458
+      },
+      {
+        "name": "_check_simple_browser",
+        "line": 496
+      },
+      {
+        "name": "_check_activity_indicators",
+        "line": 519
+      },
+      {
+        "name": "_check_approval_buttons",
+        "line": 546
+      },
+      {
+        "name": "_build_progress",
+        "line": 573
+      },
+      {
+        "name": "_classify_agent_status",
+        "line": 619
+      },
+      {
+        "name": "_compute_confidence",
+        "line": 668
+      },
+      {
+        "name": "needs_screenshot",
+        "line": 739
+      },
+      {
+        "name": "format_context_for_prompt",
+        "line": 794
+      },
+      {
+        "name": "get_presence_tracker",
+        "line": 919
+      },
+      {
+        "name": "format_context_report",
+        "line": 928
+      }
+    ],
+    "dependencies": [
+      "retry_policy",
+      "playwright.async_api",
+      "frame_walker",
+      "re",
+      "typing",
+      "time",
+      "dataclasses",
+      "asyncio",
+      "logging"
+    ]
+  },
+  "supervisor\\council_knowledge.py": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "_get_kb_path",
+        "line": 34
+      },
+      {
+        "name": "_new_entry",
+        "line": 42
+      },
+      {
+        "name": "_load_kb",
+        "line": 69
+      },
+      {
+        "name": "_save_kb",
+        "line": 83
+      },
+      {
+        "name": "record_resolution",
+        "line": 102
+      },
+      {
+        "name": "find_similar_issues",
+        "line": 151
+      },
+      {
+        "name": "increment_reuse",
+        "line": 218
+      },
+      {
+        "name": "get_stats",
+        "line": 230
+      },
+      {
+        "name": "format_for_prompt",
+        "line": 246
+      },
+      {
+        "name": "_prune",
+        "line": 276
+      },
+      {
+        "name": "_most_common_agent",
+        "line": 295
+      }
+    ],
+    "dependencies": [
+      "datetime",
+      "json",
+      "pathlib",
+      "typing",
+      "time",
+      "logging"
+    ]
+  },
+  "supervisor\\dom_prober.py": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "probe_element",
+        "line": 117
+      },
+      {
+        "name": "probe_chat_input",
+        "line": 161
+      },
+      {
+        "name": "probe_chat_messages",
+        "line": 198
+      },
+      {
+        "name": "_live_dom_scan_for_input",
+        "line": 228
+      },
+      {
+        "name": "find_best_page",
+        "line": 375
+      },
+      {
+        "name": "_minify_html_for_gemini",
+        "line": 438
+      },
+      {
+        "name": "_gemini_probe_fallback",
+        "line": 455
+      },
+      {
+        "name": "_update_selector",
+        "line": 526
+      }
+    ],
+    "dependencies": [
+      "gemini_advisor",
+      "playwright.async_api",
+      "bs4",
+      "json",
+      "re",
+      "textwrap",
+      "typing",
+      "asyncio",
+      "logging"
+    ]
+  },
+  "supervisor\\extensions.py": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "_find_antigravity_exe",
+        "line": 28
+      },
+      {
+        "name": "install_extension_cli",
+        "line": 41
+      },
+      {
+        "name": "uninstall_extension_cli",
+        "line": 88
+      },
+      {
+        "name": "list_extensions_cli",
+        "line": 116
+      },
+      {
+        "name": "install_extension_ui",
+        "line": 152
+      },
+      {
+        "name": "install_extension",
+        "line": 202
+      }
+    ],
+    "dependencies": [
+      "subprocess",
+      "playwright.async_api",
+      "pathlib",
+      "typing",
+      "asyncio",
+      "platform",
+      "logging"
+    ]
+  },
+  "supervisor\\frame_walker.py": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "find_element_in_all_frames",
+        "line": 44
+      },
+      {
+        "name": "find_all_elements_in_all_frames",
+        "line": 86
+      },
+      {
+        "name": "find_chat_frame",
+        "line": 112
+      },
+      {
+        "name": "extract_all_html",
+        "line": 166
+      },
+      {
+        "name": "_minify_html",
+        "line": 228
+      },
+      {
+        "name": "ghost_hotkey_inject",
+        "line": 256
+      },
+      {
+        "name": "_safe_url",
+        "line": 324
+      },
+      {
+        "name": "_safe_frame_name",
+        "line": 330
+      }
+    ],
+    "dependencies": [
+      "playwright.async_api",
+      "bs4",
+      "re",
+      "typing",
+      "asyncio",
+      "logging"
+    ]
+  },
+  "supervisor\\gemini_advisor.py": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "_cache_key",
+        "line": 55
+      },
+      {
+        "name": "_strip_markdown_fences",
+        "line": 60
+      },
+      {
+        "name": "_get_best_model",
+        "line": 75
+      },
+      {
+        "name": "_probe_and_cache_model",
+        "line": 115
+      },
+      {
+        "name": "_glass_brain_send",
+        "line": 198
+      },
+      {
+        "name": "_glass_brain_receive",
+        "line": 213
+      },
+      {
+        "name": "_glass_brain_error",
+        "line": 227
+      },
+      {
+        "name": "ask_gemini",
+        "line": 241
+      },
+      {
+        "name": "ask_gemini_json",
+        "line": 380
+      },
+      {
+        "name": "call_gemini_with_file",
+        "line": 407
+      },
+      {
+        "name": "call_gemini_with_file_json",
+        "line": 492
+      },
+      {
+        "name": "_extract_json_object",
+        "line": 557
+      },
+      {
+        "name": "ask_gemini_sync",
+        "line": 632
+      },
+      {
+        "name": "ask_gemini_sync_json",
+        "line": 693
+      },
+      {
+        "name": "_call_gemini_async",
+        "line": 721
+      },
+      {
+        "name": "_call_gemini_sync",
+        "line": 764
+      },
+      {
+        "name": "_diagnose_gemini_error",
+        "line": 802
+      },
+      {
+        "name": "clear_cache",
+        "line": 836
+      },
+      {
+        "name": "cache_stats",
+        "line": 842
+      },
+      {
+        "name": "self_diagnose",
+        "line": 854
+      },
+      {
+        "name": "request_self_improvement",
+        "line": 915
+      }
+    ],
+    "dependencies": [
+      "os",
+      "retry_policy",
+      "subprocess",
+      "datetime",
+      "json",
+      "pathlib",
+      "re",
+      "typing",
+      "time",
+      "asyncio",
+      "logging"
+    ]
+  },
+  "supervisor\\git_manager.py": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "_run_git",
+        "line": 24
+      },
+      {
+        "name": "is_git_repo",
+        "line": 65
+      },
+      {
+        "name": "git_init",
+        "line": 71
+      },
+      {
+        "name": "git_add_all",
+        "line": 81
+      },
+      {
+        "name": "git_commit",
+        "line": 87
+      },
+      {
+        "name": "git_push",
+        "line": 99
+      },
+      {
+        "name": "git_set_remote",
+        "line": 108
+      },
+      {
+        "name": "git_get_user_info",
+        "line": 121
+      },
+      {
+        "name": "git_status",
+        "line": 131
+      },
+      {
+        "name": "git_log",
+        "line": 137
+      },
+      {
+        "name": "_has_gh_cli",
+        "line": 150
+      },
+      {
+        "name": "create_github_repo",
+        "line": 156
+      },
+      {
+        "name": "full_git_flow",
+        "line": 192
+      }
+    ],
+    "dependencies": [
+      "os",
+      "subprocess",
+      "pathlib",
+      "typing",
+      "asyncio",
+      "logging"
+    ]
+  },
+  "supervisor\\injector.py": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "inject_message",
+        "line": 39
+      },
+      {
+        "name": "_type_and_send",
+        "line": 104
+      },
+      {
+        "name": "_verify_injection",
+        "line": 150
+      },
+      {
+        "name": "_gemini_inject_fallback",
+        "line": 229
+      },
+      {
+        "name": "inject_goal",
+        "line": 318
+      },
+      {
+        "name": "_update_selector",
+        "line": 340
+      }
+    ],
+    "dependencies": [
+      "gemini_advisor",
+      "playwright.async_api",
+      "frame_walker",
+      "textwrap",
+      "asyncio",
+      "logging"
+    ]
+  },
+  "supervisor\\local_orchestrator.py": {
+    "classes": [
+      {
+        "name": "LocalManager",
+        "line": 18
+      }
+    ],
+    "functions": [],
+    "dependencies": [
+      "json",
+      "urllib.error",
+      "urllib.request",
+      "asyncio",
+      "logging"
+    ]
+  },
+  "supervisor\\loop_detector.py": {
+    "classes": [
+      {
+        "name": "LoopStatus",
+        "line": 24
+      },
+      {
+        "name": "LoopDetector",
+        "line": 55
+      }
+    ],
+    "functions": [
+      {
+        "name": "_extract_error_key",
+        "line": 43
+      }
+    ],
+    "dependencies": [
+      "enum",
+      "re",
+      "logging",
+      "collections"
+    ]
+  },
+  "supervisor\\main.py": {
+    "classes": [
+      {
+        "name": "AutoRecoveryEngine",
+        "line": 96
+      }
+    ],
+    "functions": [
+      {
+        "name": "_play_alert",
+        "line": 79
+      },
+      {
+        "name": "_find_antigravity_exe",
+        "line": 220
+      },
+      {
+        "name": "_launch_antigravity",
+        "line": 238
+      },
+      {
+        "name": "_lockdown_workspace",
+        "line": 280
+      },
+      {
+        "name": "_get_best_page",
+        "line": 319
+      },
+      {
+        "name": "_lockfile_exists",
+        "line": 382
+      },
+      {
+        "name": "_create_lockfile",
+        "line": 388
+      },
+      {
+        "name": "_remove_lockfile",
+        "line": 399
+      },
+      {
+        "name": "_load_palette_cache",
+        "line": 414
+      },
+      {
+        "name": "_save_palette_cache",
+        "line": 428
+      },
+      {
+        "name": "_scrape_palette_entries",
+        "line": 442
+      },
+      {
+        "name": "_run_palette_command",
+        "line": 472
+      },
+      {
+        "name": "_find_best_palette_match",
+        "line": 526
+      },
+      {
+        "name": "_command_palette_inject",
+        "line": 613
+      },
+      {
+        "name": "_approval_sniper",
+        "line": 712
+      },
+      {
+        "name": "_navigation_defense",
+        "line": 804
+      },
+      {
+        "name": "_read_chat_content",
+        "line": 857
+      },
+      {
+        "name": "_analyze_ide_state",
+        "line": 905
+      },
+      {
+        "name": "_skeptical_recheck",
+        "line": 1003
+      },
+      {
+        "name": "_resuscitate_ide",
+        "line": 1112
+      },
+      {
+        "name": "_diagnose_connection_failure",
+        "line": 1184
+      },
+      {
+        "name": "_triage_fatal_error",
+        "line": 1199
+      },
+      {
+        "name": "_read_recent_logs",
+        "line": 1227
+      },
+      {
+        "name": "_gemini_diagnose_and_act",
+        "line": 1240
+      },
+      {
+        "name": "_connect_cdp",
+        "line": 1476
+      },
+      {
+        "name": "run",
+        "line": 1501
+      },
+      {
+        "name": "_save_session_state",
+        "line": 2090
+      },
+      {
+        "name": "_load_session_state",
+        "line": 2105
+      },
+      {
+        "name": "_clear_session_state",
+        "line": 2124
+      },
+      {
+        "name": "_interactive_goal",
+        "line": 2137
+      },
+      {
+        "name": "main",
+        "line": 2205
+      }
+    ],
+    "dependencies": [
+      "gemini_advisor",
+      "os",
+      "subprocess",
+      "datetime",
+      "json",
+      "self_evolver",
+      "agent_council",
+      "pathlib",
+      "sys",
+      "scheduler",
+      "traceback",
+      "typing",
+      "time",
+      "argparse",
+      "platform",
+      "asyncio",
+      "logging"
+    ]
+  },
+  "supervisor\\monitor.py": {
+    "classes": [
+      {
+        "name": "ChatMonitor",
+        "line": 46
+      }
+    ],
+    "functions": [
+      {
+        "name": "_has_ambiguous_signals",
+        "line": 321
+      },
+      {
+        "name": "_gemini_classify_situation",
+        "line": 330
+      }
+    ],
+    "dependencies": [
+      "gemini_advisor",
+      "playwright.async_api",
+      "frame_walker",
+      "textwrap",
+      "typing",
+      "time",
+      "asyncio",
+      "logging"
+    ]
+  },
+  "supervisor\\proactive_engine.py": {
+    "classes": [
+      {
+        "name": "ProactiveEngine",
+        "line": 47
+      }
+    ],
+    "functions": [],
+    "dependencies": [
+      "playwright.async_api",
+      "re",
+      "typing",
+      "time",
+      "asyncio",
+      "logging"
+    ]
+  },
+  "supervisor\\retry_policy.py": {
+    "classes": [
+      {
+        "name": "RetryPolicy",
+        "line": 32
+      },
+      {
+        "name": "ModelFailoverChain",
+        "line": 93
+      },
+      {
+        "name": "ContextBudget",
+        "line": 271
+      },
+      {
+        "name": "TaskComplexityRouter",
+        "line": 383
+      },
+      {
+        "name": "RateLimitTracker",
+        "line": 605
+      }
+    ],
+    "functions": [
+      {
+        "name": "init",
+        "line": 748
+      },
+      {
+        "name": "get_retry_policy",
+        "line": 764
+      },
+      {
+        "name": "get_failover_chain",
+        "line": 772
+      },
+      {
+        "name": "get_context_budget",
+        "line": 780
+      },
+      {
+        "name": "get_router",
+        "line": 788
+      },
+      {
+        "name": "get_rate_tracker",
+        "line": 796
+      }
+    ],
+    "dependencies": [
+      "datetime",
+      "json",
+      "pathlib",
+      "re",
+      "typing",
+      "random",
+      "time",
+      "logging"
+    ]
+  },
+  "supervisor\\scheduler.py": {
+    "classes": [
+      {
+        "name": "CronJob",
+        "line": 31
+      },
+      {
+        "name": "CronScheduler",
+        "line": 101
+      }
+    ],
+    "functions": [
+      {
+        "name": "create_default_scheduler",
+        "line": 302
+      },
+      {
+        "name": "_action_context_compact",
+        "line": 374
+      },
+      {
+        "name": "_action_budget_report",
+        "line": 385
+      },
+      {
+        "name": "_action_failover_check",
+        "line": 398
+      },
+      {
+        "name": "_action_rate_limit_report",
+        "line": 419
+      },
+      {
+        "name": "_action_self_improvement",
+        "line": 441
+      },
+      {
+        "name": "_action_workspace_index",
+        "line": 477
+      },
+      {
+        "name": "_action_telemetry_hud_update",
+        "line": 494
+      },
+      {
+        "name": "_action_metacognitive_review",
+        "line": 502
+      }
+    ],
+    "dependencies": [
+      "json",
+      "pathlib",
+      "typing",
+      "time",
+      "logging"
+    ]
+  },
+  "supervisor\\self_evolver.py": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "_extract_json_balanced",
+        "line": 54
+      },
+      {
+        "name": "_restore_from_backup",
+        "line": 116
+      },
+      {
+        "name": "_run_shadow_sandbox",
+        "line": 128
+      },
+      {
+        "name": "_build_single_prompt",
+        "line": 169
+      },
+      {
+        "name": "_council_evolve_pipeline",
+        "line": 219
+      },
+      {
+        "name": "self_evolve",
+        "line": 405
+      },
+      {
+        "name": "list_evolution_backups",
+        "line": 607
+      }
+    ],
+    "dependencies": [
+      "gemini_advisor",
+      "subprocess",
+      "json",
+      "pathlib",
+      "re",
+      "typing",
+      "time",
+      "sys",
+      "logging"
+    ]
+  },
+  "supervisor\\self_healer.py": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "_minify_html",
+        "line": 58
+      },
+      {
+        "name": "resilient_query",
+        "line": 96
+      },
+      {
+        "name": "resilient_query_one",
+        "line": 152
+      },
+      {
+        "name": "_query_with_timeout",
+        "line": 166
+      },
+      {
+        "name": "_heal_selector",
+        "line": 191
+      },
+      {
+        "name": "_record_healing_attempt",
+        "line": 328
+      },
+      {
+        "name": "get_healing_history",
+        "line": 345
+      },
+      {
+        "name": "_persist_selectors",
+        "line": 354
+      }
+    ],
+    "dependencies": [
+      "gemini_advisor",
+      "playwright.async_api",
+      "bs4",
+      "json",
+      "frame_walker",
+      "pathlib",
+      "re",
+      "textwrap",
+      "typing",
+      "asyncio",
+      "logging"
+    ]
+  },
+  "supervisor\\session_memory.py": {
+    "classes": [
+      {
+        "name": "SessionMemory",
+        "line": 34
+      }
+    ],
+    "functions": [
+      {
+        "name": "_ensure_dir",
+        "line": 29
+      }
+    ],
+    "dependencies": [
+      "json",
+      "pathlib",
+      "typing",
+      "time",
+      "logging"
+    ]
+  },
+  "supervisor\\skills_loader.py": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "load_active_skills",
+        "line": 15
+      }
+    ],
+    "dependencies": [
+      "pathlib",
+      "logging"
+    ]
+  },
+  "supervisor\\telemetry_hud.py": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "update_hud",
+        "line": 22
+      }
+    ],
+    "dependencies": [
+      "session_memory",
+      "datetime",
+      "json",
+      "scheduler",
+      "pathlib",
+      "time",
+      "logging"
+    ]
+  },
+  "supervisor\\terminal.py": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "toggle_terminal",
+        "line": 31
+      },
+      {
+        "name": "open_terminal",
+        "line": 43
+      },
+      {
+        "name": "run_terminal_command",
+        "line": 68
+      },
+      {
+        "name": "read_terminal_output",
+        "line": 118
+      },
+      {
+        "name": "_run_command_palette",
+        "line": 147
+      }
+    ],
+    "dependencies": [
+      "typing",
+      "logging",
+      "playwright.async_api",
+      "asyncio"
+    ]
+  },
+  "supervisor\\vision_optimizer.py": {
+    "classes": [],
+    "functions": [
+      {
+        "name": "screenshot_changed",
+        "line": 33
+      },
+      {
+        "name": "should_take_screenshot",
+        "line": 84
+      },
+      {
+        "name": "take_and_compare",
+        "line": 163
+      },
+      {
+        "name": "get_last_screenshot_time",
+        "line": 185
+      },
+      {
+        "name": "get_consecutive_unchanged",
+        "line": 190
+      }
+    ],
+    "dependencies": [
+      "hashlib",
+      "pathlib",
+      "time",
+      "logging"
+    ]
+  },
+  "supervisor\\workspace_indexer.py": {
+    "classes": [
+      {
+        "name": "WorkspaceMap",
+        "line": 31
+      }
+    ],
+    "functions": [],
+    "dependencies": [
+      "os",
+      "json",
+      "pathlib",
+      "re",
+      "ast",
+      "typing",
+      "logging"
+    ]
+  },
+  "supervisor\\__main__.py": {
+    "classes": [],
+    "functions": [],
+    "dependencies": [
+      "main"
+    ]
+  },
+  "tests\\mock_repo_tests.py": {
+    "classes": [],
+    "functions": [],
+    "dependencies": [
+      "os",
+      "sys"
+    ]
+  }
+}

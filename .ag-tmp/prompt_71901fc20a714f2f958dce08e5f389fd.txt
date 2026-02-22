@@ -1,0 +1,37 @@
+Reply with ONLY a JSON object in this exact format, nothing else:
+{"state": "WORKING", "reason": "what you see"}
+
+Values for "state": WORKING, WAITING, or CRASHED.
+
+Analyze the attached screenshot of the Antigravity IDE (a VS Code fork with an AI Agent sidebar on the right).
+
+DETERMINE: Is the AI Agent chat panel WORKING, WAITING, or CRASHED?
+
+WORKING = There are recent messages/code blocks visible AND a spinner/Stop button is showing OR text is actively streaming.
+WAITING = Chat area is empty OR shows only placeholder text 'Ask anything' OR has a question/approval button but no active generation.
+CRASHED = Error dialogs, blank screen, 'Extension Host terminated'.
+
+⚠️ IGNORE the model selector label for example 'Claude Opus 4.6 (Thinking)' — that is the MODEL NAME, not a status indicator.
+
+Current goal: [Workspace: c:\Users\mokde\Desktop\Experiments\Gridfall Demolition] The game is titled Gridfall Demolition and it operates as a high speed vertical pl
+
+Recent logs:
+```
+19:49:11 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+19:49:21 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+19:49:21 │ INFO    │ supervisor.session_memory │ 🧠  Starting new session memory
+19:49:21 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #202): HUD updated
+19:49:21 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+19:49:21 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #202): No active polish session.
+19:49:21 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+19:49:21 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+19:49:21 │ INFO    │ supervisor.frame_walker │ 🔎  Found element in frame: page=vscode-file://vscode-app/c:/Users/mokde/AppData/Local/Programs/Antigravity/resou, frame=vscode-file://vscode-app/c:/Users/mokde/AppData/Local/Progra, selector=div[contenteditable='true'][role='textbox']
+19:49:21 │ INFO    │ supervisor.frame_walker │ ✅  Agent selector matched: div[contenteditable='true'][role='textbox']
+19:49:21 │ INFO    │ supervisor.context_engine │ 🎯  Chat frame resolved for scraping: vscode-file://vscode-app/c:/Users/mokde/AppData/Local/Programs/Antigravity/resou
+19:49:21 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 2 messages (2 agent, 0 user/other)
+19:49:23 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=WORKING, confidence=50%, msgs=2, terminal=0, server=DOWN, browser=CLOSED, approval=NO, budget=0%, idle=40s
+19:49:23 │ INFO    │ supervisor.context_engine │ 📸  Screenshot needed: 999s since last (forced)
+19:49:24 │ INFO    │ supervisor         │ 📸  Screenshot saved: C:\Users\mokde\Desktop\Experiments\Antigravity Auto\supervisor\ide_state.png
+```
+
+Reply with ONLY the JSON object. Example: {"state": "WAITING", "reason": "chat area is empty, input shows placeholder"}

@@ -1,0 +1,56 @@
+Reply with ONLY a JSON object — no other text:
+{"state": "WORKING" or "WAITING" or "CRASHED", "reason": "what you see", "previous_wrong": true or false}
+
+CONTEXT: The supervisor reported WORKING 3× in a row but ZERO actual progress was detected. The previous analyses were likely WRONG.
+
+PREVIOUS CLAIMS (these are what Gemini said before):
+  1. Text analysis (confidence=85%)
+  2. Text analysis (confidence=85%)
+  3. Text analysis (confidence=30%)
+
+⚠️ The above claims may ALL be wrong. The supervisor has seen NO actual progress despite these claims. Look at the screenshot with FRESH EYES.
+
+Look at the attached screenshot with FRESH EYES.
+
+WORKING = visible streaming text, spinner, or Stop button.
+WAITING = empty chat, placeholder text, no active generation.
+CRASHED = error dialogs, blank screen.
+⚠️ 'Claude Opus 4.6 (Thinking)', for example, is a MODEL NAME, not a status. IGNORE IT.
+
+Goal: [Workspace: c:\Users\mokde\Desktop\Experiments\Gridfall Demolition] The game is titled Gridfall Demolition and it operates as a high speed vertical pl
+
+Recent logs:
+```
+20:49:52 │ INFO    │ supervisor.scheduler │ ⏰  Job 'feature_request_watcher' completed (run #156): FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV ex
+20:49:52 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+20:49:52 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #211): No active polish session.
+20:49:52 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+20:49:52 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+20:49:52 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+20:49:52 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+20:49:52 │ INFO    │ supervisor         │ ⏰  feature_request_watcher: FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV export feature for dashboard data. Based on recent feedback, 100 unique users have requested the ability to download 
+20:49:52 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+20:49:53 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+20:49:53 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+20:49:53 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+20:49:53 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=WORKING, confidence=30%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=152s
+20:50:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+20:50:03 │ INFO    │ supervisor.session_memory │ 🧠  Starting new session memory
+20:50:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #212): HUD updated
+20:50:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+20:50:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #212): No active polish session.
+20:50:03 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+20:50:03 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+20:50:03 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+20:50:03 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+20:50:04 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+20:50:04 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=WORKING, confidence=30%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=162s
+```
+
+Reply ONLY with JSON: {"state": "...", "reason": "...", "previous_wrong": true/false}

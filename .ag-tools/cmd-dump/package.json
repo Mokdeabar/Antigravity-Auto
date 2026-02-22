@@ -1,0 +1,22 @@
+{
+    "name": "ag-cmd-dump",
+    "displayName": "AG Command Dump",
+    "description": "Dumps all available VS Code command IDs to a text file",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.70.0"
+    },
+    "activationEvents": [
+        "*"
+    ],
+    "main": "./out/extension.js",
+    "scripts": {
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./"
+    },
+    "devDependencies": {
+        "@types/node": "^25.3.0",
+        "@types/vscode": "^1.70.0",
+        "typescript": "^5.0.0"
+    }
+}

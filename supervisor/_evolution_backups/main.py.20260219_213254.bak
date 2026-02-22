@@ -1,0 +1,1198 @@
+"""
+main.py — The Orchestrator (V7 Flawless Precision).
+
+Entry point for the Supervisor AI. V7 builds on V6 Unbreakable with
+3 precision fixes. 9 core systems + 3 V7 patches:
+
+  1. LOCKFILE MEMORY (Anti-Amnesia): .supervisor_lock prevents duplicate
+     prompt injection after crash-reboots.
+
+  2. AUTO-RECONNECT ENGINE: Catches TargetClosedError from Playwright
+     when IDE webviews refresh, re-fetches the page, and continues.
+
+  3. APPROVAL SNIPER: Lightning-fast DOM check for "Always run" /
+     "Run Alt+Enter" buttons BEFORE expensive Vision calls.
+
+  4. ERADICATE page.wait_for_timeout: ZERO instances. All waits use
+     asyncio.sleep() which cannot crash when the page navigates.
+
+  5. NAVIGATION DEFENSE: Detects if AI hijacked the main IDE window
+     to localhost, forces go_back(), and injects a reprimand.
+
+  6. 180-SECOND BRAIN: Every Gemini CLI timeout is 180s globally.
+     No 30s/60s surprises anywhere.
+
+  7. MANDATE FIREWALL: SUPERVISOR_MANDATE.md explicitly forbids
+     window hijacking with the exact anti-hijack rule.
+
+  8. BULLETPROOF WORKSPACE LOCKING: --new-window flag prevents
+     old workspace contamination.
+
+  9. DYNAMIC PAGE RESOLUTION: _get_best_page() always finds the
+     freshest valid IDE page after reconnects.
+"""
+
+import argparse
+import asyncio
+import json
+import logging
+import os
+import platform
+import subprocess
+import sys
+import time
+import traceback
+from datetime import datetime
+from pathlib import Path
+from typing import Optional
+
+from . import config
+from .self_evolver import self_evolve
+from .gemini_advisor import (
+    ask_gemini,
+    ask_gemini_sync,
+    call_gemini_with_file,
+    call_gemini_with_file_json,
+)
+
+logger = logging.getLogger("supervisor")
+
+# ─────────────────────────────────────────────────────────────
+# Constants
+# ─────────────────────────────────────────────────────────────
+_SUPERVISOR_DIR = Path(__file__).resolve().parent
+EXPERIMENTS_DIR = Path(r"c:\Users\mokde\Desktop\Experiments")
+
+# Session state file — persists goal + project_path across reboots.
+_SESSION_STATE_PATH = _SUPERVISOR_DIR / "_session_state.json"
+
+# Log file for Infinite Memory.
+_LOG_FILE = _SUPERVISOR_DIR / "supervisor.log"
+
+# Multiple fallback paths for the Antigravity executable.
+ANTIGRAVITY_EXE_CANDIDATES = [
+    Path(r"C:\Users\mokde\AppData\Local\Programs\Antigravity\Antigravity.exe"),
+    Path(r"C:\Program Files\Antigravity\Antigravity.exe"),
+    Path(r"C:\Program Files (x86)\Antigravity\Antigravity.exe"),
+]
+
+# How long to wait after launching Antigravity for it to visually render.
+IDE_STARTUP_WAIT_SECONDS = 12
+
+
+# ─────────────────────────────────────────────────────────────
+# Alert sound (human escalation)
+# ─────────────────────────────────────────────────────────────
+
+def _play_alert() -> None:
+    """Play an audible alert to summon a human."""
+    if platform.system() == "Windows":
+        try:
+            import winsound
+            for _ in range(config.ALERT_REPEAT):
+                winsound.Beep(1000, 400)
+                time.sleep(0.2)
+            return
+        except Exception:
+            pass
+    # Fallback: terminal bell.
+    for _ in range(config.ALERT_REPEAT):
+        print("\a", end="", flush=True)
+        time.sleep(0.3)
+
+
+def _wait_for_human() -> str:
+    """Block until a human types a response in the terminal."""
+    print("\n" + "=" * 60)
+    print("🚨  HUMAN INTERVENTION REQUIRED")
+    print("=" * 60)
+    print("The supervisor has exhausted automatic recovery attempts.")
+    print("Please review the situation above and type a message to")
+    print("send to the agent, or type 'skip' to move on, or 'quit'")
+    print("to stop the supervisor.\n")
+    return input("Your input ➜  ").strip()
+
+
+# ─────────────────────────────────────────────────────────────
+# System 8: Bulletproof Workspace Locking
+# ─────────────────────────────────────────────────────────────
+
+def _find_antigravity_exe() -> Path:
+    """Find the Antigravity executable, checking multiple fallback locations."""
+    for candidate in ANTIGRAVITY_EXE_CANDIDATES:
+        if candidate.exists():
+            logger.info("Found Antigravity at: %s", candidate)
+            return candidate
+
+    # Try to find it on PATH.
+    import shutil
+    on_path = shutil.which("Antigravity") or shutil.which("antigravity")
+    if on_path:
+        logger.info("Found Antigravity on PATH: %s", on_path)
+        return Path(on_path)
+
+    logger.error("Antigravity executable not found in any known location.")
+    return ANTIGRAVITY_EXE_CANDIDATES[0]
+
+
+def _launch_antigravity(project_path: str) -> None:
+    """
+    Visually launch Antigravity pointing at the given project folder.
+
+    V6: Uses --new-window to strictly prevent old workspace ghosting.
+    """
+    exe_path = _find_antigravity_exe()
+    exe = str(exe_path)
+
+    if not exe_path.exists():
+        print(f"\n  [ERROR] Antigravity not found at any known location.")
+        print("  Checked:")
+        for c in ANTIGRAVITY_EXE_CANDIDATES:
+            print(f"    - {c}")
+        sys.exit(1)
+
+    # Validate project path.
+    project_dir = Path(project_path)
+    if not project_dir.exists():
+        logger.info("Creating project directory: %s", project_path)
+        project_dir.mkdir(parents=True, exist_ok=True)
+
+    logger.info(
+        "\N{ROCKET}  Launching Antigravity:\n"
+        '    %s "%s" --new-window --remote-debugging-port=9222',
+        exe, project_path,
+    )
+    print(f"\n  \N{ROCKET} Launching Antigravity (NEW WINDOW) → {project_path}")
+
+    # V7: UTF-8 Subprocess Armor + Bulletproof launch with --new-window
+    utf8_env = {**os.environ, 'PYTHONIOENCODING': 'utf-8'}
+    if platform.system() == "Windows":
+        cmd = f'"{exe}" "{project_path}" --new-window --remote-debugging-port=9222'
+        subprocess.Popen(cmd, shell=True, encoding='utf-8', errors='replace', env=utf8_env)
+    else:
+        subprocess.Popen([exe, project_path, "--new-window", "--remote-debugging-port=9222"], encoding='utf-8', errors='replace', env=utf8_env)
+
+    print(f"  ⏳ Waiting {IDE_STARTUP_WAIT_SECONDS}s for IDE to render …")
+    time.sleep(IDE_STARTUP_WAIT_SECONDS)
+    print("  ✅ IDE should be visible now.\n")
+
+
+async def _lockdown_workspace(context, project_path: str) -> None:
+    """
+    STRICT WORKSPACE LOCKDOWN: Close any page not matching the project.
+    """
+    project_name = Path(project_path).name.lower()
+    logger.info("🔒  Workspace Lockdown: keeping only pages matching '%s'", project_name)
+
+    C = config.ANSI_CYAN
+    R = config.ANSI_RESET
+
+    for page in list(context.pages):
+        try:
+            title = (await page.title()).lower()
+            url = page.url.lower()
+
+            if project_name in title or project_name in url:
+                logger.info("🔒  KEEPING page: title='%s'", title[:60])
+                print(f"  {C}🔒 KEEPING:{R} {title[:60]}")
+                continue
+
+            if any(url.startswith(p.lower()) for p in config.DESIRED_PAGE_URL_PREFIXES):
+                logger.info("🔒  KEEPING (desired URL): url=%s", url[:80])
+                continue
+
+            if any(url.startswith(p.lower()) for p in config.IGNORED_PAGE_URL_PREFIXES):
+                continue
+
+            logger.warning("🔒  CLOSING contaminated page: title='%s'", title[:60])
+            print(f"  {config.ANSI_RED}🔒 CLOSING:{R} {title[:60]}")
+            await page.close()
+
+        except Exception as exc:
+            logger.debug("🔒  Could not inspect page: %s", exc)
+
+
+# ─────────────────────────────────────────────────────────────
+# System 9: Dynamic Page Resolution
+# ─────────────────────────────────────────────────────────────
+
+async def _get_best_page(context):
+    """
+    Dynamically resolve the best IDE page from context.pages.
+
+    Priority:
+      1. Pages with 'jetski-agent' in URL (the chat webview)
+      2. Pages with 'workbench' in URL
+      3. Pages with file:// or the project name in the title
+      4. First non-extension page
+
+    Returns the best Page, or None if no valid pages exist.
+    """
+    pages = context.pages
+    if not pages:
+        return None
+
+    # Priority 1: jetski-agent (the chat webview)
+    for p in pages:
+        try:
+            if "jetski-agent" in p.url.lower():
+                return p
+        except Exception:
+            continue
+
+    # Priority 2: workbench pages
+    for p in pages:
+        try:
+            if "workbench" in p.url.lower():
+                return p
+        except Exception:
+            continue
+
+    # Priority 3: file:// or desired URL prefix pages
+    for p in pages:
+        try:
+            url = p.url.lower()
+            if any(url.startswith(pfx.lower()) for pfx in config.DESIRED_PAGE_URL_PREFIXES):
+                return p
+        except Exception:
+            continue
+
+    # Priority 4: first non-extension page
+    for p in pages:
+        try:
+            url = p.url.lower()
+            if not any(url.startswith(pfx.lower()) for pfx in config.IGNORED_PAGE_URL_PREFIXES):
+                return p
+        except Exception:
+            continue
+
+    # Absolute fallback: first page
+    return pages[0] if pages else None
+
+
+# ─────────────────────────────────────────────────────────────
+# System 7: Mandate Firewall + File-Drop Injection
+# ─────────────────────────────────────────────────────────────
+
+def _write_mandate_file(project_path: str, goal: str) -> Path:
+    """
+    Create SUPERVISOR_MANDATE.md in the project directory.
+
+    V6: Includes the MANDATE_FIREWALL_RULE to forbid window hijacking.
+    """
+    mandate_path = Path(project_path) / config.MANDATE_FILENAME
+
+    mandate_content = f"""# 🤖 SUPERVISOR MANDATE
+
+> **This file was auto-generated by the Supervisor AI.**
+> **The AI Agent MUST read and execute ALL instructions below.**
+
+---
+
+## ULTIMATE DIRECTIVE
+
+{config.ULTIMATE_MANDATE}
+
+---
+
+## 🚫 WINDOW NAVIGATION FIREWALL
+
+{config.MANDATE_FIREWALL_RULE}
+
+---
+
+## YOUR MISSION
+
+{goal}
+
+---
+
+## CRITICAL RULES
+
+1. Complete this task FULLY and AUTONOMOUSLY.
+2. Do NOT ask questions — make your best judgment on all decisions.
+3. Always aim for 2026 Awwwards-level quality in everything.
+4. Keep the Simple Browser open to http://localhost:3000 at all times.
+5. Use the latest tools, libraries, and best practices.
+6. Push boundaries to absolute perfection — do not settle for average.
+7. **NEVER** navigate the main IDE window to localhost or any URL.
+8. **ALWAYS** use "Simple Browser: Show" for previewing in a split pane.
+9. **NEVER** open external system browsers.
+
+---
+
+*Generated at: {datetime.now().isoformat()}*
+"""
+
+    mandate_path.write_text(mandate_content, encoding="utf-8")
+    logger.info("📄  Wrote SUPERVISOR_MANDATE.md to: %s", mandate_path)
+    print(f"  📄 Created: {mandate_path}")
+    return mandate_path
+
+
+# ─────────────────────────────────────────────────────────────
+# System 1: Lockfile Memory (Anti-Amnesia)
+# ─────────────────────────────────────────────────────────────
+
+def _lockfile_exists(project_path: str) -> bool:
+    """Check if .supervisor_lock exists in the project directory."""
+    lock_path = Path(project_path) / config.LOCKFILE_NAME
+    return lock_path.exists()
+
+
+def _create_lockfile(project_path: str) -> None:
+    """Create the .supervisor_lock file after first injection."""
+    lock_path = Path(project_path) / config.LOCKFILE_NAME
+    lock_path.write_text(
+        f"locked={datetime.now().isoformat()}\n",
+        encoding="utf-8",
+    )
+    logger.info("🔐  Created lockfile: %s", lock_path)
+    print(f"  🔐 Lockfile created: {lock_path}")
+
+
+def _remove_lockfile(project_path: str) -> None:
+    """Remove lockfile on graceful exit."""
+    lock_path = Path(project_path) / config.LOCKFILE_NAME
+    try:
+        if lock_path.exists():
+            lock_path.unlink()
+            logger.info("🔓  Removed lockfile: %s", lock_path)
+    except Exception:
+        pass
+
+
+# ─────────────────────────────────────────────────────────────
+# System 4: Command Palette Injection (ZERO wait_for_timeout)
+# ─────────────────────────────────────────────────────────────
+
+async def _command_palette_inject(page, text: str) -> bool:
+    """
+    Use the Developer Command Palette for 100% reliable chat focus.
+
+    V6: ALL waits use asyncio.sleep() — ZERO page.wait_for_timeout calls.
+    Falls back to golden DOM selector if Command Palette fails.
+
+    Steps:
+      A. page.bring_to_front()
+      B. Press F1 (sleep 1s)
+      C. Type 'Chat: Focus on Agent Chat' (sleep 0.5s), press Enter
+      D. Sleep 1.5s for the sidebar to physically slide open
+      E. Use pyperclip to copy text, Ctrl+V to paste, Enter to send
+
+    Returns True on success, False on failure.
+    """
+    import pyperclip
+
+    B = config.ANSI_BOLD
+    G = config.ANSI_GREEN
+    R = config.ANSI_RESET
+    print(f"\n  {B}{G}🎯 COMMAND PALETTE INJECTION{R}")
+
+    try:
+        # A. Force absolute OS focus
+        await page.bring_to_front()
+        await asyncio.sleep(0.3)
+        logger.info("🎯  Step A: Brought page to front.")
+
+        # B. Open Command Palette with F1
+        await page.keyboard.press("F1")
+        await asyncio.sleep(1.0)  # V6: asyncio.sleep, NOT page.wait_for_timeout
+        logger.info("🎯  Step B: Pressed F1 — Command Palette open.")
+
+        # C. Type the focus command and execute
+        await page.keyboard.insert_text("Chat: Focus on Agent Chat")
+        await asyncio.sleep(0.5)  # V6: asyncio.sleep
+        await page.keyboard.press("Enter")
+        logger.info("🎯  Step C: Typed 'Chat: Focus on Agent Chat' + Enter.")
+
+        # D. Wait for the sidebar to physically slide open
+        await asyncio.sleep(1.5)  # V6: asyncio.sleep
+        logger.info("🎯  Step D: Waited 1.5s for sidebar slide.")
+
+        # E. Copy text to OS clipboard and paste
+        pyperclip.copy(text)
+        logger.info("🎯  Step E: Copied %d chars to clipboard via pyperclip.", len(text))
+
+        await page.keyboard.press("Control+v")
+        await asyncio.sleep(0.5)  # V6: asyncio.sleep
+        await page.keyboard.press("Enter")
+        await asyncio.sleep(0.3)
+
+        logger.info("🎯  Command Palette injection completed successfully.")
+        print(f"  {G}✅ Injected via Command Palette!{R}\n")
+        return True
+
+    except Exception as exc:
+        logger.warning("🎯  Command Palette injection failed: %s — trying DOM fallback.", exc)
+
+        # V6 Fallback: Golden DOM selector
+        try:
+            golden_sel = 'div[contenteditable="true"][role="textbox"]'
+            el = await page.query_selector(golden_sel)
+            if el:
+                await el.focus()
+                await asyncio.sleep(0.3)
+                import pyperclip
+                pyperclip.copy(text)
+                await page.keyboard.press("Control+v")
+                await asyncio.sleep(0.3)
+                await page.keyboard.press("Enter")
+                logger.info("🎯  DOM fallback injection succeeded.")
+                print(f"  {G}✅ Injected via DOM fallback!{R}\n")
+                return True
+        except Exception as dom_exc:
+            logger.error("🎯  DOM fallback also failed: %s", dom_exc)
+
+        print(f"  {config.ANSI_RED}❌ All injection methods failed: {exc}{R}\n")
+        return False
+
+
+# ─────────────────────────────────────────────────────────────
+# System 3: Approval Sniper (Lightning-Fast Unblock) — V7 Laser-Scoped
+# ─────────────────────────────────────────────────────────────
+
+async def _approval_sniper(context) -> bool:
+    """
+    Lightning-fast check to unblock terminal commands BEFORE Vision.
+
+    V7 FIX (Sniper Misfire): Uses strict Playwright locators that target
+    ONLY the AI chat approval buttons — never the top menu bar 'Run' item.
+
+    Targets (via role="button" + exact text):
+      - "Run Alt+Enter"  (the primary run button in the chat)
+      - "Always run"     (the persistent approval button)
+
+    Uses a short timeout to avoid blocking the loop.
+    Returns True if any button was clicked, False otherwise.
+    """
+    timeout = config.APPROVAL_SNIPER_TIMEOUT_MS
+
+    # V7: Laser-scoped CSS selectors — matches ONLY chat approval buttons,
+    # never the top-level menu bar items like File/Edit/View/Run.
+    sniper_selector = (
+        'div[role="button"]:has-text("Run Alt+Enter"), '
+        'button:has-text("Run Alt+Enter"), '
+        'div[role="button"]:has-text("Always run"), '
+        'button:has-text("Always run")'
+    )
+
+    for page in context.pages:
+        try:
+            for frame in page.frames:
+                try:
+                    btn = frame.locator(sniper_selector)
+                    if await btn.count() > 0:
+                        clicked_text = await btn.first.inner_text()
+                        await btn.first.click(timeout=timeout)
+                        logger.info(
+                            "⚡  [ACTION] Auto-approved command via Laser Sniper: '%s'",
+                            clicked_text.strip(),
+                        )
+                        print(
+                            f"  {config.ANSI_GREEN}⚡ [ACTION] Auto-approved "
+                            f"command: '{clicked_text.strip()}'{config.ANSI_RESET}"
+                        )
+                        return True
+                except Exception:
+                    # Button not found or not clickable — try next frame
+                    continue
+        except Exception:
+            # Page might be closed or in a bad state
+            continue
+
+    return False
+
+
+# ─────────────────────────────────────────────────────────────
+# System 5: Navigation Defense (Anti-Hijack)
+# ─────────────────────────────────────────────────────────────
+
+async def _navigation_defense(page, context) -> tuple:
+    """
+    Detects if the AI hijacked the main IDE window to localhost.
+
+    If page.url starts with 'http://localhost', forces go_back()
+    and injects a strict reprimand.
+
+    Returns (page, was_hijacked: bool).
+    The page may be updated if re-resolution was needed.
+    """
+    try:
+        url = page.url
+    except Exception:
+        # Page is already dead, need reconnect
+        new_page = await _get_best_page(context)
+        return (new_page or page, False)
+
+    if url.startswith("http://localhost") or url.startswith("https://localhost"):
+        Y = config.ANSI_YELLOW
+        R = config.ANSI_RESET
+        logger.warning("🛡️  HIJACK DETECTED! Page navigated to: %s", url)
+        print(f"\n  {Y}🛡️ HIJACK DETECTED! IDE navigated to {url}{R}")
+        print(f"  {Y}🛡️ Forcing go_back() and injecting reprimand …{R}")
+
+        try:
+            await page.go_back()
+            await asyncio.sleep(3.0)
+        except Exception as exc:
+            logger.warning("🛡️  go_back() failed: %s — re-resolving page.", exc)
+            page = await _get_best_page(context)
+
+        # Inject reprimand
+        reprimand = (
+            "CRITICAL ERROR: You navigated the main window to localhost. "
+            "NEVER do this. Use the Simple Browser split-pane. "
+            "Run the command 'Simple Browser: Show' and open "
+            "http://localhost:3000 there instead. NEVER navigate "
+            "the main IDE window to any URL."
+        )
+        try:
+            await _command_palette_inject(page, reprimand)
+        except Exception:
+            pass
+
+        return (page, True)
+
+    return (page, False)
+
+
+# ─────────────────────────────────────────────────────────────
+# Multimodal Vision — The All-Seeing Eye
+# ─────────────────────────────────────────────────────────────
+
+async def _analyze_ide_state(page) -> dict:
+    """
+    Use EYESIGHT to analyze the IDE state.
+
+    V6: Timeout is 180s for multimodal vision models.
+    Returns: {"state": "WORKING"|"WAITING"|"CRASHED", "reason": "..."}
+    """
+    screenshot_path = config.SCREENSHOT_PATH
+
+    try:
+        await page.screenshot(path=screenshot_path)
+        logger.info("📸  Screenshot saved: %s", screenshot_path)
+
+        prompt = (
+            "Analyze this screenshot of my VS Code/Antigravity IDE. "
+            "Look at the AI Agent chat sidebar. "
+            "Is the AI currently working/thinking, "
+            "is it waiting for human approval/input, "
+            "or has the IDE crashed/completely flatlined? "
+            'Reply ONLY with a valid JSON object: '
+            '{"state": "WORKING" or "WAITING" or "CRASHED", "reason": "..."}'
+        )
+
+        # V6: 180s timeout for vision models
+        data = await call_gemini_with_file_json(prompt, screenshot_path, timeout=180)
+
+        if data and "state" in data:
+            state = data["state"].upper()
+            reason = data.get("reason", "No reason provided")
+            logger.info("👁️  Vision analysis: state=%s, reason=%s", state, reason)
+            return {"state": state, "reason": reason}
+        else:
+            logger.warning("👁️  Vision analysis returned no valid state. Assuming WORKING.")
+            return {"state": "WORKING", "reason": "Could not parse Gemini vision response"}
+
+    except Exception as exc:
+        logger.error("👁️  Vision analysis failed: %s", exc)
+        return {"state": "WORKING", "reason": f"Vision analysis error: {exc}"}
+
+
+async def _resuscitate_ide(page, context, goal: str):
+    """
+    The Defibrillator — restart the Extension Host and re-inject the goal.
+
+    V6: ALL waits are asyncio.sleep(). Returns (success, updated_page).
+    """
+    logger.warning("🫀  DEFIBRILLATOR ACTIVATED — attempting to resuscitate IDE …")
+
+    M = config.ANSI_MAGENTA
+    B = config.ANSI_BOLD
+    R = config.ANSI_RESET
+    print(f"\n  {B}{M}🫀 DEFIBRILLATOR ACTIVATED{R}")
+
+    try:
+        # A. Force window focus.
+        await page.bring_to_front()
+        await page.mouse.click(500, 300)
+        await asyncio.sleep(0.5)
+
+        # B. Open the Command Palette.
+        await page.keyboard.press("F1")
+        await asyncio.sleep(1.0)  # V6: asyncio.sleep
+
+        # C. Type the restart command.
+        await page.keyboard.insert_text("Developer: Restart Extension Host")
+        await asyncio.sleep(0.5)  # V6: asyncio.sleep
+        await page.keyboard.press("Enter")
+
+        # D. Wait 20 seconds for IDE internal reboot.
+        logger.info("🫀  Waiting 20s for Extension Host to restart …")
+        print(f"  {M}⏳ Waiting 20s for Extension Host restart …{R}")
+        await asyncio.sleep(20.0)  # V6: asyncio.sleep — NEVER page.wait_for_timeout
+
+        # E. Re-resolve the page (it may have changed)
+        page = await _get_best_page(context) or page
+
+        # F. Re-inject recovery prompt via Command Palette.
+        recovery_prompt = (
+            "@workspace The extension host was just restarted. "
+            "Review the workspace, determine where you left off, and "
+            "immediately resume building. Read SUPERVISOR_MANDATE.md "
+            "for the full instructions. Keep the Simple Browser open "
+            "to http://localhost:3000 at all times. NEVER navigate "
+            "the main IDE window to localhost."
+        )
+
+        ok = await _command_palette_inject(page, recovery_prompt)
+        if ok:
+            logger.info("🫀  Defibrillator SUCCESS — recovery prompt injected.")
+            print(f"  {config.ANSI_GREEN}🫀 Defibrillator SUCCESS!{R}")
+            return (True, page)
+        else:
+            logger.error("🫀  Defibrillator FAILED — re-injection failed.")
+            return (False, page)
+
+    except Exception as exc:
+        logger.error("🫀  Defibrillator EXCEPTION: %s", exc)
+        # Try to get a fresh page for the caller
+        try:
+            page = await _get_best_page(context) or page
+        except Exception:
+            pass
+        return (False, page)
+
+
+# ─────────────────────────────────────────────────────────────
+# Gemini-assisted diagnostics
+# ─────────────────────────────────────────────────────────────
+
+async def _diagnose_connection_failure(error: Exception) -> None:
+    """Ask Gemini to help diagnose why CDP connection failed."""
+    try:
+        prompt = (
+            f"I'm trying to connect to an Electron IDE app (Antigravity, a VS Code fork) "
+            f"via Chrome DevTools Protocol at {config.CDP_URL}.\n\n"
+            f"The connection failed with this error:\n{error}\n\n"
+            f"What are the most likely causes and quick fixes? Keep it under 5 bullet points."
+        )
+        advice = await ask_gemini(prompt, timeout=180)
+        logger.info("🧠  Gemini diagnosis:\n%s", advice)
+    except Exception as exc:
+        logger.debug("Gemini diagnosis failed: %s", exc)
+
+
+def _triage_fatal_error(tb_str: str) -> str:
+    """
+    Ask Gemini if a fatal error is transient or a code bug.
+    V6: 180s timeout — no more triage timeouts.
+    """
+    try:
+        prompt = (
+            f"A Python supervisor script just crashed with this traceback:\n\n"
+            f"{tb_str}\n\n"
+            f"Is this:\n"
+            f"A) A TRANSIENT error (network timeout, race condition, temporary resource "
+            f"   unavailability) that would likely succeed on retry?\n"
+            f"B) A CODE BUG that requires fixing the source code?\n\n"
+            f"Reply with ONLY the single word: RETRY or EVOLVE"
+        )
+        response = ask_gemini_sync(prompt, timeout=180)  # V6: 180s
+        decision = response.strip().upper()
+        if "RETRY" in decision:
+            return "retry"
+        return "evolve"
+    except Exception:
+        return "evolve"
+
+
+# ─────────────────────────────────────────────────────────────
+# CDP Connection Helper
+# ─────────────────────────────────────────────────────────────
+
+async def _connect_cdp():
+    """
+    Connect to Antigravity via CDP and return (browser, context, page).
+    """
+    from playwright.async_api import async_playwright
+
+    pw = await async_playwright().start()
+    browser = await pw.chromium.connect_over_cdp(config.CDP_URL)
+    context = browser.contexts[0] if browser.contexts else None
+
+    if not context:
+        raise RuntimeError("No browser context found after CDP connection.")
+
+    page = await _get_best_page(context)
+    if not page:
+        raise RuntimeError("No valid IDE page found in browser context.")
+
+    logger.info("🔌  Connected to Antigravity via CDP. Page: %s", page.url[:80])
+    return (pw, browser, context, page)
+
+
+# ─────────────────────────────────────────────────────────────
+# Main loop — V6 Unbreakable God Mode
+# ─────────────────────────────────────────────────────────────
+
+async def run(goal: str, project_path: str | None = None, dry_run: bool = False) -> None:
+    """Main supervisor loop — V7 Flawless Precision."""
+
+    G = config.ANSI_GREEN
+    C = config.ANSI_CYAN
+    B = config.ANSI_BOLD
+    R = config.ANSI_RESET
+
+    print(f"\n{B}{G}{'='*60}{R}")
+    print(f"{B}{G}  🌐 SUPERVISOR AI V7 — FLAWLESS PRECISION{R}")
+    print(f"{B}{G}{'='*60}{R}")
+    print(f"{C}  Goal: {goal[:100]}{'…' if len(goal) > 100 else ''}{R}")
+    print(f"{C}  Project: {project_path or 'N/A'}{R}")
+    print(f"{C}  Dry-run: {dry_run}{R}")
+    print(f"{B}{G}{'='*60}{R}\n")
+
+    logger.info("=" * 60)
+    logger.info("🚀  Supervisor AI V7 Flawless Precision starting")
+    logger.info("   Goal: %s", goal)
+    logger.info("   Dry-run: %s", dry_run)
+    logger.info("=" * 60)
+
+    if dry_run:
+        logger.info("[DRY-RUN] Skipping CDP connection.")
+        logger.info("[DRY-RUN] Would inject goal: %s", goal)
+        print(f"  {G}[DRY-RUN] All systems nominal. Exiting.{R}")
+        return
+
+    # ── Persist session state for auto-resume after reboot ──
+    _save_session_state(goal, project_path)
+
+    # ── System 7: Write the mandate file (with FIREWALL rule) ──
+    if project_path:
+        _write_mandate_file(project_path, goal)
+
+    # ── V7 System 10: Zombie Hunter (Pre-flight Kill) ─────
+    if project_path:
+        logger.info("🧟  Zombie Hunter: Killing stale Electron/Node processes …")
+        print(f"  {C}🧟 Zombie Hunter: Clearing stale processes …{R}")
+        os.system('taskkill /f /im antigravity.exe >nul 2>&1')
+        os.system('taskkill /f /im node.exe >nul 2>&1')
+        logger.info("🧟  Killed stale processes. Waiting 3s for port release …")
+        print(f"  {C}⏳ Waiting 3s for port 9222 to release …{R}")
+        time.sleep(3)
+
+    # ── System 8: Visually launch Antigravity (--new-window) ──
+    if project_path:
+        _launch_antigravity(project_path)
+
+    # ── Connect (with Gemini diagnostics on failure) ───────
+    pw = None
+    try:
+        pw, browser, context, page = await _connect_cdp()
+    except Exception as exc:
+        logger.error("Failed to connect to Antigravity: %s", exc)
+        await _diagnose_connection_failure(exc)
+        sys.exit(1)
+
+    # ── System 8: Strict Workspace Lockdown ────────────────
+    if project_path:
+        await _lockdown_workspace(context, project_path)
+
+    # ── System 1: Lockfile Memory (Anti-Amnesia) ───────────
+    try:
+        if project_path and _lockfile_exists(project_path):
+            # Lockfile exists — session already injected, skip re-injection
+            logger.info("🔐  [INFO] Lockfile found. Resuming existing session.")
+            print(f"  {C}🔐 [INFO] Lockfile found. Resuming existing session.{R}")
+        else:
+            # No lockfile — first run. Inject the goal.
+            logger.info("💉  No lockfile — first injection via File-Drop + Command Palette …")
+            print(f"\n  {B}{C}💉 FIRST INJECTION VIA FILE-DROP METHOD{R}")
+
+            tiny_string = config.TINY_INJECT_STRING
+
+            # Try Command Palette injection first
+            success = await _command_palette_inject(page, tiny_string)
+
+            if not success:
+                # Fallback: try golden DOM selector directly
+                logger.warning("🎯  Command Palette failed — trying DOM fallback …")
+                try:
+                    golden_sel = 'div[contenteditable="true"][role="textbox"]'
+                    el = await page.query_selector(golden_sel)
+                    if el:
+                        import pyperclip
+                        await el.focus()
+                        await asyncio.sleep(0.3)
+                        pyperclip.copy(tiny_string)
+                        await page.keyboard.press("Control+v")
+                        await asyncio.sleep(0.3)
+                        await page.keyboard.press("Enter")
+                        success = True
+                        logger.info("💉  DOM fallback injection succeeded.")
+                except Exception as dom_exc:
+                    logger.error("💉  DOM fallback failed: %s", dom_exc)
+
+            if not success:
+                raise Exception(
+                    "Injection Verification Failed: All strategies failed. "
+                    "UI is completely unresponsive."
+                )
+
+            # Create lockfile immediately after successful injection
+            if project_path:
+                _create_lockfile(project_path)
+
+        logger.info("✅ Entering monitoring loop (poll every %.1fs, vision every %.1fs) …",
+                     config.POLL_INTERVAL_SECONDS, config.VISION_POLL_INTERVAL_SECONDS)
+        print(f"  {G}✅ Entering V7 God Loop …{R}\n")
+
+        # ── Defibrillator state ─────────────────────────────
+        resuscitate_fail_count = 0
+        last_vision_check = time.time()
+        consecutive_reconnects = 0
+
+        # ── THE MAIN MONITORING LOOP ─────────────────────────
+        while True:
+            await asyncio.sleep(config.POLL_INTERVAL_SECONDS)
+
+            # ====================================================
+            # System 2: Auto-Reconnect Engine (Anti-Crash)
+            # Wraps ALL Playwright interactions in a try/except
+            # that catches TargetClosedError gracefully.
+            # ====================================================
+            try:
+                # ── System 5: Navigation Defense ───────────
+                page, was_hijacked = await _navigation_defense(page, context)
+                if was_hijacked:
+                    await asyncio.sleep(2.0)
+                    continue
+
+                # ── System 3: Approval Sniper ──────────────
+                sniped = await _approval_sniper(context)
+                if sniped:
+                    await asyncio.sleep(2.0)
+                    continue
+
+                # ── Multimodal Vision God Loop ─────────────
+                now = time.time()
+                if now - last_vision_check >= config.VISION_POLL_INTERVAL_SECONDS:
+                    last_vision_check = now
+
+                    vision_result = await _analyze_ide_state(page)
+                    state = vision_result.get("state", "WORKING")
+                    reason = vision_result.get("reason", "")
+
+                    if state == "CRASHED":
+                        logger.warning("👁️  Vision detected CRASHED: %s", reason)
+                        print(f"  {config.ANSI_RED}👁️ CRASHED: {reason}{R}")
+
+                        ok, page = await _resuscitate_ide(page, context, goal)
+                        if ok:
+                            resuscitate_fail_count = 0
+                            await asyncio.sleep(5.0)
+                            continue
+                        else:
+                            resuscitate_fail_count += 1
+                            logger.error(
+                                "🫀  Resuscitation failed (%d/%d).",
+                                resuscitate_fail_count,
+                                config.MAX_RESUSCITATE_FAILURES,
+                            )
+                            if resuscitate_fail_count >= config.MAX_RESUSCITATE_FAILURES:
+                                raise Exception(
+                                    f"Defibrillator failed {config.MAX_RESUSCITATE_FAILURES} "
+                                    f"times. Last reason: {reason}"
+                                )
+                            continue
+
+                    elif state == "WAITING":
+                        logger.info("👁️  Vision detected WAITING: %s", reason)
+                        print(f"  {config.ANSI_YELLOW}👁️ WAITING: {reason}{R}")
+                        # Let the Approval Sniper handle it next loop
+
+                    else:
+                        logger.debug("👁️  Vision: WORKING — %s", reason)
+
+                # If we got here without error, reset reconnect counter
+                consecutive_reconnects = 0
+
+            except Exception as loop_exc:
+                # ============================================
+                # System 2: Auto-Reconnect Engine
+                # ============================================
+                exc_str = str(loop_exc).lower()
+                is_page_closed = (
+                    "target page" in exc_str
+                    or "closed" in exc_str
+                    or "targetclosederror" in exc_str
+                    or "target closed" in exc_str
+                    or "connection" in exc_str
+                )
+
+                if is_page_closed:
+                    consecutive_reconnects += 1
+                    Y = config.ANSI_YELLOW
+                    logger.warning(
+                        "🔄  [WARNING] IDE webview refreshed. "
+                        "Re-attaching … (attempt %d)",
+                        consecutive_reconnects,
+                    )
+                    print(
+                        f"  {Y}🔄 [WARNING] IDE webview refreshed. "
+                        f"Re-attaching … (attempt {consecutive_reconnects}){R}"
+                    )
+
+                    # Wait 3 seconds for the IDE to stabilize
+                    await asyncio.sleep(3.0)
+
+                    # Try to re-fetch best page
+                    try:
+                        new_page = await _get_best_page(context)
+                        if new_page:
+                            page = new_page
+                            logger.info(
+                                "🔄  Re-attached to page: %s", page.url[:80]
+                            )
+                            print(f"  {G}🔄 Re-attached to: {page.url[:60]}{R}")
+                        else:
+                            logger.warning("🔄  No valid page found — waiting …")
+                            await asyncio.sleep(5.0)
+                    except Exception as refetch_exc:
+                        logger.error("🔄  Re-fetch failed: %s", refetch_exc)
+                        await asyncio.sleep(5.0)
+
+                    # Safety: if too many consecutive reconnects, something is wrong
+                    if consecutive_reconnects >= 10:
+                        raise Exception(
+                            f"Too many consecutive reconnects ({consecutive_reconnects}). "
+                            f"IDE may be in an unrecoverable state."
+                        )
+
+                    continue  # ← Resume the loop, do NOT crash
+                else:
+                    # This is a real error, not a page-closed issue — re-raise
+                    raise
+
+    except KeyboardInterrupt:
+        logger.info("Interrupted by user.")
+    except Exception as fatal_exc:
+        # ── SELF-EVOLUTION TRIGGER ─────────────────────────
+        tb = traceback.format_exc()
+        logger.critical("💀  FATAL EXCEPTION in main loop: %s\n%s", fatal_exc, tb)
+        print("\n" + "=" * 60)
+        print("💀  FATAL ERROR — consulting Gemini for triage …")
+        print("=" * 60)
+
+        # V6: 180s timeout for triage — no more triage timeouts
+        decision = _triage_fatal_error(tb)
+
+        if decision == "retry":
+            logger.info("🧠  Gemini says RETRY — exiting with code 42 for reboot.")
+            print("  🧠 Gemini diagnosis: Transient error — will retry.")
+            sys.exit(42)
+        else:
+            logger.info("🧠  Gemini says EVOLVE — triggering self-evolution.")
+            print("  🧠 Gemini diagnosis: Code bug — triggering self-evolution.")
+            self_evolve(tb, screenshot_path=config.SCREENSHOT_PATH)
+    finally:
+        try:
+            if pw:
+                await pw.stop()
+        except Exception:
+            pass
+        logger.info("Supervisor shut down.")
+
+
+# ─────────────────────────────────────────────────────────────
+# Session State Persistence
+# ─────────────────────────────────────────────────────────────
+
+def _save_session_state(goal: str, project_path: str | None) -> None:
+    """Save current session state for auto-resume after reboot."""
+    state = {
+        "goal": goal,
+        "project_path": project_path,
+        "timestamp": time.time(),
+    }
+    try:
+        with open(_SESSION_STATE_PATH, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2)
+        logger.info("💾  Session state saved for auto-resume.")
+    except Exception as exc:
+        logger.warning("Could not save session state: %s", exc)
+
+
+def _load_session_state() -> tuple[str, str | None] | None:
+    """Load saved session state. Returns (goal, project_path) or None."""
+    if not _SESSION_STATE_PATH.exists():
+        return None
+    try:
+        with open(_SESSION_STATE_PATH, "r", encoding="utf-8") as f:
+            state = json.load(f)
+        age = time.time() - state.get("timestamp", 0)
+        if age > 86400:
+            return None
+        goal = state.get("goal")
+        project_path = state.get("project_path")
+        if not goal:
+            return None
+        return (goal, project_path)
+    except Exception:
+        return None
+
+
+def _clear_session_state() -> None:
+    """Clear the session state file."""
+    try:
+        if _SESSION_STATE_PATH.exists():
+            _SESSION_STATE_PATH.unlink()
+    except Exception:
+        pass
+
+
+# ─────────────────────────────────────────────────────────────
+# Interactive goal & project selection
+# ─────────────────────────────────────────────────────────────
+
+def _interactive_goal() -> tuple[str, str | None]:
+    """Present an interactive menu when no --goal is supplied."""
+    print("\n  What would you like to do?\n")
+    print("  [1] 🆕  Build something new")
+    print("  [2] 🔄  Continue from an existing workspace")
+    print()
+
+    choice = ""
+    while choice not in ("1", "2"):
+        choice = input("  Enter choice (1 or 2): ").strip()
+
+    if choice == "1":
+        project_name = input("\n  📁 Project name: ").strip()
+        if not project_name:
+            print("  [ERROR] No project name provided. Exiting.")
+            sys.exit(1)
+
+        project_dir = EXPERIMENTS_DIR / project_name
+        project_dir.mkdir(parents=True, exist_ok=True)
+        print(f"  ✅ Created: {project_dir}")
+
+        goal = input("\n  🎯 Enter your goal:\n  > ").strip()
+        if not goal:
+            print("  [ERROR] No goal provided. Exiting.")
+            sys.exit(1)
+
+        goal = f"[Workspace: {project_dir}] {goal}"
+        return goal, str(project_dir)
+
+    else:
+        if not EXPERIMENTS_DIR.is_dir():
+            print(f"  [ERROR] Experiments directory not found: {EXPERIMENTS_DIR}")
+            sys.exit(1)
+
+        workspaces = sorted([d.name for d in EXPERIMENTS_DIR.iterdir() if d.is_dir()])
+        if not workspaces:
+            print("  [ERROR] No workspace folders found.")
+            sys.exit(1)
+
+        print(f"\n  Found {len(workspaces)} workspaces:\n")
+        for i, ws in enumerate(workspaces, 1):
+            print(f"    [{i:2d}] {ws}")
+        print()
+
+        ws_idx = 0
+        while ws_idx < 1 or ws_idx > len(workspaces):
+            try:
+                ws_idx = int(input("  Enter workspace number: ").strip())
+            except ValueError:
+                continue
+
+        chosen_ws = workspaces[ws_idx - 1]
+        chosen_path = EXPERIMENTS_DIR / chosen_ws
+        print(f"  ✅ Selected: {chosen_path}")
+
+        goal = input(f"\n  🎯 What should I do in '{chosen_ws}'?\n  > ").strip()
+        if not goal:
+            print("  [ERROR] No goal provided. Exiting.")
+            sys.exit(1)
+
+        goal = f"[Workspace: {chosen_path}] {goal}"
+        return goal, str(chosen_path)
+
+
+# ─────────────────────────────────────────────────────────────
+# CLI entry point
+# ─────────────────────────────────────────────────────────────
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Supervisor AI V7 — Flawless Precision",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            '  python -m supervisor --goal "Build a React dashboard" -p ./myproject\n'
+            '  python -m supervisor --goal "Fix failing tests" --dry-run\n'
+            '  python -m supervisor  (interactive mode)\n'
+        ),
+    )
+    parser.add_argument("--goal", "-g", default=None, help="The goal to achieve.")
+    parser.add_argument("--project-path", "-p", default=None, help="Path to the project folder.")
+    parser.add_argument("--dry-run", action="store_true", help="Run without connecting.")
+    parser.add_argument(
+        "--log-level", default=config.LOG_LEVEL,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        help="Logging verbosity.",
+    )
+    args = parser.parse_args()
+
+    # ── Infinite Memory: dual logging (console + file) ──────
+    log_level = getattr(logging, args.log_level)
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+
+    fmt = logging.Formatter(config.LOG_FORMAT, datefmt=config.LOG_DATE_FORMAT)
+
+    if not any(isinstance(h, logging.StreamHandler) for h in root_logger.handlers):
+        console = logging.StreamHandler(sys.stdout)
+        console.setLevel(log_level)
+        console.setFormatter(fmt)
+        root_logger.addHandler(console)
+
+    try:
+        file_handler = logging.FileHandler(str(_LOG_FILE), encoding="utf-8", mode="a")
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(fmt)
+        root_logger.addHandler(file_handler)
+        logger.info("📝  Logging to file: %s", _LOG_FILE)
+    except Exception as exc:
+        logger.warning("Could not set up file logging: %s", exc)
+
+    # ── Resolve goal + project path ────────────────────────
+    goal = args.goal
+    project_path = args.project_path
+
+    if not goal:
+        saved = _load_session_state()
+        if saved:
+            saved_goal, saved_project = saved
+            print("\n  🔄 Found saved session from a previous run:")
+            print(f"     Goal: {saved_goal[:80]}…")
+            print(f"     Project: {saved_project or 'N/A'}")
+            print("\n  ⏱️  Auto-resuming in 5 seconds. Press Ctrl+C to cancel.\n")
+            try:
+                time.sleep(5)
+                goal = saved_goal
+                project_path = saved_project
+            except KeyboardInterrupt:
+                print("\n  Cancelled auto-resume.\n")
+
+    if not goal:
+        goal, project_path = _interactive_goal()
+
+    # ── Run the async loop ─────────────────────────────────
+    asyncio.run(run(goal, project_path, args.dry_run))
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,1234 @@
+15:03:33 │ INFO    │ supervisor         │ 📝  V30 Ephemeral Log: fresh session → C:\Users\mokde\Desktop\Experiments\Antigravity Auto\supervisor\supervisor.log
+15:03:33 │ INFO    │ supervisor         │ 🔄  SAVED SESSION FOUND: goal='[Workspace: c:\Users\mokde\Desktop\Experiments\Gridfall Demolition] Th', project='c:\Users\mokde\Desktop\Experiments\Gridfall Demolition'
+15:03:35 │ INFO    │ supervisor         │ ✅  Continuing saved session.
+15:03:35 │ INFO    │ supervisor         │ ============================================================
+15:03:35 │ INFO    │ supervisor         │ 🚀  Supervisor AI V11 Deep Context starting
+15:03:35 │ INFO    │ supervisor         │    Goal: [Workspace: c:\Users\mokde\Desktop\Experiments\Gridfall Demolition] The game is titled Gridfall Demolition and it operates as a high speed vertical platformer built entirely with hyper detailed scalable vector graphics.  The player controls a nimble engineer trapped in a rapidly filling cylindrical shaft. Heavy geometric tetrominoes plummet from the sky requiring the player to run and wall jump across them to survive a continuously rising floor of toxic sludge. The core gameplay forces the player to navigate this chaotic falling puzzle while managing mechanical enemies that patrol the settling blocks. The player cannot defeat enemies by jumping on them. Instead they must deploy timed explosives that detonate in precise horizontal and vertical blasts mirroring classic arcade bomb grids. These explosions obliterate enemies and shatter the tetrominoes. If a player strategically blasts blocks to clear a perfect horizontal line across the shaft that entire row vaporises in a massive chain reaction dropping the whole stack and buying crucial survival time. The visual design pushes browser limits by utilising complex SVG filters and gradients to create a pristine brutalist aesthetic. The blocks render as heavy forged steel with glowing neon internal wiring. Every explosion is a crisp geometric burst of layered vector shapes expanding and dissipating without pixelation or resolution loss. Character animations rely on seamless vector morphing for fluid traversal. The game features five distinct stages escalating in complexity. The first stage is the Iron Chasm focusing on basic block management and simple drone pathing. The second stage introduces the Cryo Chamber where blocks are coated in frost making movement slippery and explosions temporarily freeze enemies instead of destroying them. The third stage is the Magma Reactor containing dense indestructible blocks that only sink when the normal rows beneath them are cleared. The fourth stage features the Gravity Coil where the plummeting speed of new shapes violently accelerates and decelerates. The final stage is the Singularity Core where phantom blocks materialise and vanish to the exact rhythm of the heavy electronic soundtrack. Acceptance criteria demand absolute performance precision. The custom engine must maintain a locked sixty frames per second during maximum screen clearing chain reactions. Collision detection must calculate flawlessly to allow pixel perfect wall kicks off blocks that are actively falling through the air. Make this in a browser playable game, perfectly, everything installed that you ned, SVGs beautifull made for the game assets, with animations, levels, story, progress, etc. EVERYTHING start to end for the PERFECT production-ready end version of this award-winning 2026 browser-based 2D platformer game. Addictive mechanics, scoring, etc.
+15:03:35 │ INFO    │ supervisor         │    Dry-run: False
+15:03:35 │ INFO    │ supervisor         │    Proactive mode: True
+15:03:35 │ INFO    │ supervisor         │ ============================================================
+15:03:35 │ INFO    │ supervisor         │ 💾  Session state saved for auto-resume.
+15:03:35 │ INFO    │ supervisor         │ 📄  Wrote SUPERVISOR_MANDATE.md to: c:\Users\mokde\Desktop\Experiments\Gridfall Demolition\SUPERVISOR_MANDATE.md
+15:03:35 │ INFO    │ supervisor         │ 📄  Wrote open_browser.ps1 to: c:\Users\mokde\Desktop\Experiments\Gridfall Demolition\open_browser.ps1
+15:03:35 │ INFO    │ supervisor         │ 🧟  Zombie Hunter: Killing stale Electron/Node processes …
+15:03:36 │ INFO    │ supervisor         │ 🧟  Killed stale processes. Waiting 3s for port release …
+15:03:39 │ INFO    │ supervisor         │ Found Antigravity at: C:\Users\mokde\AppData\Local\Programs\Antigravity\Antigravity.exe
+15:03:39 │ INFO    │ supervisor         │ 🚀  Launching Antigravity:
+    C:\Users\mokde\AppData\Local\Programs\Antigravity\Antigravity.exe "c:\Users\mokde\Desktop\Experiments\Gridfall Demolition" --new-window --remote-debugging-port=9222 --disable-gpu --no-sandbox --disable-dev-shm-usage
+15:03:39 │ INFO    │ supervisor         │ 🚀 Launching Antigravity (NEW WINDOW) → c:\Users\mokde\Desktop\Experiments\Gridfall Demolition
+15:03:39 │ INFO    │ supervisor         │ 🖥️  Electron stderr capture thread started (PID: 62880)
+15:03:39 │ INFO    │ supervisor         │ ⏳  Waiting for IDE to render (progressive polling)…
+15:03:40 │ WARNING │ supervisor         │ 🖥️  [Electron] DevTools listening on ws://127.0.0.1:9222/devtools/browser/dd745257-0005-4413-8a95-b9f6f56cd382
+15:03:41 │ WARNING │ supervisor         │ 🖥️  [Electron] Warning: 'remote-debugging-port' is not in the list of known options, but still passed to Electron/Chromium.
+15:03:41 │ WARNING │ supervisor         │ 🖥️  [Electron] [main 2026-02-22T12:03:41.728Z] [uncaught exception in main]: Error: Failed to set path
+15:03:41 │ WARNING │ supervisor         │ 🖥️  [Electron] [main 2026-02-22T12:03:41.729Z] Error: Failed to set path
+15:03:41 │ WARNING │ supervisor         │ 🖥️  [Electron]     at Nz.l (file:///C:/Users/mokde/AppData/Local/Programs/Antigravity/resources/app/out/main.js:1032:39755)
+15:03:55 │ INFO    │ supervisor         │ ✅  IDE should be visible now.
+15:03:57 │ INFO    │ supervisor         │ 🔌  Page 0: url=vscode-file://vscode-app/c:/Users/mokde/AppData/Local/Programs/Antigravity/resources/app/out/vs/code title=Gridfall Demolition - Antigravity - open_browser.p frames=1
+15:03:57 │ INFO    │ supervisor         │ 🔌  Page 1: url=vscode-file://vscode-app/c:/Users/mokde/AppData/Local/Programs/Antigravity/resources/app/out/vs/code title=Launchpad frames=1
+15:03:57 │ INFO    │ supervisor         │ 🔌  Connected to Antigravity via CDP. Page: vscode-file://vscode-app/c:/Users/mokde/AppData/Local/Programs/Antigravity/resou
+15:04:22 │ INFO    │ supervisor         │ 🔌  ✅ Boot detection succeeded via 'any input element' (selector: input, textarea, [role="textbox"])
+15:04:25 │ INFO    │ supervisor         │ 🔒  Workspace Lockdown: keeping only pages matching 'gridfall demolition'
+15:04:25 │ INFO    │ supervisor         │ 🔒  KEEPING page: title='gridfall demolition - antigravity - open_browser.ps1'
+15:04:25 │ WARNING │ supervisor         │ 🔒  CLOSING contaminated page: title='launchpad'
+15:04:25 │ INFO    │ supervisor         │ 🔒 CLOSING rogue page: launchpad
+15:04:25 │ INFO    │ supervisor         │ 🔒  Page re-resolved after lockdown: vscode-file://vscode-app/c:/Users/mokde/AppData/Local/Programs/Antigravity/resou
+15:04:25 │ INFO    │ supervisor.retry_policy │ 🔄  Loaded failover state: 0 models with cooldowns
+15:04:25 │ INFO    │ supervisor.retry_policy │ 🔄  Retry/failover/budget/router/rate-limit systems initialized: RetryPolicy(max_attempts=3, base_delay=2.0s, max_delay=30.0s, jitter=10%)
+15:04:25 │ INFO    │ supervisor.scheduler │ ⏰  Loaded 18 scheduled jobs from disk
+15:04:25 │ INFO    │ supervisor         │ 🔄  V12 OpenClaw systems initialized: RetryPolicy + ModelFailoverChain + ContextBudget + CronScheduler
+15:04:25 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 3018m ago)
+15:04:25 │ INFO    │ supervisor         │ 🧠  V11 systems initialized: Context Engine + Vision Optimizer + Proactive Engine + Session Memory
+15:04:25 │ INFO    │ supervisor         │ ✅ Entering monitoring loop (poll every 10.0s, vision every 30.0s) …
+15:04:25 │ WARNING │ supervisor         │ 🔐  STALE LOCKFILE: PID 43792 is dead. Auto-removing.
+15:04:25 │ INFO    │ supervisor         │ 💉  No lockfile — first injection via File-Drop + Command Palette …
+15:04:43 │ INFO    │ supervisor.frame_walker │ 🔎  Found element in frame: page=vscode-file://vscode-app/c:/Users/mokde/AppData/Local/Programs/Antigravity/resou, frame=vscode-file://vscode-app/c:/Users/mokde/AppData/Local/Progra, selector=div[contenteditable='true'][role='textbox']
+15:04:43 │ INFO    │ supervisor.frame_walker │ ✅  Agent selector matched: div[contenteditable='true'][role='textbox']
+15:04:43 │ INFO    │ supervisor         │ 💉  Chat frame ready — proceeding with injection.
+15:04:43 │ INFO    │ supervisor         │ 🎯 COMMAND PALETTE INJECTION starting
+15:04:43 │ INFO    │ supervisor.frame_walker │ 🔎  Found element in frame: page=vscode-file://vscode-app/c:/Users/mokde/AppData/Local/Programs/Antigravity/resou, frame=vscode-file://vscode-app/c:/Users/mokde/AppData/Local/Progra, selector=div[contenteditable="true"][role="textbox"]
+15:04:43 │ INFO    │ supervisor         │ 🎯  V33 Direct injection: found chat input via frame-walk
+15:05:02 │ INFO    │ supervisor.frame_walker │ 🔎  Found element in frame: page=vscode-file://vscode-app/c:/Users/mokde/AppData/Local/Programs/Antigravity/resou, frame=vscode-file://vscode-app/c:/Users/mokde/AppData/Local/Progra, selector=div[contenteditable='true'][role='textbox']
+15:05:02 │ INFO    │ supervisor.frame_walker │ ✅  Agent selector matched: div[contenteditable='true'][role='textbox']
+15:05:02 │ INFO    │ supervisor         │ 🎯  Chat panel already open (visible) — skipping Command Palette F1 toggle.
+15:05:02 │ INFO    │ supervisor         │ 🎯  Step E: Inserted 313 chars via keyboard.insert_text().
+15:05:24 │ INFO    │ supervisor.frame_walker │ 🔎  Found element in frame: page=vscode-file://vscode-app/c:/Users/mokde/AppData/Local/Programs/Antigravity/resou, frame=vscode-file://vscode-app/c:/Users/mokde/AppData/Local/Progra, selector=div[contenteditable='true'][role='textbox']
+15:05:24 │ INFO    │ supervisor.frame_walker │ ✅  Agent selector matched: div[contenteditable='true'][role='textbox']
+15:05:24 │ INFO    │ supervisor         │ 🎯  Step F: Post-injection verification PASSED — chat frame found.
+15:05:24 │ INFO    │ supervisor         │ 🎯  Command Palette injection completed successfully.
+15:05:24 │ INFO    │ supervisor         │ ✅ Injected successfully via Command Palette.
+15:05:24 │ INFO    │ supervisor         │ 🔐  Created lockfile: c:\Users\mokde\Desktop\Experiments\Gridfall Demolition\.supervisor_lock (pid=82248)
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:05:34 │ INFO    │ supervisor.session_memory │ 🧠  Starting new session memory
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #633): HUD updated
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Running job: workspace_index → workspace_index
+15:05:34 │ INFO    │ supervisor.workspace_indexer │ 👁️  Omniscient Eye starting AST scan of workspace: c:\Users\mokde\Desktop\Experiments\Gridfall Demolition
+15:05:34 │ INFO    │ supervisor.workspace_indexer │ 👁️  Omniscient Eye indexed 6 files.
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Job 'workspace_index' completed (run #69): Indexed 6 files in workspace map.
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Running job: context_compact → context_compact
+15:05:34 │ INFO    │ supervisor.session_memory │ 🧠  Starting new session memory
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Job 'context_compact' completed (run #21): Compaction completed
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Running job: budget_report → budget_report
+15:05:34 │ INFO    │ supervisor.scheduler │ 📊  Scheduled budget report:
+📊 Context Budget Report (1m session)
+   Calls: 0
+   Sent: 0 chars (~0 tokens)
+   Received: 0 chars (~0 tokens)
+   Avg prompt: 0 chars | Avg response: 0 chars
+   Budget: 0.0% of 2,000,000 char limit
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Job 'budget_report' completed (run #31): Budget: 0.0% used
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Running job: failover_check → failover_check
+15:05:34 │ INFO    │ supervisor.scheduler │ 🔄  Failover status: active=gemini-3.1-pro-preview | gemini-3.1-pro-preview(✅), auto(✅), gemini-3-pro-preview(✅), gemini-2.5-pro(✅), gemini-2.5-flash(✅), gemini-2.0-flash(✅)
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Job 'failover_check' completed (run #42): Active: gemini-3.1-pro-preview
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Running job: rate_limit_report → rate_limit_report
+15:05:34 │ INFO    │ supervisor.scheduler │ ⚡  ⚡ Rate limits: 12 total, 0 last hour | 🎯 Routing: Pro=414, Flash=0, Auto=153 (0% Flash)
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Job 'rate_limit_report' completed (run #28): ⚡ Rate limits: 12 total, 0 last hour | 🎯 Routing: Pro=414, Flash=0, Auto=153 (0% Flash)
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #318): No hotfix pending.
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_poll → telemetry_poll
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_poll' completed (run #69): Telemetry poll skipped: no DEPLOY_TOKEN.
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #318): No experiment pending.
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #318): No refactor pending.
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Running job: feature_request_watcher → feature_request_watcher
+15:05:34 │ INFO    │ supervisor.scheduler │ 🔬 FEATURE_EPIC.md detected — signaling feature build.
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Job 'feature_request_watcher' completed (run #235): FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV ex
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:05:34 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #633): No active polish session.
+15:05:34 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:05:34 │ INFO    │ supervisor         │ ⏰  workspace_index: Indexed 6 files in workspace map.
+15:05:34 │ INFO    │ supervisor         │ ⏰  context_compact: Compaction completed
+15:05:34 │ INFO    │ supervisor         │ ⏰  budget_report: Budget: 0.0% used
+15:05:34 │ INFO    │ supervisor         │ ⏰  failover_check: Active: gemini-3.1-pro-preview
+15:05:34 │ INFO    │ supervisor         │ ⏰  rate_limit_report: ⚡ Rate limits: 12 total, 0 last hour | 🎯 Routing: Pro=414, Flash=0, Auto=153 (0% Flash)
+15:05:34 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:05:34 │ INFO    │ supervisor         │ ⏰  telemetry_poll: Telemetry poll skipped: no DEPLOY_TOKEN.
+15:05:34 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:05:34 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:05:34 │ INFO    │ supervisor         │ ⏰  feature_request_watcher: FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV export feature for dashboard data. Based on recent feedback, 100 unique users have requested the ability to download 
+15:05:34 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:05:34 │ INFO    │ supervisor.session_memory │ 🧠  Starting new session memory
+15:05:52 │ INFO    │ supervisor.frame_walker │ 🔎  Found element in frame: page=vscode-file://vscode-app/c:/Users/mokde/AppData/Local/Programs/Antigravity/resou, frame=vscode-file://vscode-app/c:/Users/mokde/AppData/Local/Progra, selector=div[contenteditable='true'][role='textbox']
+15:05:52 │ INFO    │ supervisor.frame_walker │ ✅  Agent selector matched: div[contenteditable='true'][role='textbox']
+15:05:52 │ INFO    │ supervisor.context_engine │ 🎯  Chat frame resolved for scraping: vscode-file://vscode-app/c:/Users/mokde/AppData/Local/Programs/Antigravity/resou
+15:05:52 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 2 messages (2 agent, 0 user/other)
+15:05:52 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=WORKING, confidence=55%, msgs=2, terminal=3, server=DOWN, browser=CLOSED, approval=NO, budget=0%, idle=87s
+15:06:02 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:06:02 │ INFO    │ supervisor.session_memory │ 🧠  Starting new session memory
+15:06:02 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #634): HUD updated
+15:06:02 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:06:02 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #634): No active polish session.
+15:06:02 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:06:02 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:06:03 │ INFO    │ supervisor         │ ⚡  [ACTION] Clicked 'Always run' checkbox via Laser Sniper.
+15:06:03 │ INFO    │ supervisor         │ ⚡  [ACTION] Auto-approved command via Laser Sniper: 'Always run'
+15:06:16 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:06:16 │ INFO    │ supervisor.session_memory │ 🧠  Starting new session memory
+15:06:16 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #635): HUD updated
+15:06:16 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:06:16 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #319): No hotfix pending.
+15:06:16 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:06:16 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #319): No experiment pending.
+15:06:16 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:06:16 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #319): No refactor pending.
+15:06:16 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:06:16 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #635): No active polish session.
+15:06:16 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:06:16 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:06:16 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:06:16 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:06:16 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:06:16 │ INFO    │ supervisor         │ ⚡  [ACTION] Clicked 'Always run' checkbox via Laser Sniper.
+15:06:17 │ INFO    │ supervisor         │ ⚡  [ACTION] Auto-approved command via Laser Sniper: 'Always run'
+15:06:29 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:06:29 │ INFO    │ supervisor.session_memory │ 🧠  Starting new session memory
+15:06:29 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #636): HUD updated
+15:06:29 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:06:29 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #636): No active polish session.
+15:06:29 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:06:29 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:06:30 │ INFO    │ supervisor         │ ⚡  [ACTION] Clicked 'Always run' checkbox via Laser Sniper.
+15:06:30 │ INFO    │ supervisor         │ ⚡  [ACTION] Auto-approved command via Laser Sniper: 'Always run'
+15:06:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:06:43 │ INFO    │ supervisor.session_memory │ 🧠  Starting new session memory
+15:06:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #637): HUD updated
+15:06:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: feature_request_watcher → feature_request_watcher
+15:06:43 │ INFO    │ supervisor.scheduler │ 🔬 FEATURE_EPIC.md detected — signaling feature build.
+15:06:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'feature_request_watcher' completed (run #236): FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV ex
+15:06:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:06:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #637): No active polish session.
+15:06:43 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:06:43 │ INFO    │ supervisor         │ ⏰  feature_request_watcher: FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV export feature for dashboard data. Based on recent feedback, 100 unique users have requested the ability to download 
+15:06:43 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:06:43 │ INFO    │ supervisor         │ ⚡  [ACTION] Clicked 'Always run' checkbox via Laser Sniper.
+15:06:44 │ INFO    │ supervisor         │ ⚡  [ACTION] Auto-approved command via Laser Sniper: 'Always run'
+15:06:56 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:06:56 │ INFO    │ supervisor.session_memory │ 🧠  Starting new session memory
+15:06:56 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #638): HUD updated
+15:06:56 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:06:56 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #320): No hotfix pending.
+15:06:56 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:06:56 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #320): No experiment pending.
+15:06:56 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:06:56 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #320): No refactor pending.
+15:06:56 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:06:56 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #638): No active polish session.
+15:06:56 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:06:56 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:06:56 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:06:56 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:06:56 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:06:57 │ INFO    │ supervisor         │ ⚡  [ACTION] Clicked 'Always run' checkbox via Laser Sniper.
+15:06:57 │ INFO    │ supervisor         │ ⚡  [ACTION] Auto-approved command via Laser Sniper: 'Always run'
+15:07:04 │ WARNING │ supervisor         │ 🖥️  [Electron] [main 2026-02-22T12:07:04.762Z] [perf] profiling STARTED b3a88b25-f05e-4e44-af0d-ca5001914c36
+15:07:09 │ WARNING │ supervisor         │ 🖥️  [Electron] [main 2026-02-22T12:07:09.813Z] [perf] profiling DONE b3a88b25-f05e-4e44-af0d-ca5001914c36
+15:07:10 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:07:10 │ INFO    │ supervisor.session_memory │ 🧠  Starting new session memory
+15:07:10 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #639): HUD updated
+15:07:10 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:07:10 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #639): No active polish session.
+15:07:10 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:07:10 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:07:10 │ INFO    │ supervisor         │ ⚡  [ACTION] Clicked 'Always run' checkbox via Laser Sniper.
+15:07:11 │ INFO    │ supervisor         │ ⚡  [ACTION] Auto-approved command via Laser Sniper: 'Always run'
+15:07:11 │ WARNING │ supervisor         │ 🛡️  Blocked localhost navigation on main frame: http://localhost:3000/
+15:07:11 │ WARNING │ supervisor         │ 🖥️  [Electron] [main 2026-02-22T12:07:11.438Z] CodeWindow: failed to load (reason: ERR_BLOCKED_BY_CLIENT, code: -20)
+15:07:11 │ WARNING │ supervisor         │ 🖥️  [Electron] (node:81412) electron: Failed to load URL: http://localhost:3000/ with error: ERR_BLOCKED_BY_CLIENT
+15:07:11 │ WARNING │ supervisor         │ 🖥️  [Electron] (Use `Antigravity --trace-warnings ...` to show where the warning was created)
+15:07:11 │ WARNING │ supervisor         │ 🖥️  [Electron] [main 2026-02-22T12:07:11.453Z] [uncaught exception in main]: Refused to handle ipcMain event for channel 'vscode:187a2f6f-d3d9-49e1-99e0-68f78024a6d9' because of a bad origin of 'localhost:3000'.
+15:07:11 │ WARNING │ supervisor         │ 🖥️  [Electron] Error occurred in handler for 'vscode:187a2f6f-d3d9-49e1-99e0-68f78024a6d9': Invalid channel 'vscode:187a2f6f-d3d9-49e1-99e0-68f78024a6d9' or sender for ipcMain.handle() usage.
+15:07:11 │ WARNING │ supervisor         │ 🖥️  [Electron] [main 2026-02-22T12:07:11.454Z] [uncaught exception in main]: Refused to handle ipcMain event for channel 'vscode:fetchShellEnv' because of a bad origin of 'localhost:3000'.
+15:07:11 │ WARNING │ supervisor         │ 🖥️  [Electron] Error occurred in handler for 'vscode:fetchShellEnv': Invalid channel 'vscode:fetchShellEnv' or sender for ipcMain.handle() usage.
+15:07:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:07:23 │ INFO    │ supervisor.session_memory │ 🧠  Starting new session memory
+15:07:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #640): HUD updated
+15:07:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:07:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #640): No active polish session.
+15:07:23 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:07:23 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:07:23 │ INFO    │ supervisor.session_memory │ 🧠  Starting new session memory
+15:07:26 │ INFO    │ supervisor.session_memory │ 🧠  Starting new session memory
+15:07:26 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:07:43 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:07:43 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:07:43 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:07:43 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=WORKING, confidence=30%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=198s
+15:07:43 │ WARNING │ supervisor.proactive_engine │ 🌐  Failed to launch open_browser.ps1: [WinError 2] The system cannot find the file specified
+15:07:43 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 0m ago)
+15:07:45 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 0m ago)
+15:07:45 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:08:03 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:08:03 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:08:03 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:08:03 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=218s
+15:08:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:08:13 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 1m ago)
+15:08:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #641): HUD updated
+15:08:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:08:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #321): No hotfix pending.
+15:08:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:08:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #321): No experiment pending.
+15:08:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:08:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #321): No refactor pending.
+15:08:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: feature_request_watcher → feature_request_watcher
+15:08:13 │ INFO    │ supervisor.scheduler │ 🔬 FEATURE_EPIC.md detected — signaling feature build.
+15:08:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'feature_request_watcher' completed (run #237): FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV ex
+15:08:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:08:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #641): No active polish session.
+15:08:13 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:08:13 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:08:13 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:08:13 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:08:13 │ INFO    │ supervisor         │ ⏰  feature_request_watcher: FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV export feature for dashboard data. Based on recent feedback, 100 unique users have requested the ability to download 
+15:08:13 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:08:13 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 1m ago)
+15:08:15 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 1m ago)
+15:08:15 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:08:33 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:08:33 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:08:33 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:08:33 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=248s
+15:08:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:08:43 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 1m ago)
+15:08:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #642): HUD updated
+15:08:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:08:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #642): No active polish session.
+15:08:43 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:08:43 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:08:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:08:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #322): No hotfix pending.
+15:08:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:08:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #322): No experiment pending.
+15:08:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:08:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #322): No refactor pending.
+15:08:43 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:08:43 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:08:43 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:08:43 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 1m ago)
+15:08:45 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 1m ago)
+15:08:45 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:09:03 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:09:03 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:09:03 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:09:03 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=278s
+15:09:03 │ WARNING │ supervisor.proactive_engine │ 🌐  Failed to launch open_browser.ps1: [WinError 2] The system cannot find the file specified
+15:09:03 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 2m ago)
+15:09:05 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 2m ago)
+15:09:05 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:09:23 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:09:23 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:09:23 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:09:23 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=298s
+15:09:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:09:33 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 2m ago)
+15:09:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #643): HUD updated
+15:09:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:09:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #323): No hotfix pending.
+15:09:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:09:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #323): No experiment pending.
+15:09:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:09:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #323): No refactor pending.
+15:09:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: feature_request_watcher → feature_request_watcher
+15:09:33 │ INFO    │ supervisor.scheduler │ 🔬 FEATURE_EPIC.md detected — signaling feature build.
+15:09:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'feature_request_watcher' completed (run #238): FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV ex
+15:09:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:09:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #643): No active polish session.
+15:09:33 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:09:33 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:09:33 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:09:33 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:09:33 │ INFO    │ supervisor         │ ⏰  feature_request_watcher: FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV export feature for dashboard data. Based on recent feedback, 100 unique users have requested the ability to download 
+15:09:33 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:09:33 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 2m ago)
+15:09:35 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 2m ago)
+15:09:35 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:09:53 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:09:53 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:09:53 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:09:53 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=328s
+15:10:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:10:03 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 3m ago)
+15:10:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #644): HUD updated
+15:10:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:10:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #644): No active polish session.
+15:10:03 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:10:03 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:10:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:10:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #324): No hotfix pending.
+15:10:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:10:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #324): No experiment pending.
+15:10:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:10:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #324): No refactor pending.
+15:10:03 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:10:03 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:10:03 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:10:03 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 3m ago)
+15:10:05 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 3m ago)
+15:10:05 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:10:23 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:10:23 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:10:23 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:10:23 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=358s
+15:10:23 │ WARNING │ supervisor.proactive_engine │ 🌐  Failed to launch open_browser.ps1: [WinError 2] The system cannot find the file specified
+15:10:23 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 3m ago)
+15:10:25 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 3m ago)
+15:10:25 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:10:43 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:10:43 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:10:43 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:10:43 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=378s
+15:10:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:10:53 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 3m ago)
+15:10:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #645): HUD updated
+15:10:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: workspace_index → workspace_index
+15:10:53 │ INFO    │ supervisor.workspace_indexer │ 👁️  Omniscient Eye starting AST scan of workspace: c:\Users\mokde\Desktop\Experiments\Gridfall Demolition
+15:10:53 │ INFO    │ supervisor.workspace_indexer │ 👁️  Omniscient Eye indexed 6 files.
+15:10:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'workspace_index' completed (run #70): Indexed 6 files in workspace map.
+15:10:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:10:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #325): No hotfix pending.
+15:10:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_poll → telemetry_poll
+15:10:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_poll' completed (run #70): Telemetry poll skipped: no DEPLOY_TOKEN.
+15:10:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:10:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #325): No experiment pending.
+15:10:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:10:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #325): No refactor pending.
+15:10:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: feature_request_watcher → feature_request_watcher
+15:10:53 │ INFO    │ supervisor.scheduler │ 🔬 FEATURE_EPIC.md detected — signaling feature build.
+15:10:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'feature_request_watcher' completed (run #239): FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV ex
+15:10:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:10:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #645): No active polish session.
+15:10:53 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:10:53 │ INFO    │ supervisor         │ ⏰  workspace_index: Indexed 6 files in workspace map.
+15:10:53 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:10:53 │ INFO    │ supervisor         │ ⏰  telemetry_poll: Telemetry poll skipped: no DEPLOY_TOKEN.
+15:10:53 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:10:53 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:10:53 │ INFO    │ supervisor         │ ⏰  feature_request_watcher: FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV export feature for dashboard data. Based on recent feedback, 100 unique users have requested the ability to download 
+15:10:53 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:10:53 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 3m ago)
+15:10:55 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 3m ago)
+15:10:55 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:11:13 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:11:13 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:11:13 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:11:13 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=408s
+15:11:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:11:23 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 4m ago)
+15:11:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #646): HUD updated
+15:11:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:11:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #326): No hotfix pending.
+15:11:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:11:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #326): No experiment pending.
+15:11:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:11:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #326): No refactor pending.
+15:11:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:11:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #646): No active polish session.
+15:11:23 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:11:23 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:11:23 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:11:23 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:11:23 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:11:23 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 4m ago)
+15:11:25 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 4m ago)
+15:11:25 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:11:43 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:11:43 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:11:43 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:11:43 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=438s
+15:11:43 │ WARNING │ supervisor.proactive_engine │ 🌐  Failed to launch open_browser.ps1: [WinError 2] The system cannot find the file specified
+15:11:43 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 4m ago)
+15:11:45 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 4m ago)
+15:11:45 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:12:03 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:12:03 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:12:03 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:12:03 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=458s
+15:12:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:12:13 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 5m ago)
+15:12:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #647): HUD updated
+15:12:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:12:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #327): No hotfix pending.
+15:12:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:12:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #327): No experiment pending.
+15:12:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:12:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #327): No refactor pending.
+15:12:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: feature_request_watcher → feature_request_watcher
+15:12:13 │ INFO    │ supervisor.scheduler │ 🔬 FEATURE_EPIC.md detected — signaling feature build.
+15:12:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'feature_request_watcher' completed (run #240): FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV ex
+15:12:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:12:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #647): No active polish session.
+15:12:13 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:12:13 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:12:13 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:12:13 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:12:13 │ INFO    │ supervisor         │ ⏰  feature_request_watcher: FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV export feature for dashboard data. Based on recent feedback, 100 unique users have requested the ability to download 
+15:12:13 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:12:13 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 5m ago)
+15:12:15 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 5m ago)
+15:12:15 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:12:33 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:12:33 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:12:33 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:12:33 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=488s
+15:12:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:12:43 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 5m ago)
+15:12:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #648): HUD updated
+15:12:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:12:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #328): No hotfix pending.
+15:12:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:12:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #328): No experiment pending.
+15:12:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:12:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #328): No refactor pending.
+15:12:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:12:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #648): No active polish session.
+15:12:43 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:12:43 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:12:43 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:12:43 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:12:43 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:12:43 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 5m ago)
+15:12:45 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 5m ago)
+15:12:45 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:13:03 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:13:03 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:13:03 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:13:03 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=518s
+15:13:03 │ WARNING │ supervisor.proactive_engine │ 🌐  Failed to launch open_browser.ps1: [WinError 2] The system cannot find the file specified
+15:13:03 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 6m ago)
+15:13:05 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 6m ago)
+15:13:05 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:13:23 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:13:23 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:13:23 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:13:23 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=538s
+15:13:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:13:33 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 6m ago)
+15:13:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #649): HUD updated
+15:13:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:13:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #329): No hotfix pending.
+15:13:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:13:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #329): No experiment pending.
+15:13:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:13:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #329): No refactor pending.
+15:13:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: feature_request_watcher → feature_request_watcher
+15:13:33 │ INFO    │ supervisor.scheduler │ 🔬 FEATURE_EPIC.md detected — signaling feature build.
+15:13:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'feature_request_watcher' completed (run #241): FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV ex
+15:13:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:13:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #649): No active polish session.
+15:13:33 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:13:33 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:13:33 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:13:33 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:13:33 │ INFO    │ supervisor         │ ⏰  feature_request_watcher: FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV export feature for dashboard data. Based on recent feedback, 100 unique users have requested the ability to download 
+15:13:33 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:13:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:13:43 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 6m ago)
+15:13:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #650): HUD updated
+15:13:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:13:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #650): No active polish session.
+15:13:43 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:13:43 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:13:43 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 6m ago)
+15:13:45 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 6m ago)
+15:13:45 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:14:03 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:14:03 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:14:03 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:14:03 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=578s
+15:14:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:14:13 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 7m ago)
+15:14:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #651): HUD updated
+15:14:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:14:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #330): No hotfix pending.
+15:14:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:14:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #330): No experiment pending.
+15:14:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:14:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #330): No refactor pending.
+15:14:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:14:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #651): No active polish session.
+15:14:13 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:14:13 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:14:13 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:14:13 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:14:13 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:14:13 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 7m ago)
+15:14:15 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 7m ago)
+15:14:15 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:14:33 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:14:33 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:14:33 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:14:33 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=608s
+15:14:33 │ WARNING │ supervisor.proactive_engine │ 🌐  Failed to launch open_browser.ps1: [WinError 2] The system cannot find the file specified
+15:14:33 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 7m ago)
+15:14:35 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 7m ago)
+15:14:35 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:14:53 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:14:53 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:14:53 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:14:53 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=628s
+15:15:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:15:03 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 8m ago)
+15:15:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #652): HUD updated
+15:15:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:15:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #331): No hotfix pending.
+15:15:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:15:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #331): No experiment pending.
+15:15:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:15:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #331): No refactor pending.
+15:15:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: feature_request_watcher → feature_request_watcher
+15:15:03 │ INFO    │ supervisor.scheduler │ 🔬 FEATURE_EPIC.md detected — signaling feature build.
+15:15:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'feature_request_watcher' completed (run #242): FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV ex
+15:15:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:15:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #652): No active polish session.
+15:15:03 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:15:03 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:15:03 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:15:03 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:15:03 │ INFO    │ supervisor         │ ⏰  feature_request_watcher: FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV export feature for dashboard data. Based on recent feedback, 100 unique users have requested the ability to download 
+15:15:03 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:15:03 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 8m ago)
+15:15:05 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 8m ago)
+15:15:05 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:15:23 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:15:23 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:15:23 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:15:23 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=658s
+15:15:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:15:33 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 8m ago)
+15:15:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #653): HUD updated
+15:15:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:15:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #332): No hotfix pending.
+15:15:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:15:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #332): No experiment pending.
+15:15:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:15:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #332): No refactor pending.
+15:15:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:15:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #653): No active polish session.
+15:15:33 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:15:33 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:15:33 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:15:33 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:15:33 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:15:33 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 8m ago)
+15:15:35 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 8m ago)
+15:15:35 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:15:53 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:15:53 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:15:53 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:15:53 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=688s
+15:15:53 │ WARNING │ supervisor.proactive_engine │ 🌐  Failed to launch open_browser.ps1: [WinError 2] The system cannot find the file specified
+15:15:53 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 8m ago)
+15:15:55 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 8m ago)
+15:15:55 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:16:13 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:16:13 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:16:13 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:16:13 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=708s
+15:16:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:16:23 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 9m ago)
+15:16:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #654): HUD updated
+15:16:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: workspace_index → workspace_index
+15:16:23 │ INFO    │ supervisor.workspace_indexer │ 👁️  Omniscient Eye starting AST scan of workspace: c:\Users\mokde\Desktop\Experiments\Gridfall Demolition
+15:16:23 │ INFO    │ supervisor.workspace_indexer │ 👁️  Omniscient Eye indexed 6 files.
+15:16:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'workspace_index' completed (run #71): Indexed 6 files in workspace map.
+15:16:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: failover_check → failover_check
+15:16:23 │ INFO    │ supervisor.scheduler │ 🔄  Failover status: active=gemini-3.1-pro-preview | gemini-3.1-pro-preview(✅), auto(✅), gemini-3-pro-preview(✅), gemini-2.5-pro(✅), gemini-2.5-flash(✅), gemini-2.0-flash(✅)
+15:16:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'failover_check' completed (run #43): Active: gemini-3.1-pro-preview
+15:16:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:16:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #333): No hotfix pending.
+15:16:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_poll → telemetry_poll
+15:16:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_poll' completed (run #71): Telemetry poll skipped: no DEPLOY_TOKEN.
+15:16:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:16:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #333): No experiment pending.
+15:16:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:16:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #333): No refactor pending.
+15:16:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: feature_request_watcher → feature_request_watcher
+15:16:23 │ INFO    │ supervisor.scheduler │ 🔬 FEATURE_EPIC.md detected — signaling feature build.
+15:16:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'feature_request_watcher' completed (run #243): FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV ex
+15:16:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:16:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #654): No active polish session.
+15:16:23 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:16:23 │ INFO    │ supervisor         │ ⏰  workspace_index: Indexed 6 files in workspace map.
+15:16:23 │ INFO    │ supervisor         │ ⏰  failover_check: Active: gemini-3.1-pro-preview
+15:16:23 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:16:23 │ INFO    │ supervisor         │ ⏰  telemetry_poll: Telemetry poll skipped: no DEPLOY_TOKEN.
+15:16:23 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:16:23 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:16:23 │ INFO    │ supervisor         │ ⏰  feature_request_watcher: FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV export feature for dashboard data. Based on recent feedback, 100 unique users have requested the ability to download 
+15:16:23 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:16:23 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 9m ago)
+15:16:25 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 9m ago)
+15:16:25 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:16:43 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:16:43 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:16:43 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:16:43 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=738s
+15:16:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:16:53 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 9m ago)
+15:16:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #655): HUD updated
+15:16:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:16:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #334): No hotfix pending.
+15:16:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:16:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #334): No experiment pending.
+15:16:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:16:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #334): No refactor pending.
+15:16:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:16:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #655): No active polish session.
+15:16:53 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:16:53 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:16:53 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:16:53 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:16:53 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:16:53 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 9m ago)
+15:16:55 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 9m ago)
+15:16:55 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:17:13 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:17:13 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:17:13 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:17:13 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=768s
+15:17:13 │ WARNING │ supervisor.proactive_engine │ 🌐  Failed to launch open_browser.ps1: [WinError 2] The system cannot find the file specified
+15:17:13 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 10m ago)
+15:17:15 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 10m ago)
+15:17:15 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:17:33 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:17:33 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:17:33 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:17:33 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=788s
+15:17:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:17:43 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 10m ago)
+15:17:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #656): HUD updated
+15:17:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:17:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #335): No hotfix pending.
+15:17:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:17:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #335): No experiment pending.
+15:17:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:17:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #335): No refactor pending.
+15:17:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: feature_request_watcher → feature_request_watcher
+15:17:43 │ INFO    │ supervisor.scheduler │ 🔬 FEATURE_EPIC.md detected — signaling feature build.
+15:17:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'feature_request_watcher' completed (run #244): FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV ex
+15:17:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:17:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #656): No active polish session.
+15:17:43 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:17:43 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:17:43 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:17:43 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:17:43 │ INFO    │ supervisor         │ ⏰  feature_request_watcher: FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV export feature for dashboard data. Based on recent feedback, 100 unique users have requested the ability to download 
+15:17:43 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:17:43 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 10m ago)
+15:17:45 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 10m ago)
+15:17:45 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:18:03 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:18:03 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:18:03 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:18:03 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=818s
+15:18:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:18:13 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 11m ago)
+15:18:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #657): HUD updated
+15:18:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:18:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #336): No hotfix pending.
+15:18:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:18:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #336): No experiment pending.
+15:18:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:18:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #336): No refactor pending.
+15:18:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:18:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #657): No active polish session.
+15:18:13 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:18:13 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:18:13 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:18:13 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:18:13 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:18:13 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 11m ago)
+15:18:15 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 11m ago)
+15:18:15 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:18:33 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:18:33 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:18:33 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:18:33 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=848s
+15:18:33 │ WARNING │ supervisor.proactive_engine │ 🌐  Failed to launch open_browser.ps1: [WinError 2] The system cannot find the file specified
+15:18:33 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 11m ago)
+15:18:35 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 11m ago)
+15:18:35 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:18:53 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:18:53 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:18:53 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:18:53 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=868s
+15:19:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:19:03 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 12m ago)
+15:19:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #658): HUD updated
+15:19:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:19:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #337): No hotfix pending.
+15:19:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:19:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #337): No experiment pending.
+15:19:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:19:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #337): No refactor pending.
+15:19:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: feature_request_watcher → feature_request_watcher
+15:19:03 │ INFO    │ supervisor.scheduler │ 🔬 FEATURE_EPIC.md detected — signaling feature build.
+15:19:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'feature_request_watcher' completed (run #245): FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV ex
+15:19:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:19:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #658): No active polish session.
+15:19:03 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:19:03 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:19:03 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:19:03 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:19:03 │ INFO    │ supervisor         │ ⏰  feature_request_watcher: FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV export feature for dashboard data. Based on recent feedback, 100 unique users have requested the ability to download 
+15:19:03 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:19:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:19:13 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 12m ago)
+15:19:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #659): HUD updated
+15:19:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: self_improvement → self_improvement
+15:19:13 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 12m ago)
+15:19:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'self_improvement' completed (run #12): Self-improvement analysis scheduled
+15:19:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: metacognitive_review → metacognitive_review
+15:19:13 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 12m ago)
+15:19:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'metacognitive_review' completed (run #12): Skipped: Metacognitive review deferred. Supervisor is currently WORKING.
+15:19:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_evaluator → experiment_evaluator
+15:19:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_evaluator' completed (run #12): No experiments ready for evaluation.
+15:19:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: finops_monitor → finops_monitor
+15:19:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'finops_monitor' completed (run #12): No APM report available.
+15:19:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: feature_pipeline → feature_pipeline
+15:19:13 │ INFO    │ supervisor.user_research_engine │ No PRODUCT_VISION.md found — vision gate disabled.
+15:19:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'feature_pipeline' completed (run #12): Feature pipeline dispatched (async)
+15:19:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:19:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #659): No active polish session.
+15:19:13 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:19:13 │ INFO    │ supervisor         │ ⏰  self_improvement: Self-improvement analysis scheduled
+15:19:13 │ INFO    │ supervisor         │ ⏰  metacognitive_review: Skipped: Metacognitive review deferred. Supervisor is currently WORKING.
+15:19:13 │ INFO    │ supervisor         │ ⏰  experiment_evaluator: No experiments ready for evaluation.
+15:19:13 │ INFO    │ supervisor         │ ⏰  finops_monitor: No APM report available.
+15:19:13 │ INFO    │ supervisor         │ ⏰  feature_pipeline: Feature pipeline dispatched (async)
+15:19:13 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:19:44 │ INFO    │ supervisor.gemini_advisor │ 🔧  Self-improvement suggestions: - [EFFICIENCY] Implement caching for frequently accessed data or expensive computations across various engines (e.g., `context_engine`, `temporal_planner`) to reduce latency and processing overhead.
+- [RELIABILITY] Integrate circuit breaker patterns for external service calls or critical internal mo
+15:19:44 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:19:44 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 12m ago)
+15:19:44 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #660): HUD updated
+15:19:44 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:19:44 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #338): No hotfix pending.
+15:19:44 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:19:44 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #338): No experiment pending.
+15:19:44 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:19:44 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #338): No refactor pending.
+15:19:44 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:19:44 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #660): No active polish session.
+15:19:44 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:19:44 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:19:44 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:19:44 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:19:44 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:19:44 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 12m ago)
+15:19:46 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 12m ago)
+15:19:46 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:20:03 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:20:03 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:20:03 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:20:03 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=939s
+15:20:03 │ WARNING │ supervisor.proactive_engine │ 🌐  Failed to launch open_browser.ps1: [WinError 2] The system cannot find the file specified
+15:20:03 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 13m ago)
+15:20:06 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 13m ago)
+15:20:06 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:20:23 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:20:23 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:20:23 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:20:23 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=958s
+15:20:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:20:33 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 13m ago)
+15:20:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #661): HUD updated
+15:20:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:20:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #339): No hotfix pending.
+15:20:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:20:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #339): No experiment pending.
+15:20:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:20:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #339): No refactor pending.
+15:20:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: feature_request_watcher → feature_request_watcher
+15:20:33 │ INFO    │ supervisor.scheduler │ 🔬 FEATURE_EPIC.md detected — signaling feature build.
+15:20:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'feature_request_watcher' completed (run #246): FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV ex
+15:20:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:20:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #661): No active polish session.
+15:20:33 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:20:33 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:20:33 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:20:33 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:20:33 │ INFO    │ supervisor         │ ⏰  feature_request_watcher: FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV export feature for dashboard data. Based on recent feedback, 100 unique users have requested the ability to download 
+15:20:33 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:20:34 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 13m ago)
+15:20:36 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 13m ago)
+15:20:36 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:20:53 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:20:53 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:20:53 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:20:53 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=988s
+15:21:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:21:03 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 14m ago)
+15:21:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #662): HUD updated
+15:21:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: budget_report → budget_report
+15:21:03 │ INFO    │ supervisor.scheduler │ 📊  Scheduled budget report:
+📊 Context Budget Report (17m session)
+   Calls: 0
+   Sent: 0 chars (~0 tokens)
+   Received: 0 chars (~0 tokens)
+   Avg prompt: 0 chars | Avg response: 0 chars
+   Budget: 0.0% of 2,000,000 char limit
+15:21:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'budget_report' completed (run #32): Budget: 0.0% used
+15:21:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:21:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #662): No active polish session.
+15:21:03 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:21:03 │ INFO    │ supervisor         │ ⏰  budget_report: Budget: 0.0% used
+15:21:03 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:21:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:21:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #340): No hotfix pending.
+15:21:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:21:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #340): No experiment pending.
+15:21:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:21:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #340): No refactor pending.
+15:21:03 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:21:03 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:21:03 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:21:03 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 14m ago)
+15:21:06 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 14m ago)
+15:21:06 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:21:23 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:21:23 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:21:23 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:21:23 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=1018s
+15:21:23 │ WARNING │ supervisor.proactive_engine │ 🌐  Failed to launch open_browser.ps1: [WinError 2] The system cannot find the file specified
+15:21:23 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 14m ago)
+15:21:25 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 14m ago)
+15:21:25 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:21:43 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:21:43 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:21:43 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:21:43 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=1038s
+15:21:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:21:53 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 14m ago)
+15:21:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #663): HUD updated
+15:21:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: workspace_index → workspace_index
+15:21:53 │ INFO    │ supervisor.workspace_indexer │ 👁️  Omniscient Eye starting AST scan of workspace: c:\Users\mokde\Desktop\Experiments\Gridfall Demolition
+15:21:53 │ INFO    │ supervisor.workspace_indexer │ 👁️  Omniscient Eye indexed 6 files.
+15:21:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'workspace_index' completed (run #72): Indexed 6 files in workspace map.
+15:21:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:21:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #341): No hotfix pending.
+15:21:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_poll → telemetry_poll
+15:21:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_poll' completed (run #72): Telemetry poll skipped: no DEPLOY_TOKEN.
+15:21:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:21:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #341): No experiment pending.
+15:21:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:21:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #341): No refactor pending.
+15:21:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: feature_request_watcher → feature_request_watcher
+15:21:53 │ INFO    │ supervisor.scheduler │ 🔬 FEATURE_EPIC.md detected — signaling feature build.
+15:21:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'feature_request_watcher' completed (run #247): FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV ex
+15:21:53 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:21:53 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #663): No active polish session.
+15:21:53 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:21:53 │ INFO    │ supervisor         │ ⏰  workspace_index: Indexed 6 files in workspace map.
+15:21:53 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:21:53 │ INFO    │ supervisor         │ ⏰  telemetry_poll: Telemetry poll skipped: no DEPLOY_TOKEN.
+15:21:53 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:21:53 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:21:53 │ INFO    │ supervisor         │ ⏰  feature_request_watcher: FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV export feature for dashboard data. Based on recent feedback, 100 unique users have requested the ability to download 
+15:21:53 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:21:53 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 14m ago)
+15:21:55 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 14m ago)
+15:21:55 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:22:13 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:22:13 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:22:13 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:22:13 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=1068s
+15:22:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:22:23 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 15m ago)
+15:22:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #664): HUD updated
+15:22:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:22:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #342): No hotfix pending.
+15:22:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:22:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #342): No experiment pending.
+15:22:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:22:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #342): No refactor pending.
+15:22:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:22:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #664): No active polish session.
+15:22:23 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:22:23 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:22:23 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:22:23 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:22:23 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:22:23 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 15m ago)
+15:22:25 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 15m ago)
+15:22:25 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:22:43 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:22:43 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:22:43 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:22:43 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=1098s
+15:22:43 │ WARNING │ supervisor.proactive_engine │ 🌐  Failed to launch open_browser.ps1: [WinError 2] The system cannot find the file specified
+15:22:43 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 15m ago)
+15:22:45 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 15m ago)
+15:22:45 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:23:03 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:23:03 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:23:03 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:23:03 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=1118s
+15:23:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:23:13 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 16m ago)
+15:23:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #665): HUD updated
+15:23:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:23:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #343): No hotfix pending.
+15:23:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:23:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #343): No experiment pending.
+15:23:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:23:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #343): No refactor pending.
+15:23:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: feature_request_watcher → feature_request_watcher
+15:23:13 │ INFO    │ supervisor.scheduler │ 🔬 FEATURE_EPIC.md detected — signaling feature build.
+15:23:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'feature_request_watcher' completed (run #248): FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV ex
+15:23:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:23:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #665): No active polish session.
+15:23:13 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:23:13 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:23:13 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:23:13 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:23:13 │ INFO    │ supervisor         │ ⏰  feature_request_watcher: FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV export feature for dashboard data. Based on recent feedback, 100 unique users have requested the ability to download 
+15:23:13 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:23:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:23:23 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 16m ago)
+15:23:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #666): HUD updated
+15:23:23 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:23:23 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #666): No active polish session.
+15:23:23 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:23:23 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:23:23 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 16m ago)
+15:23:25 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 16m ago)
+15:23:25 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:23:43 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:23:43 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:23:43 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:23:43 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=1158s
+15:23:43 │ WARNING │ supervisor.proactive_engine │ 🌐  Failed to launch open_browser.ps1: [WinError 2] The system cannot find the file specified
+15:23:43 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 16m ago)
+15:23:45 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 16m ago)
+15:23:45 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:24:03 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:24:03 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:24:03 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:24:03 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=1178s
+15:24:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:24:13 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 17m ago)
+15:24:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #667): HUD updated
+15:24:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:24:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #344): No hotfix pending.
+15:24:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:24:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #344): No experiment pending.
+15:24:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:24:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #344): No refactor pending.
+15:24:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:24:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #667): No active polish session.
+15:24:13 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:24:13 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:24:13 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:24:13 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:24:13 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:24:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: feature_request_watcher → feature_request_watcher
+15:24:13 │ INFO    │ supervisor.scheduler │ 🔬 FEATURE_EPIC.md detected — signaling feature build.
+15:24:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'feature_request_watcher' completed (run #249): FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV ex
+15:24:13 │ INFO    │ supervisor         │ ⏰  feature_request_watcher: FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV export feature for dashboard data. Based on recent feedback, 100 unique users have requested the ability to download 
+15:24:13 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 17m ago)
+15:24:15 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 17m ago)
+15:24:15 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:24:33 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:24:33 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:24:33 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:24:33 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=1208s
+15:24:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:24:43 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 17m ago)
+15:24:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #668): HUD updated
+15:24:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:24:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #345): No hotfix pending.
+15:24:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:24:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #345): No experiment pending.
+15:24:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:24:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #345): No refactor pending.
+15:24:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:24:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #668): No active polish session.
+15:24:43 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:24:43 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:24:43 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:24:43 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:24:43 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:24:43 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 17m ago)
+15:24:45 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 17m ago)
+15:24:45 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:25:03 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:25:03 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:25:03 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:25:03 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=1238s
+15:25:03 │ WARNING │ supervisor.proactive_engine │ 🌐  Failed to launch open_browser.ps1: [WinError 2] The system cannot find the file specified
+15:25:03 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 18m ago)
+15:25:05 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 18m ago)
+15:25:05 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:25:23 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:25:23 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:25:23 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:25:23 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=1258s
+15:25:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:25:33 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 18m ago)
+15:25:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #669): HUD updated
+15:25:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:25:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #346): No hotfix pending.
+15:25:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:25:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #346): No experiment pending.
+15:25:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:25:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #346): No refactor pending.
+15:25:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: feature_request_watcher → feature_request_watcher
+15:25:33 │ INFO    │ supervisor.scheduler │ 🔬 FEATURE_EPIC.md detected — signaling feature build.
+15:25:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'feature_request_watcher' completed (run #250): FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV ex
+15:25:33 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:25:33 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #669): No active polish session.
+15:25:33 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:25:33 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:25:33 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:25:33 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:25:33 │ INFO    │ supervisor         │ ⏰  feature_request_watcher: FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV export feature for dashboard data. Based on recent feedback, 100 unique users have requested the ability to download 
+15:25:33 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:25:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:25:43 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 18m ago)
+15:25:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #670): HUD updated
+15:25:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: rate_limit_report → rate_limit_report
+15:25:43 │ INFO    │ supervisor.scheduler │ ⚡  ⚡ Rate limits: 12 total, 0 last hour | 🎯 Routing: Pro=414, Flash=0, Auto=153 (0% Flash)
+15:25:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'rate_limit_report' completed (run #29): ⚡ Rate limits: 12 total, 0 last hour | 🎯 Routing: Pro=414, Flash=0, Auto=153 (0% Flash)
+15:25:43 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:25:43 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #670): No active polish session.
+15:25:43 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:25:43 │ INFO    │ supervisor         │ ⏰  rate_limit_report: ⚡ Rate limits: 12 total, 0 last hour | 🎯 Routing: Pro=414, Flash=0, Auto=153 (0% Flash)
+15:25:43 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:25:43 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 18m ago)
+15:25:45 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 18m ago)
+15:25:45 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:26:03 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:26:03 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:26:03 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:26:03 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=1298s
+15:26:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:26:13 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 19m ago)
+15:26:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #671): HUD updated
+15:26:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:26:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #347): No hotfix pending.
+15:26:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:26:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #347): No experiment pending.
+15:26:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:26:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #347): No refactor pending.
+15:26:13 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:26:13 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #671): No active polish session.
+15:26:13 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:26:13 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:26:13 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:26:13 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:26:13 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:26:13 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 19m ago)
+15:26:15 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 19m ago)
+15:26:15 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:26:33 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:26:33 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:26:33 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:26:33 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=1328s
+15:26:33 │ WARNING │ supervisor.proactive_engine │ 🌐  Failed to launch open_browser.ps1: [WinError 2] The system cannot find the file specified
+15:26:33 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 19m ago)
+15:26:35 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 19m ago)
+15:26:35 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:26:53 │ WARNING │ supervisor.frame_walker │ ⚠️  Could not find chat input in any frame.
+15:26:53 │ WARNING │ supervisor.context_engine │ 🎯  Chat frame not resolved — falling back to all-frame scan.
+15:26:53 │ INFO    │ supervisor.context_engine │ 🎯  Chat scrape result: 0 messages (0 agent, 0 user/other)
+15:26:53 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=UNKNOWN, confidence=5%, msgs=0, terminal=0, server=UP, browser=CLOSED, approval=NO, budget=0%, idle=1348s
+15:27:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_hud_update → telemetry_hud_update
+15:27:03 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 20m ago)
+15:27:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_hud_update' completed (run #672): HUD updated
+15:27:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: workspace_index → workspace_index
+15:27:03 │ INFO    │ supervisor.workspace_indexer │ 👁️  Omniscient Eye starting AST scan of workspace: c:\Users\mokde\Desktop\Experiments\Gridfall Demolition
+15:27:03 │ INFO    │ supervisor.workspace_indexer │ 👁️  Omniscient Eye indexed 6 files.
+15:27:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'workspace_index' completed (run #73): Indexed 6 files in workspace map.
+15:27:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: failover_check → failover_check
+15:27:03 │ INFO    │ supervisor.scheduler │ 🔄  Failover status: active=gemini-3.1-pro-preview | gemini-3.1-pro-preview(✅), auto(✅), gemini-3-pro-preview(✅), gemini-2.5-pro(✅), gemini-2.5-flash(✅), gemini-2.0-flash(✅)
+15:27:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'failover_check' completed (run #44): Active: gemini-3.1-pro-preview
+15:27:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: hotfix_watcher → hotfix_watcher
+15:27:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'hotfix_watcher' completed (run #348): No hotfix pending.
+15:27:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: telemetry_poll → telemetry_poll
+15:27:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'telemetry_poll' completed (run #73): Telemetry poll skipped: no DEPLOY_TOKEN.
+15:27:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: experiment_watcher → experiment_watcher
+15:27:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'experiment_watcher' completed (run #348): No experiment pending.
+15:27:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: refactor_watcher → refactor_watcher
+15:27:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'refactor_watcher' completed (run #348): No refactor pending.
+15:27:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: feature_request_watcher → feature_request_watcher
+15:27:03 │ INFO    │ supervisor.scheduler │ 🔬 FEATURE_EPIC.md detected — signaling feature build.
+15:27:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'feature_request_watcher' completed (run #251): FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV ex
+15:27:03 │ INFO    │ supervisor.scheduler │ ⏰  Running job: user_injection_monitor → user_injection_monitor
+15:27:03 │ INFO    │ supervisor.scheduler │ ⏰  Job 'user_injection_monitor' completed (run #672): No active polish session.
+15:27:03 │ INFO    │ supervisor         │ ⏰  telemetry_hud_update: HUD updated
+15:27:03 │ INFO    │ supervisor         │ ⏰  workspace_index: Indexed 6 files in workspace map.
+15:27:03 │ INFO    │ supervisor         │ ⏰  failover_check: Active: gemini-3.1-pro-preview
+15:27:03 │ INFO    │ supervisor         │ ⏰  hotfix_watcher: No hotfix pending.
+15:27:03 │ INFO    │ supervisor         │ ⏰  telemetry_poll: Telemetry poll skipped: no DEPLOY_TOKEN.
+15:27:03 │ INFO    │ supervisor         │ ⏰  experiment_watcher: No experiment pending.
+15:27:03 │ INFO    │ supervisor         │ ⏰  refactor_watcher: No refactor pending.
+15:27:03 │ INFO    │ supervisor         │ ⏰  feature_request_watcher: FEATURE_READY: # Feature Epic: CSV Export
+
+## Summary
+The goal of this epic is to implement a CSV export feature for dashboard data. Based on recent feedback, 100 unique users have requested the ability to download 
+15:27:03 │ INFO    │ supervisor         │ ⏰  user_injection_monitor: No active polish session.
+15:27:03 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 20m ago)
+15:27:05 │ INFO    │ supervisor.session_memory │ 🧠  Resuming session with 0 events in memory (started 20m ago)
+15:27:05 │ INFO    │ supervisor.context_engine │ 🌐  Dev server found on port 3000
+15:27:18 │ INFO    │ supervisor         │ Supervisor shut down.

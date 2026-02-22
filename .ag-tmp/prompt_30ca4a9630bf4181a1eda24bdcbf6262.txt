@@ -1,0 +1,39 @@
+Reply with ONLY a JSON object in this exact format, nothing else:
+{"state": "WORKING", "reason": "what you see"}
+
+Values for "state": WORKING, WAITING, or CRASHED.
+
+Analyze the attached screenshot of the Antigravity IDE (a VS Code fork with an AI Agent sidebar on the right).
+
+DETERMINE: Is the AI Agent chat panel WORKING, WAITING, or CRASHED?
+
+WORKING = There are recent messages/code blocks visible AND a spinner/Stop button is showing OR text is actively streaming.
+WAITING = Chat area is empty OR shows only placeholder text 'Ask anything' OR has a question/approval button but no active generation.
+CRASHED = Error dialogs, blank screen, 'Extension Host terminated'.
+
+⚠️ IGNORE the model selector label for example 'Claude Opus 4.6 (Thinking)' — that is the MODEL NAME, not a status indicator.
+
+⚠️ WAITING has been detected 1× already. Be EXTRA skeptical of WORKING claims.
+
+Current goal: [Workspace: c:\Users\mokde\Desktop\Experiments\Gridfall Demolition] The game is titled Gridfall Demolition and it operates as a high speed vertical pl
+
+Recent logs:
+```
+11:29:22 │ INFO    │ supervisor         │ 👁️  Vision analysis: state=WORKING, reason=The AI Agent sidebar shows 'Thinking' status with recent activity logs and a stop button visible.
+11:29:34 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=WORKING, confidence=25%, msgs=0, terminal=0, server=DOWN, browser=CLOSED, approval=NO, budget=0%, idle=221s
+11:29:36 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=WORKING, confidence=25%, msgs=0, terminal=0, server=DOWN, browser=CLOSED, approval=NO, budget=0%, idle=223s
+11:29:36 │ INFO    │ supervisor.context_engine │ 📸  Screenshot needed: no messages found
+11:29:36 │ INFO    │ supervisor         │ 📸  Screenshot saved: C:\Users\mokde\Desktop\Experiments\Antigravity Auto\supervisor\ide_state.png
+11:30:15 │ INFO    │ supervisor.gemini_advisor │ 🧠  Gemini file response (193 chars): {"state": "WAITING", "reason": "The AI Agent has finished its response and the input field shows the placeholder 'Ask an…
+11:30:15 │ INFO    │ supervisor         │ 👁️  Vision analysis: state=WAITING, reason=The AI Agent has finished its response and the input field shows the placeholder 'Ask anything...', with no active processing, spinner, or Stop button visible.
+11:30:15 │ INFO    │ supervisor         │ 👁️  Vision detected WAITING (1 consecutive): The AI Agent has finished its response and the input field shows the placeholder 'Ask anything...', with no active processing, spinner, or Stop button visible.
+11:30:15 │ INFO    │ supervisor         │ ⚡  Fast-path: AI is waiting. Re-prompting immediately via Command Palette...
+11:30:15 │ INFO    │ supervisor.frame_walker │ 👻  Attempting Ghost Hotkey injection via Command Palette …
+11:30:19 │ INFO    │ supervisor.frame_walker │ 👻  Copied 107 chars to OS clipboard via pyperclip.
+11:30:20 │ INFO    │ supervisor.frame_walker │ 👻  Ghost Hotkey injection completed (pending verification).
+11:30:32 │ INFO    │ supervisor.context_engine │ 📊  Context gathered: status=WORKING, confidence=25%, msgs=0, terminal=0, server=DOWN, browser=CLOSED, approval=NO, budget=0%, idle=279s
+11:30:32 │ INFO    │ supervisor.context_engine │ 📸  Screenshot needed: no messages found
+11:30:33 │ INFO    │ supervisor         │ 📸  Screenshot saved: C:\Users\mokde\Desktop\Experiments\Antigravity Auto\supervisor\ide_state.png
+```
+
+Reply with ONLY the JSON object. Example: {"state": "WAITING", "reason": "chat area is empty, input shows placeholder"}

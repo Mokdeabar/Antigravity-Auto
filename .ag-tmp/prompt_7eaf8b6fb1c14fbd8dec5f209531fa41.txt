@@ -1,0 +1,314 @@
+You are the DEBUGGER — an elite reverse engineer who has debugged thousands of production crashes. You specialize in Python async code, Playwright browser automation, and Electron internals. Your job is to:
+1. Deep-dive into specific errors, tracebacks, and anomalies
+2. Read the relevant source code and identify the exact bug
+3. Trace the causal chain from symptom to root cause
+4. Propose a precise, minimal fix that doesn't break anything else
+
+You never reach for broad solutions when a scalpel will do.
+
+CRITICAL KNOWLEDGE FROM PAST SESSIONS:
+Past Issue #1: [WAITING] Trigger: WAITING state detected: The previous response was empty, indicating no active ge → Diagnosis: Unable to analyze → Resolution: UNRESOLVED after 5 rounds (❌ failed)
+Past Issue #2: [WAITING] Trigger: WAITING state detected: The previous response is empty and shows no signs of act → Diagnosis: Unable to analyze → Resolution: UNRESOLVED after 5 rounds (❌ failed)
+Past Issue #3: [WAITING] Trigger: WAITING state detected: The previous response was empty and provided no informat → Diagnosis: Unable to analyze → Resolution: UNRESOLVED after 5 rounds (❌ failed)
+Do NOT repeat strategies that failed previously!
+
+---
+
+TASK:
+DIAGNOSIS FROM DIAGNOSTICIAN: Unable to analyze
+
+ISSUE: WAITING state detected: chat input shows 'Ask anything' placeholder and no active generation or spinner is visible
+ISSUE TYPE: WAITING
+
+RECENT LOGS:
+13:29:06 │ INFO    │ supervisor         │ 📸  Screenshot saved: C:\Users\mokde\Desktop\Experiments\Antigravity Auto\supervisor\ide_state.png
+13:29:47 │ INFO    │ supervisor.gemini_advisor │ 🧠  Gemini file response (124 chars): {"state": "WAITING", "reason": "chat input shows 'Ask anything' placeholder and no active generation or spinner is visib…
+13:29:47 │ INFO    │ supervisor         │ 👁️  Vision analysis: state=WAITING, reason=chat input shows 'Ask anything' placeholder and no active generation or spinner is visible
+13:29:47 │ INFO    │ supervisor         │ 👁️  Vision detected WAITING (4 consecutive): chat input shows 'Ask anything' placeholder and no active generation or spinner is visible
+13:29:47 │ INFO    │ supervisor         │ 🏛️  WAITING 4× — convening Agent Council
+13:29:47 │ INFO    │ supervisor.agent_council │ 🏛️  Council convened for WAITING: WAITING state detected: chat input shows 'Ask anything' plac (count: 4)
+13:29:47 │ INFO    │ supervisor.council_knowledge │ 📚  Found 3 similar past issues for 'WAITING'
+13:29:47 │ INFO    │ supervisor.agent_council │ 🏛️  Council round 1/5
+13:29:47 │ INFO    │ supervisor.session_memory │ 🧠  Starting new session memory
+13:29:47 │ INFO    │ supervisor.agent_council │ 🧠  Routing diagnostician to LocalManager...
+13:29:48 │ INFO    │ supervisor.local_orchestrator │ 🧠 Ollama engine is already running.
+13:29:50 │ INFO    │ supervisor.local_orchestrator │ 🧠 Routing to Local Ollama (llama3)...
+13:30:52 │ ERROR   │ supervisor.local_orchestrator │ Local Manager failed to respond: timed out
+13:30:52 │ WARNING │ supervisor.agent_council │ 🏛️  Diagnostician returned nothing — using fallback.
+13:30:52 │ INFO    │ supervisor.agent_council │ 🏛️  Launching Swarm Debate.
+13:30:52 │ INFO    │ supervisor.agent_council │ ☁️  Calling cloud agent: debugger (prompt: 14763 chars)
+13:30:52 │ INFO    │ supervisor.agent_council │ ☁️  Calling cloud agent: architect (prompt: 1910 chars)
+13:32:24 │ INFO    │ supervisor.gemini_advisor │ 🧠  Gemini response (2487 chars, attempt 1/3, model=auto): I will begin by examining the main execution loop and state management logic in `supervisor/main.py` to identify how the…
+13:32:24 │ INFO    │ supervisor.agent_council │ ☁️  Cloud agent architect responded: {'design': "The 'WAITING' state failure loop is caused by a blind spot in the Agent Council and a cautious recovery path
+13:33:35 │ INFO    │ supervisor.gemini_advisor │ 🧠  Gemini file response (1362 chars): {
+  "refined_diagnosis": "The 'WAITING' state is caused by a silent injection failure in `_command_palette_inject`. The …
+13:33:35 │ INFO    │ supervisor.agent_council │ ☁️  Cloud agent debugger responded: {'refined_diagnosis': "The 'WAITING' state is caused by a silent injection failure in `_command_palette_inject`. The log
+13:33:35 │ INFO    │ supervisor.agent_council │ ☁️  Calling cloud agent: synthesizer (prompt: 4708 chars)
+13:34:50 │ INFO    │ supervisor.gemini_advisor │ 🧠  Gemini response (2444 chars, attempt 1/3, model=auto): I will verify the reported bug at line 706 of `supervisor/main.py` and the import error in `supervisor/proactive_engine.…
+13:34:50 │ INFO    │ supervisor.agent_council │ ☁️  Cloud agent synthesizer responded: {'synthesized_diagnosis': "The 'WAITING' state failure loop is caused by a mechanical scoping error in the supervisor's 
+13:34:52 │ INFO    │ supervisor.agent_council │ 🏛️  Council round 2/5
+13:34:52 │ INFO    │ supervisor.session_memory │ 🧠  Starting new session memory
+13:34:52 │ INFO    │ supervisor.agent_council │ 🧠  Routing diagnostician to LocalManager...
+13:34:53 │ INFO    │ supervisor.local_orchestrator │ 🧠 Ollama engine is already running.
+13:34:55 │ INFO    │ supervisor.local_orchestrator │ 🧠 Routing to Local Ollama (llama3)...
+13:35:57 │ ERROR   │ supervisor.local_orchestrator │ Local Manager failed to respond: timed out
+13:35:57 │ WARNING │ supervisor.agent_council │ 🏛️  Diagnostician returned nothing — using fallback.
+13:35:57 │ INFO    │ supervisor.agent_council │ 🏛️  Launching Swarm Debate.
+13:35:57 │ INFO    │ supervisor.agent_council │ ☁️  Calling cloud agent: debugger (prompt: 15880 chars)
+13:35:57 │ INFO    │ supervisor.agent_council │ ☁️  Calling cloud agent: architect (prompt: 1910 chars)
+13:37:47 │ WARNING │ supervisor.retry_policy │ 🔄  Model auto failed (attempt #1). Cooldown: 60s
+13:37:47 │ WARNING │ supervisor.gemini_advisor │ 🧠  Gemini CLI attempt 1/3 failed: Gemini CLI exited with code 1: Loaded cached credentials.
+Error when talking to Gemini API Full report available at: C:\Users\mokde\AppData\Local\Temp\gemini-client-error-Turn.run-sendMessageStream-2026-02-21T10-37-47-615Z.json TerminalQuotaError: You have exhausted your capacity on this model. Your quota will reset after 11h18m58s.
+    at classifyGoogleError (file:///C:/Users/mokde/AppData/Roaming/npm/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/utils/googleQuotaErrors.js:214:28)
+    at retry — retrying in 2.0s (model: gemini-3.1-pro-preview) …
+13:38:03 │ WARNING │ supervisor.agent_council │ ☁️  Cloud agent debugger returned no parseable response.
+13:38:30 │ INFO    │ supervisor.gemini_advisor │ 🧠  Gemini response (1113 chars, attempt 2/3, model=gemini-3.1-pro-preview): ```json
+{
+  "design": "Implement a Deadlock Resolution mechanism within the proactive_engine.py and loop_detector.py. Th…
+13:38:30 │ INFO    │ supervisor.agent_council │ ☁️  Cloud agent architect responded: {'design': "Implement a Deadlock Resolution mechanism within the proactive_engine.py and loop_detector.py. The system cu
+13:38:30 │ INFO    │ supervisor.agent_council │ ☁️  Calling cloud agent: synthesizer (prompt: 2878 chars)
+13:39:04 │ INFO    │ supervisor.gemini_advisor │ 🧠  Gemini response (1102 chars, attempt 1/3, model=gemini-3.1-pro-preview): ```json
+{
+  "synthesized_diagnosis": "The system enters an unresolved WAITING/STALL state where the IDE chat resets to '…
+13:39:04 │ INFO    │ supervisor.agent_council │ ☁️  Cloud agent synthesizer responded: {'synthesized_diagnosis': "The system enters an unresolved WAITING/STALL state where the IDE chat resets to 'Ask anythin
+
+RELEVANT SOURCE CODE (main.py, first 8000 chars):
+"""
+main.py — The Orchestrator (V7.2 Background Mode).
+
+Entry point for the Supervisor AI. V7.2 adds fully non-interactive
+background operation — ZERO blocking input() calls, auto-restart
+after self-evolution, and automatic recovery from all failures.
+
+9 core systems + V7 patches + V7.2 Background Mode:
+
+  1. LOCKFILE MEMORY (Anti-Amnesia)
+  2. AUTO-RECONNECT ENGINE
+  3. APPROVAL SNIPER (V7 Laser-Scoped)
+  4. ERADICATE page.wait_for_timeout
+  5. NAVIGATION DEFENSE (Anti-Hijack)
+  6. 180-SECOND BRAIN (Global Timeouts)
+  7. MANDATE FIREWALL
+  8. BULLETPROOF WORKSPACE LOCKING
+  9. DYNAMIC PAGE RESOLUTION
+  10. V7.2 BACKGROUND MODE: No input() anywhere. Auto-recover,
+      auto-restart, auto-resume. Runs unattended while user works.
+"""
+
+import argparse
+import asyncio
+import json
+import logging
+import os
+import platform
+import subprocess
+import sys
+import time
+import traceback
+from datetime import datetime
+from pathlib import Path
+from typing import Optional
+
+# ── V7 Robustness: Ensure Windows System32 is in PATH ──
+if sys.platform == "win32":
+    _sys32 = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32")
+    if _sys32.lower() not in os.environ.get("PATH", "").lower():
+        os.environ["PATH"] = f"{_sys32}{os.pathsep}{os.environ.get('PATH', '')}"
+
+from . import config
+from .self_evolver import self_evolve
+from .gemini_advisor import (
+    ask_gemini,
+    ask_gemini_sync,
+    call_gemini_with_file,
+    call_gemini_with_file_json,
+)
+from .agent_council import AgentCouncil, Issue as CouncilIssue
+from . import command_resolver
+from . import bootstrap
+from .scheduler import CronScheduler
+
+logger = logging.getLogger("supervisor")
+
+# ─────────────────────────────────────────────────────────────
+# Constants
+# ─────────────────────────────────────────────────────────────
+_SUPERVISOR_DIR = Path(__file__).resolve().parent
+EXPERIMENTS_DIR = Path(r"c:\Users\mokde\Desktop\Experiments")
+
+# Session state file — persists goal + project_path across reboots.
+_SESSION_STATE_PATH = _SUPERVISOR_DIR / "_session_state.json"
+
+# Log file for Infinite Memory.
+_LOG_FILE = _SUPERVISOR_DIR / "supervisor.log"
+
+# Multiple fallback paths for the Antigravity executable.
+ANTIGRAVITY_EXE_CANDIDATES = [
+    Path(r"C:\Users\mokde\AppData\Local\Programs\Antigravity\Antigravity.exe"),
+    Path(r"C:\Program Files\Antigravity\Antigravity.exe"),
+    Path(r"C:\Program Files (x86)\Antigravity\Antigravity.exe"),
+]
+
+# How long to wait after launching Antigravity for it to visually render.
+IDE_STARTUP_WAIT_SECONDS = 12
+
+
+# ─────────────────────────────────────────────────────────────
+# Alert sound (human escalation)
+# ─────────────────────────────────────────────────────────────
+
+def _play_alert() -> None:
+    """Play an audible alert to summon a human."""
+    if platform.system() == "Windows":
+        try:
+            import winsound
+            for _ in range(config.ALERT_REPEAT):
+                winsound.Beep(1000, 400)
+                time.sleep(0.2)
+            return
+        except Exception:
+            pass
+    # Fallback: terminal bell.
+    for _ in range(config.ALERT_REPEAT):
+        print("\a", end="", flush=True)
+        time.sleep(0.3)
+
+
+class AutoRecoveryEngine:
+    """
+    V7.2 Genius-Level Recovery Engine.
+
+    A stateful recovery system that gets SMARTER with each failure:
+
+      • Exponential backoff: 10s → 20s → 40s → 80s → 160s → 300s (cap)
+      • Strategy rotation: each recovery attempt escalates through
+        progressively more aggressive strategies
+      • Crash forensics: logs every crash with timestamps for post-mortem
+      • Health auto-reset: consecutive successes reduce backoff
+      • Self-evolution trigger: after all strategies exhausted, triggers
+        sys.exit(42) to force the .bat reboot with fresh code
+
+    Strategies (in escalation order):
+      1. RECONNECT — just re-attach to IDE via CDP
+      2. RESTART_HOST — restart the Extension Host process
+      3. FULL_RELAUNCH — kill everything and relaunch Antigravity
+      4. EVOLVE — trigger self-evolution via Gemini
+    """
+
+    STRATEGIES = ["RECONNECT", "RESTART_HOST", "FULL_RELAUNCH", "EVOLVE"]
+    MIN_BACKOFF = 10
+    MAX_BACKOFF = 300
+
+    def __init__(self):
+        self._consecutive_failures = 0
+        self._total_failures = 0
+        self._backoff = self.MIN_BACKOFF
+        self._strategy_index = 0
+        self._crash_log: list[dict] = []
+
+    @property
+    def current_strategy(self) -> str:
+        idx = min(self._strategy_index, len(self.STRATEGIES) - 1)
+        return self.STRATEGIES[idx]
+
+    def record_success(self) -> None:
+        """Call after a successful monitoring loop iteration."""
+        if self._consecutive_failures > 0:
+            logger.info(
+                "💚  Recovery engine: health restored after %d consecutive failures.",
+                self._consecutive_failures,
+            )
+        self._consecutive_failures = 0
+        self._strategy_index = 0
+        # Decay backoff toward minimum on success
+        self._backoff = max(self.MIN_BACKOFF, self._backoff // 2)
+
+    def recover(self, error_context: str = "") -> str:
+        """
+        Called when the supervisor exhausts its normal retry logic.
+
+        Returns the recommended strategy string. The caller should
+        act on it. After calling this, the engine sleeps for the
+        current backoff duration.
+        """
+        self._consecutive_failures += 1
+        self._total_failures += 1
+
+        strategy = self.current_strategy
+
+        # Log crash forensics
+        crash_entry = {
+            "time": datetime.now().isoformat(),
+            "failure_num": self._consecutive_failures,
+            "total": self._total_failures,
+            "strategy": strategy,
+            "backoff": self._backoff,
+            "context": error_context[:200],
+        }
+        self._crash_log.append(crash_entry)
+        # Keep only last 50 entries
+        if len(self._crash_log) > 50:
+            self._crash_log = self._crash_log[-50:]
+
+        M = config.ANSI_MAGENTA
+        B = config.ANSI_BOLD
+        Y = config.ANSI_YELLOW
+        R = config.ANSI_RESET
+
+        logger.warning(
+            "🔄  Recovery Engine [failure #%d | lifetime #%d | strategy: %s | backoff: %ds]",
+            self._consecutive_failures, self._total_failures, strategy, self._backoff,
+        )
+        print(f"\n  {B}{M}{'═' * 56}{R}")
+        print(f"  {B}{M}  🔄 AUTO-RECOVERY ENGINE V7.2{R}")
+        print(f"  {M}  Failure:  #{self._consecutive_failures} (lifetime: #{self._total_failures}){R}")
+        print(f"  {M}  Strategy: {strategy}{R}")
+        print(f"  {M}  Backoff:  {self._backoff}s{R}")
+        if error_context:
+            print(f"  {Y}  Context:  {error_context[:80]}{R}")
+        print(f"  {B}{M}{'═' * 56}{R}\n")
+
+        # Sleep with backoff
+        time.sleep(self._backoff)
+
+        # Escalate: increase backoff and advance strategy
+        self._backoff = min(self._backoff * 2, self.MAX_BACKOFF)
+        self._strategy_index += 1
+
+        # If we've exhausted all strategies, trigger evolution reboot
+        if self._strategy_index >= len(self.STRATEGIES):
+            logger.critical(
+                "🧬  Recovery Engine: ALL strategies exhausted. Forcing evolution reboot."
+            )
+            print(f"  {B}{config.ANSI_RED}🧬 All recovery strategies exhausted. Forcing reboot...{R}")
+            sys.exit(42)
+
+        return strategy
+
+    def get_crash_log(self) -> list[dict]:
+        """Return crash forensics for debugging or Gemini context."""
+        return list(self._crash_log)
+
+
+# Global recovery engine instance
+_recovery_engine = AutoRecoveryEngine()
+
+
+# ─────────────────────────────────────────────────────────────
+# System 8: Bulletproof Workspace Locking
+# ─────────────────────────────────────────────────────────────
+
+def _find_antigravity_exe() -> Path:
+    """Find the Antigravity executable, checking multiple fallback locations."""
+    for candidate in ANTIGRAVITY_EXE_CANDIDATES:
+        if candidate.exists():
+            lo
+
+Deep-dive into this error. Respond with JSON:
+{
+  "refined_diagnosis": "your deeper analysis",
+  "root_cause_line": "the specific code causing the issue",
+  "recommended_action": "REINJECT" | "GHOST_HOTKEY" | "CLICK_SELECTOR" | "RESTART_HOST" | "EVOLVE" | "RUN_COMMAND" | "OMNI_BRAIN",
+  "action_detail": "specific instructions (or the OMNI_BRAIN high-level objective)",
+  "fix_description": "what code change would prevent this"
+}

@@ -1,0 +1,38 @@
+{
+  "jobs": [
+    {
+      "name": "context_compact",
+      "action": "context_compact",
+      "interval_seconds": 1800,
+      "one_shot": false,
+      "enabled": true,
+      "last_run": 1771586784.1800954,
+      "run_count": 4,
+      "last_result": "Compaction completed",
+      "created_at": 1771580802.0537553
+    },
+    {
+      "name": "budget_report",
+      "action": "budget_report",
+      "interval_seconds": 900,
+      "one_shot": false,
+      "enabled": true,
+      "last_run": 1771586784.1818993,
+      "run_count": 6,
+      "last_result": "Budget: 0.2% used",
+      "created_at": 1771580802.0547643
+    },
+    {
+      "name": "failover_check",
+      "action": "failover_check",
+      "interval_seconds": 600,
+      "one_shot": false,
+      "enabled": true,
+      "last_run": 1771586784.18333,
+      "run_count": 7,
+      "last_result": "Active: gemini-2.5-pro",
+      "created_at": 1771580802.055831
+    }
+  ],
+  "saved_at": 1771586784.1849122
+}
