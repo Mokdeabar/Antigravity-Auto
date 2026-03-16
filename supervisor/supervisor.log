@@ -1018,3 +1018,76 @@ INSTRUCTIONS:
 21:17:02 │ INFO    │ supervisor           │ 🛑  [Pool] Safe stop requested — draining 4 active workers.
 21:17:09 │ INFO    │ supervisor.sandbox_manager │ 📦  [Sync] Synced 7 file(s) to sandbox (touched for HMR) — 0 failed, 0 skipped
 21:17:24 │ INFO    │ supervisor.tool_server │ Dev server found on port 3000
+21:20:03 │ INFO    │ supervisor.headless_executor │ 🚀  [Gemini] Response received: 203.4s, exit=1, stdout=0 bytes, stderr=2066 bytes
+21:20:30 │ INFO    │ supervisor.retry_policy │ 📊  [QuotaProbe] PTY stats: 3 models captured. Usage counter reset.
+21:20:30 │ INFO    │ supervisor.headless_executor │ 📊  [QuotaProbe] PTY stats: 3 models from CLI /stats.
+21:20:30 │ WARNING │ supervisor.retry_policy │ 🔄  Model gemini-3.1-flash-lite-preview failed (attempt #5). Cooldown: 1800s
+21:20:37 │ INFO    │ supervisor.retry_policy │ 📊  [QuotaProbe] PTY stats: 3 models captured. Usage counter reset.
+21:20:37 │ WARNING │ supervisor.headless_executor │ ⚡  [Gemini] API error on model gemini-3.1-flash-lite-preview — reported to failover chain.
+21:20:44 │ INFO    │ supervisor.retry_policy │ 📊  [QuotaProbe] PTY stats: 3 models captured. Usage counter reset.
+21:20:44 │ INFO    │ supervisor.headless_executor │ Task completed: status=error, duration=551.1s, files_changed=3, errors=0 — PREVIOUS ATTEMPT FAILED without a specific error message.  ORIGINAL TASK: [Audit…
+21:20:44 │ WARNING │ supervisor           │ 🔧  [t256-UIUX] [Auto-Fix] Retry also failed: []
+21:20:44 │ INFO    │ supervisor.temporal_planner │ 💾  [State] DAG state saved — 248/291 tasks complete → C:\Users\mokde\Desktop\Experiments\SSC\.ag-supervisor\epic_state.json
+21:20:44 │ INFO    │ supervisor.temporal_planner │ 📋  [Replan→Gemini] Replan prompt (192525 chars) for failed task t256-UIUX.
+    Lesson: []…
+    User prompt: ORIGINAL EPIC:
+## ⚙️  PROJECT PHASES — 6 total, active: Phase 2
+
+### ⏳ Phase 1: "Foundation & Localization Polish"
+**Focus:** Establish base UI shell, Arabic RTL typography, initial performance optimizations, and 3D visualization enhancements.
+**Exit Criteria:** All previously listed base UI, R3F vi…
+21:20:44 │ INFO    │ supervisor.gemini_advisor │ 📊  Large prompt detected (193036 chars, ~48259 tokens). 2 section(s) > 10K chars could use @file references for efficiency:
+21:20:44 │ INFO    │ supervisor.gemini_advisor │ 📊    Section 60: 162927 chars (~40731 tokens)
+21:20:44 │ INFO    │ supervisor.gemini_advisor │ 📊    Section 62: 14330 chars (~3582 tokens)
+21:20:44 │ INFO    │ supervisor.headless_executor │ 🚀  [Gemini] Response received: 233.6s, exit=1, stdout=0 bytes, stderr=2066 bytes
+21:20:50 │ INFO    │ supervisor.retry_policy │ 📊  [QuotaProbe] PTY stats: 3 models captured. Usage counter reset.
+21:20:57 │ INFO    │ supervisor.retry_policy │ 📊  [QuotaProbe] PTY stats: 3 models captured. Usage counter reset.
+21:20:57 │ INFO    │ supervisor.headless_executor │ 📊  [QuotaProbe] PTY stats: 3 models from CLI /stats.
+21:20:57 │ WARNING │ supervisor.retry_policy │ 🔄  Model gemini-3.1-flash-lite-preview failed (attempt #6). Cooldown: 1800s
+21:21:04 │ INFO    │ supervisor.retry_policy │ 📊  [QuotaProbe] PTY stats: 3 models captured. Usage counter reset.
+21:21:04 │ WARNING │ supervisor.headless_executor │ ⚡  [Gemini] API error on model gemini-3.1-flash-lite-preview — reported to failover chain.
+21:21:10 │ INFO    │ supervisor.retry_policy │ 📊  [QuotaProbe] PTY stats: 3 models captured. Usage counter reset.
+21:21:10 │ INFO    │ supervisor.headless_executor │ Task completed: status=error, duration=404.9s, files_changed=2, errors=0 — PREVIOUS ATTEMPT FAILED without a specific error message.  ORIGINAL TASK: [phase…
+21:21:10 │ WARNING │ supervisor           │ 🔧  [t227-FUNC] [Auto-Fix] Retry also failed: []
+21:21:10 │ INFO    │ supervisor.temporal_planner │ 💾  [State] DAG state saved — 248/291 tasks complete → C:\Users\mokde\Desktop\Experiments\SSC\.ag-supervisor\epic_state.json
+21:21:10 │ INFO    │ supervisor.temporal_planner │ 📋  [Replan→Gemini] Replan prompt (192525 chars) for failed task t227-FUNC.
+    Lesson: []…
+    User prompt: ORIGINAL EPIC:
+## ⚙️  PROJECT PHASES — 6 total, active: Phase 2
+
+### ⏳ Phase 1: "Foundation & Localization Polish"
+**Focus:** Establish base UI shell, Arabic RTL typography, initial performance optimizations, and 3D visualization enhancements.
+**Exit Criteria:** All previously listed base UI, R3F vi…
+21:21:10 │ INFO    │ supervisor.gemini_advisor │ 📊  Large prompt detected (193036 chars, ~48259 tokens). 2 section(s) > 10K chars could use @file references for efficiency:
+21:21:10 │ INFO    │ supervisor.gemini_advisor │ 📊    Section 60: 162927 chars (~40731 tokens)
+21:21:10 │ INFO    │ supervisor.gemini_advisor │ 📊    Section 62: 14330 chars (~3582 tokens)
+21:21:10 │ INFO    │ supervisor.headless_executor │ 🚀  [Gemini] Response received: 258.9s, exit=1, stdout=0 bytes, stderr=2066 bytes
+21:21:17 │ INFO    │ supervisor.retry_policy │ 📊  [QuotaProbe] PTY stats: 3 models captured. Usage counter reset.
+21:21:24 │ INFO    │ supervisor.retry_policy │ 📊  [QuotaProbe] PTY stats: 3 models captured. Usage counter reset.
+21:21:24 │ INFO    │ supervisor.headless_executor │ 📊  [QuotaProbe] PTY stats: 3 models from CLI /stats.
+21:21:24 │ WARNING │ supervisor.retry_policy │ 🔄  Model gemini-3.1-flash-lite-preview failed (attempt #7). Cooldown: 1800s
+21:21:30 │ INFO    │ supervisor.retry_policy │ 📊  [QuotaProbe] PTY stats: 3 models captured. Usage counter reset.
+21:21:30 │ WARNING │ supervisor.headless_executor │ ⚡  [Gemini] API error on model gemini-3.1-flash-lite-preview — reported to failover chain.
+21:21:37 │ INFO    │ supervisor.retry_policy │ 📊  [QuotaProbe] PTY stats: 3 models captured. Usage counter reset.
+21:21:37 │ INFO    │ supervisor.headless_executor │ Task completed: status=error, duration=502.0s, files_changed=2, errors=0 — t229-FUNC: [phase-p3_t7] [Phase p3] [FUNC] Map AI-generated JSON payloads directly to Zustand state updates (Node creation)
+21:21:37 │ INFO    │ supervisor.temporal_planner │ 💾  [State] DAG state saved — 248/291 tasks complete → C:\Users\mokde\Desktop\Experiments\SSC\.ag-supervisor\epic_state.json
+21:21:37 │ INFO    │ supervisor           │ 🛑  [Pool] t229-FUNC failed but skipping auto-fix — safe stop active.
+21:21:58 │ INFO    │ supervisor.gemini_advisor │ 🧠  Gemini call cancelled by safe stop — no model cooldown.
+21:21:58 │ ERROR   │ supervisor.temporal_planner │ 📋  [Replan] Pro model call failed: Gemini CLI failed after 3 attempts: Gemini CLI cancelled (safe stop requested)
+21:21:58 │ WARNING │ supervisor.temporal_planner │ 📋  [Replan←Gemini] Empty response — replan failed.
+21:22:25 │ INFO    │ supervisor.gemini_advisor │ 🧠  Gemini call cancelled by safe stop — no model cooldown.
+21:22:25 │ ERROR   │ supervisor.temporal_planner │ 📋  [Replan] Pro model call failed: Gemini CLI failed after 3 attempts: Gemini CLI cancelled (safe stop requested)
+21:22:25 │ WARNING │ supervisor.temporal_planner │ 📋  [Replan←Gemini] Empty response — replan failed.
+21:22:25 │ INFO    │ supervisor           │ 🛑  [Pool] All workers drained. Exiting scheduling loop.
+21:22:25 │ INFO    │ supervisor           │ 🧹  Cleaning up …
+21:22:25 │ INFO    │ supervisor           │ 🔌  [Port] Cleared preview port file.
+21:22:25 │ INFO    │ supervisor           │ 🔓  Removed lockfile: C:\Users\mokde\Desktop\Experiments\SSC\.supervisor_lock
+21:22:25 │ INFO    │ supervisor.temporal_planner │ 💾  [State] DAG state saved — 248/291 tasks complete → C:\Users\mokde\Desktop\Experiments\SSC\.ag-supervisor\epic_state.json
+21:22:25 │ INFO    │ supervisor           │ 💾  [Shutdown] DAG state saved (291 nodes).
+21:22:26 │ INFO    │ supervisor.sandbox_manager │ Copying workspace out of sandbox to: C:\Users\mokde\Desktop\Experiments\SSC
+21:22:26 │ INFO    │ supervisor.sandbox_manager │ Destroying sandbox: supervisor-sandbox-5f3cb7ac
+21:22:56 │ WARNING │ supervisor.sandbox_manager │ Failed to destroy sandbox supervisor-sandbox-5f3cb7ac: Command timed out after 30s
+21:24:26 │ WARNING │ supervisor.sandbox_manager │ Workspace copy-out failed: Command timed out after 120s
+21:24:26 │ INFO    │ supervisor.temporal_planner │ 💾  [State] DAG state saved — 248/291 tasks complete → C:\Users\mokde\Desktop\Experiments\SSC\.ag-supervisor\epic_state.json
+21:24:26 │ INFO    │ supervisor           │ 🏁  Supervisor shut down cleanly.
+21:28:29 │ INFO    │ supervisor.api_server │ 🔌 WebSocket client disconnected (0 remaining)
