@@ -1,38 +1,38 @@
 {
   "snapshots": {
     "gemini-3.1-pro-preview": {
-      "remaining_pct": 76.2,
-      "resets_in_s": 84900,
-      "resets_at": 1773760143.2547274,
-      "probed_at": 1773675243.2547274,
+      "remaining_pct": 75.1,
+      "resets_in_s": 84840,
+      "resets_at": 1773760149.8767579,
+      "probed_at": 1773675309.8767579,
       "source": "pty_probe"
     },
     "gemini-3-flash-preview": {
-      "remaining_pct": 96.5,
-      "resets_in_s": 84900,
-      "resets_at": 1773760143.2547274,
-      "probed_at": 1773675243.2547274,
+      "remaining_pct": 96.1,
+      "resets_in_s": 84780,
+      "resets_at": 1773760089.8767579,
+      "probed_at": 1773675309.8767579,
       "source": "pty_probe"
     },
     "gemini-2.5-pro": {
-      "remaining_pct": 76.2,
-      "resets_in_s": 84900,
-      "resets_at": 1773760143.2547274,
-      "probed_at": 1773675243.2547274,
+      "remaining_pct": 75.1,
+      "resets_in_s": 84840,
+      "resets_at": 1773760149.8767579,
+      "probed_at": 1773675309.8767579,
       "source": "pty_probe"
     },
     "gemini-2.5-flash": {
-      "remaining_pct": 96.5,
-      "resets_in_s": 84900,
-      "resets_at": 1773760143.2547274,
-      "probed_at": 1773675243.2547274,
+      "remaining_pct": 96.1,
+      "resets_in_s": 84780,
+      "resets_at": 1773760089.8767579,
+      "probed_at": 1773675309.8767579,
       "source": "pty_probe"
     },
     "gemini-2.5-flash-lite": {
       "remaining_pct": 100.0,
-      "resets_in_s": 3300,
-      "resets_at": 1773678543.2547274,
-      "probed_at": 1773675243.2547274,
+      "resets_in_s": 3180,
+      "resets_at": 1773678489.8767579,
+      "probed_at": 1773675309.8767579,
       "source": "pty_probe"
     },
     "auto": {
@@ -44,8 +44,8 @@
       "auto_reset": true
     }
   },
-  "last_probe_at": 1773675243.2547274,
+  "last_probe_at": 1773675309.8767579,
   "requests_since_probe": 0,
   "usage_tracking_day": "2026-03-16",
-  "saved_at": 1773675249.8625584
+  "saved_at": 1773675317.5169728
 }
