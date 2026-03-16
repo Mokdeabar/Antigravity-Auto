@@ -1,40 +1,39 @@
 {
   "snapshots": {
     "gemini-3.1-pro-preview": {
-      "remaining_pct": 25.4,
-      "resets_in_s": 78660,
-      "resets_at": 1773760141.0704799,
-      "probed_at": 1773681481.0704799,
+      "remaining_pct": 0.0,
+      "resets_in_s": 75240,
+      "resets_at": 1773760156.4571962,
+      "probed_at": 1773684916.4571962,
       "source": "pty_probe"
     },
     "gemini-3-flash-preview": {
-      "remaining_pct": 83.7,
-      "resets_in_s": 82740,
-      "resets_at": 1773760098.7639134,
-      "probed_at": 1773677358.7639134,
+      "remaining_pct": 77.5,
+      "resets_in_s": 76320,
+      "resets_at": 1773760097.0368865,
+      "probed_at": 1773683777.0368865,
       "source": "pty_probe"
     },
     "gemini-2.5-pro": {
-      "remaining_pct": 25.4,
-      "resets_in_s": 78660,
-      "resets_at": 1773760141.0704799,
-      "probed_at": 1773681481.0704799,
+      "remaining_pct": 0.0,
+      "resets_in_s": 75240,
+      "resets_at": 1773760156.4571962,
+      "probed_at": 1773684916.4571962,
       "source": "pty_probe"
     },
     "gemini-2.5-flash": {
-      "remaining_pct": 77.9,
-      "resets_in_s": 78660,
-      "resets_at": 1773760141.0704799,
-      "probed_at": 1773681481.0704799,
+      "remaining_pct": 71.9,
+      "resets_in_s": 75180,
+      "resets_at": 1773760096.4571962,
+      "probed_at": 1773684916.4571962,
       "source": "pty_probe"
     },
     "gemini-2.5-flash-lite": {
       "remaining_pct": 100.0,
-      "resets_in_s": 1140,
-      "resets_at": 0,
-      "probed_at": 1773678504.6407518,
-      "source": "auto_reset_full",
-      "auto_reset": true
+      "resets_in_s": 81120,
+      "resets_at": 1773764897.0368865,
+      "probed_at": 1773683777.0368865,
+      "source": "pty_probe"
     },
     "auto": {
       "remaining_pct": 100.0,
@@ -45,8 +44,8 @@
       "auto_reset": true
     }
   },
-  "last_probe_at": 1773681481.0704799,
-  "requests_since_probe": 0,
+  "last_probe_at": 1773684916.4571962,
+  "requests_since_probe": 2,
   "usage_tracking_day": "2026-03-16",
-  "saved_at": 1773681487.6790555
+  "saved_at": 1773684952.7208712
 }

@@ -1,28 +1,9 @@
 {
   "cooldowns": {
-    "gemini-3.1-pro-preview": 1773680497.8553393
+    "model-a": 1773685120.9404404
   },
-  "failures": {
-    "gemini-3.1-pro-preview": 1,
-    "gemini-3-pro-preview": 3,
-    "auto": 3,
-    "gemini-3.1-pro-preview-customtools": 3,
-    "gemini-3.1-flash-lite": 3,
-    "gemini-3-flash": 3,
-    "null": 2,
-    "gemini-3.1-flash-lite-preview": 3,
-    "gemini-3.1-flash-image-preview": 3,
-    "gemini-3-flash-preview": 3,
-    "gemini-2.5-pro": 3,
-    "gemini-2.5-flash": 3,
-    "gemini-2.5-flash-lite": 1
-  },
-  "successes": {
-    "gemini-3.1-pro-preview": 34,
-    "auto": 3,
-    "gemini-3-flash-preview": 1,
-    "gemini-2.5-flash-lite": 4
-  },
-  "sticky_model": "gemini-3.1-pro-preview",
-  "timestamp": "2026-03-16T17:02:13.391972+00:00"
+  "failures": {},
+  "successes": {},
+  "sticky_model": null,
+  "timestamp": "2026-03-16T18:18:10.941880+00:00"
 }

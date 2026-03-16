@@ -2646,6 +2646,11 @@ async def start_api_server(
         import asyncio as _ps_aio
         await _ps_aio.sleep(30)  # Initial delay — let boot finish first
         while True:
+            # V74: Exit on shutdown — prevents orphaned PTY calls after clean stop
+            if state and getattr(state, 'stop_requested', False):
+                logger.debug("📊  [Periodic] Stop requested — exiting probe loop")
+                break
+
             _sleep_interval = 60  # Default: probe every 60s
             try:
                 from .retry_policy import get_quota_probe, get_daily_budget, get_failover_chain
@@ -2691,7 +2696,16 @@ async def start_api_server(
                     logger.debug("📊  [Periodic] /stats probe completed")
             except Exception as _ps_exc:
                 logger.debug("📊  [Periodic] /stats probe failed: %s", _ps_exc)
-            await _ps_aio.sleep(_sleep_interval)
+
+            # V74: Stop-aware sleep — breaks long intervals into 10s chunks
+            # so the loop can exit within 10s of a stop signal
+            _slept = 0
+            while _slept < _sleep_interval:
+                if state and getattr(state, 'stop_requested', False):
+                    break
+                _chunk = min(10, _sleep_interval - _slept)
+                await _ps_aio.sleep(_chunk)
+                _slept += _chunk
 
     asyncio.create_task(_periodic_stats_probe())
 

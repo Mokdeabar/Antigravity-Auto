@@ -2309,7 +2309,21 @@ class HeadlessExecutor:
                 _flash_age = time.time() - getattr(self, '_flash_failed_at', 0.0)
                 _skip_flash = _flash_age < getattr(self, '_FLASH_SKIP_WINDOW', 1800)
                 if _skip_flash:
-                    model = _fc.get_active_model() or _default_model
+                    model = _fc.get_active_model(pro_only=_pro_only) or _default_model
+                    if model is None and _pro_only:
+                        # Pro exhausted — return pause signal
+                        logger.warning(
+                            "⏸  [V74] Pro model unavailable (flash-skip path). PRO_ONLY_CODING active — "
+                            "returning rate-limited failure so caller can wait."
+                        )
+                        return {
+                            "exit_code": 1,
+                            "stdout": "",
+                            "stderr": "Pro model quota exhausted. PRO_ONLY_CODING active — pausing until quota resets.",
+                            "timed_out": False,
+                            "_rate_limited": True,
+                        }
+                    model = model or _default_model
                     logger.debug(
                         "🎯  [Model] Flash recently failed (%.0fs ago) — routing to Pro instead: %s",
                         _flash_age, model,

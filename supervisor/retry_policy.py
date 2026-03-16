@@ -387,10 +387,18 @@ class ModelFailoverChain:
         print(f"  {M}⚡ Model {model} quota exhausted. Cooldown: {hours}h{mins}m{R}")
 
         # Try to find next available model
-        next_model = self.get_active_model()
+        # V74: Respect PRO_ONLY_CODING — don't failover to non-pro for coding
+        _pro_only_cfg = getattr(config, "PRO_ONLY_CODING", False)
+        next_model = self.get_active_model(pro_only=_pro_only_cfg)
         if next_model:
             logger.info("🔄  Failover → model %s", next_model)
             print(f"  {M}🔄 Failing over to model: {next_model}{R}")
+        elif _pro_only_cfg:
+            logger.warning(
+                "⏸  All Pro models exhausted. PRO_ONLY_CODING active — "
+                "system will pause until quota resets."
+            )
+            print(f"  {M}⏸ All Pro models exhausted — pausing until quota resets.{R}")
         else:
             logger.warning("🔄  ALL models exhausted — no failover available.")
 
@@ -975,17 +983,30 @@ class RateLimitTracker:
     def suggest_alternative_model(self, current_model: str) -> str:
         """
         Return the next model in the progressive downgrade sequence.
+
+        V74: Respects PRO_ONLY_CODING — only suggests Pro-bucket models
+        when pro-only coding is active. Returns current_model unchanged
+        if no pro alternative is available (caller will hit the pause gate).
         """
         chain = get_failover_chain()
         models = chain._models
+        _pro_only = getattr(config, "PRO_ONLY_CODING", False)
         try:
             current_idx = models.index(current_model)
             for i in range(current_idx + 1, len(models)):
                 if chain._is_available(models[i], time.time()):
+                    # V74: Skip non-pro models when PRO_ONLY_CODING is active
+                    if _pro_only and config.classify_model(models[i]) != "pro":
+                        continue
                     logger.info("⚡  Downgrading from %s → %s due to rate limit", current_model, models[i])
                     return models[i]
         except ValueError:
             pass
+        if _pro_only:
+            logger.info(
+                "⏸  [V74] No Pro alternative for %s — returning unchanged (pause gate will handle)",
+                current_model,
+            )
         return current_model
 
     def get_stats(self) -> dict:
