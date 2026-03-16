@@ -484,6 +484,9 @@ Self-reviews also remain disabled (V57 decision) — they were rubber-stamping a
 - **Quota exhaustion requeue** — Pool worker returns tasks to `pending` instead of sleeping-then-proceeding when all models are exhausted. Prevents cascading retry failures; the scheduling loop's quota pause gate handles the wait cleanly.
 - **Smart PTY probe suppression** — Periodic `/stats` probe suppresses during known long cooldowns, sleeping until ~5min before the soonest quota reset. Eliminates recurring PTY timeout noise during multi-hour cooldowns.
 - **Event-driven quota probing** — `/stats` probe fires on every CLI call, every failure, and every quota exhaustion event (gated by `_pty_ready`). Dashboard quota data is always fresh with zero staggering overhead.
+- **Test-log compression for auto-fix** — `_compress_errors_for_retry()` extracts only error name, file:line references, and 5 lines of stack context per error (capped at 1500 chars each). Focuses CLI retry prompts on exact errors instead of flooding them with passing test output, while the CLI still has full `@.` file access for deeper investigation.
+- **Architectural drift detection** — Coherence gate now scans for duplicate exported names across different files after every 5 completed nodes. When duplicates are found, injects a priority-85 consolidation task into the DAG to merge redundant exports.
+- **Shared-file impact check** — When a worker modifies files in shared directories (`lib/`, `utils/`, `shared/`, `types/`, `hooks/`, `common/`, `core/`), immediately runs `tsc --noEmit` to catch type breakage. Injects a priority-95 repair task on failure before other workers commit stale code.
 
 ---
 

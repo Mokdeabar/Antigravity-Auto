@@ -2381,6 +2381,97 @@ async def _capture_console_errors(sandbox) -> dict:
         return {"formatted": [], "categories": {}, "raw": []}
 
 
+# ── V74: Error compression for auto-fix prompts ──────────────────────
+# Raw errors can be massive (full Jest/Vite output, 50K+ chars).
+# This extracts only actionable info: error name, file:line, stack context.
+# The CLI still has full @. access to read entire files when needed.
+
+import re as _re_compress
+
+_FILE_LINE_PATTERN = _re_compress.compile(
+    r'(?:'
+    r'at\s+(?:.*?\s+\()?(/[^\s:]+):(\d+)'           # Node.js: at fn (/path:line
+    r'|(/[^\s:]+):(\d+):\d+'                          # Generic: /path:line:col
+    r'|([A-Za-z]:\\\\[^\s:]+):(\d+)'                   # Windows: C:\path:line
+    r'|(\S+\.(?:ts|tsx|js|jsx|py|css))\((\d+),\d+\)'  # TS: file.ts(line,col)
+    r')'
+)
+
+def _compress_errors_for_retry(errors: list[str], max_per_error: int = 1500) -> list[str]:
+    """
+    Compress raw error strings to extract only actionable information.
+
+    For each error:
+      1. First line (error name + message)
+      2. File:line references from stack traces
+      3. Up to 5 lines of surrounding context per reference
+      4. Capped at max_per_error chars total
+
+    Returns a list of compressed error strings.
+    """
+    compressed = []
+    for raw in errors:
+        raw_str = str(raw)
+        lines = raw_str.splitlines()
+
+        if not lines:
+            compressed.append("(empty error)")
+            continue
+
+        parts = []
+
+        # Always include the first non-empty line (error name/message)
+        first_line = ""
+        for line in lines:
+            stripped = line.strip()
+            if stripped:
+                first_line = stripped
+                break
+        parts.append(first_line)
+
+        # Extract file:line references and their surrounding context
+        seen_refs = set()
+        for i, line in enumerate(lines):
+            match = _FILE_LINE_PATTERN.search(line)
+            if match:
+                # Get the matched file and line number
+                groups = match.groups()
+                file_ref = next((g for g in groups[::2] if g), None)
+                line_ref = next((g for g in groups[1::2] if g), None)
+                ref_key = f"{file_ref}:{line_ref}" if file_ref and line_ref else line.strip()
+
+                if ref_key in seen_refs:
+                    continue
+                seen_refs.add(ref_key)
+
+                # Include this line and up to 2 lines before/after for context
+                start = max(0, i - 2)
+                end = min(len(lines), i + 3)
+                context = "\n".join(lines[start:end]).strip()
+                if context and context != first_line:
+                    parts.append(context)
+
+                # Cap at 5 file references per error
+                if len(seen_refs) >= 5:
+                    break
+
+        # If no file references found, include up to first 10 non-empty lines
+        if not seen_refs:
+            meaningful = [l for l in lines[1:] if l.strip()][:10]
+            if meaningful:
+                parts.append("\n".join(meaningful))
+
+        result = "\n---\n".join(parts)
+
+        # Final cap
+        if len(result) > max_per_error:
+            result = result[:max_per_error - 20] + "\n... (truncated)"
+
+        compressed.append(result)
+
+    return compressed
+
+
 async def _diagnose_and_retry(
     task_description: str,
     failure_errors: list[str],
@@ -2420,15 +2511,16 @@ async def _diagnose_and_retry(
         return False, sk
 
     # ── Step 1: Build error context ──
-    # Ollama is not used here — local models can't handle the task context size
-    # and Gemini can analyze its own errors more effectively on retry.
-    error_text = "\n".join(str(e) for e in failure_errors[:5])
-    logger.info("🔧  %s[Auto-Fix] Building retry with error context (%d errors)", label, len(failure_errors))
+    # V74: Compress errors to extract actionable info only.
+    # Raw errors can be 50K+ chars (full Jest/Vite output).
+    # Extract: error name/message, file:line, 5 lines of stack context.
+    # CLI still has @. access for deeper investigation.
+    compressed = _compress_errors_for_retry(failure_errors[:5])
+    error_text = "\n".join(compressed)
+    logger.info("🔧  %s[Auto-Fix] Building retry with error context (%d errors, %d chars compressed)", label, len(failure_errors), len(error_text))
 
 
     # ── Step 2: Build enriched retry prompt (V60: 3-way branch) ──
-    # Branch on failure type so each gets a prompt calibrated to the actual problem.
-    error_text = "\n".join(str(e) for e in failure_errors[:5])
 
     if silent_timeout:
         # Gemini was spawned but returned no output and wrote no files; it likely
@@ -4754,6 +4846,74 @@ async def _execute_dag_recursive(
                     except Exception as _fc_exc:
                         logger.debug("[FileConflict] Layer 1 error (non-fatal): %s", _fc_exc)
 
+                    # V74: Shared-file impact check — immediate type-check when
+                    # a worker modifies files in shared/core directories.
+                    # Prevents Worker B from committing stale code after Worker A
+                    # changes a shared function signature.
+                    try:
+                        import os as _sf_os
+                        _SHARED_DIRS = {'lib', 'utils', 'shared', 'types', 'hooks', 'common', 'core'}
+                        _shared_touched = False
+                        for _sf in chunk_result.files_changed:
+                            _sf_str = str(_sf).replace('\\', '/')
+                            _sf_parts = _sf_str.split('/')
+                            # Check if any path segment is a shared directory
+                            if any(p.lower() in _SHARED_DIRS for p in _sf_parts):
+                                _shared_touched = True
+                                break
+                            # Also check if the file itself is a common shared name
+                            _sf_base = _sf_os.path.basename(_sf_str).lower()
+                            if _sf_base in ('types.ts', 'types.tsx', 'index.ts', 'api.ts', 'constants.ts'):
+                                _shared_touched = True
+                                break
+
+                        if _shared_touched and sandbox and sandbox.is_running:
+                            logger.info(
+                                "🔗  [SharedFile] %s modified shared file(s) — running type-check",
+                                node.task_id,
+                            )
+                            _tsc_result = await sandbox.exec_command(
+                                "cd /workspace && npx tsc --noEmit 2>&1 | tail -30",
+                                timeout=60,
+                            )
+                            if _tsc_result.exit_code != 0:
+                                _tsc_errors = (_tsc_result.stdout or "")[-500:]
+                                logger.warning(
+                                    "🔗  [SharedFile] Type-check FAILED after %s: %s",
+                                    node.task_id, _tsc_errors[:200],
+                                )
+                                # Inject high-priority repair task
+                                _sfc_in_flight = any(
+                                    n.task_id.startswith("shared-fix")
+                                    and n.status in ("pending", "running")
+                                    for n in planner._nodes.values()
+                                )
+                                if not _sfc_in_flight:
+                                    _sfc_id = f"shared-fix-{int(__import__('time').time())}"
+                                    planner.inject_task(
+                                        task_id=_sfc_id,
+                                        description=(
+                                            "[BUILD] Type-check failure after shared file modification by "
+                                            f"task {node.task_id}. TypeScript errors:\n{_tsc_errors}\n\n"
+                                            "Fix ALL type errors. Check that all imports reference the "
+                                            "correct types and function signatures. Run `npx tsc --noEmit` "
+                                            "to verify zero errors."
+                                        ),
+                                        dependencies=[node.task_id],
+                                        priority=95,
+                                    )
+                                    if state:
+                                        state.record_activity(
+                                            "warning",
+                                            f"🔗 Shared file impact: type errors after {node.task_id} — repair task injected",
+                                        )
+                            else:
+                                logger.debug(
+                                    "🔗  [SharedFile] Type-check passed after %s", node.task_id,
+                                )
+                    except Exception as _sf_exc:
+                        logger.debug("🔗  [SharedFile] Impact check error (non-fatal): %s", _sf_exc)
+
                 # V58: Layer 3 — Regression guard (line-count sentinel)
                 # If any file shrank by >40% and had >30 lines, auto-inject a merge task.
                 try:
@@ -5982,6 +6142,61 @@ async def _execute_dag_recursive(
                     )
                 except Exception as exc:
                     logger.debug("🔍  [Build Health] Post-coherence check skipped: %s", exc)
+
+            # V74: Architectural drift detection — catch duplicate exports/files
+            # Workers operating in parallel can create duplicate utility files or
+            # redundant exports. Detect this early and inject a consolidation task.
+            if not (state and getattr(state, 'stop_requested', False)):
+                try:
+                    if sandbox and sandbox.is_running:
+                        _drift_result = await sandbox.exec_command(
+                            # Find all exported names across .ts/.tsx/.js/.jsx files,
+                            # extract "export {function|class|const} NAME" patterns,
+                            # then find duplicates across different files.
+                            "cd /workspace && "
+                            "grep -rn --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' "
+                            "  -E 'export (function|class|const|let|var) ' src/ 2>/dev/null | "
+                            "sed 's/.*export \\(function\\|class\\|const\\|let\\|var\\) //' | "
+                            "sed 's/[(<:{[:space:]].*//' | "
+                            "sort | uniq -d",
+                            timeout=10,
+                        )
+                        _dup_names = [n.strip() for n in (_drift_result.stdout or "").splitlines() if n.strip()]
+                        if _dup_names and planner:
+                            # Check if a drift-fix task is already pending
+                            _drift_in_flight = any(
+                                n.task_id.startswith("drift-fix")
+                                and n.status in ("pending", "running")
+                                for n in planner._nodes.values()
+                            )
+                            if not _drift_in_flight:
+                                _dup_preview = ", ".join(_dup_names[:10])
+                                logger.warning(
+                                    "🏗️  [Drift] Duplicate exported names detected: %s",
+                                    _dup_preview,
+                                )
+                                from .temporal_planner import TaskNode as _DTN
+                                _drift_id = f"drift-fix-{int(__import__('time').time())}"
+                                planner.inject_task(
+                                    task_id=_drift_id,
+                                    description=(
+                                        "[BUILD] Architectural drift detected: the following names are "
+                                        f"exported from MULTIPLE files: {_dup_preview}. "
+                                        "For each duplicate, consolidate to a single canonical location. "
+                                        "Update all import statements across the codebase to use the "
+                                        "canonical export. Remove the redundant duplicate. "
+                                        "Run `npx tsc --noEmit` to verify no import breakage."
+                                    ),
+                                    dependencies=[],
+                                    priority=85,
+                                )
+                                if state:
+                                    state.record_activity(
+                                        "warning",
+                                        f"🏗️ Drift: {len(_dup_names)} duplicate export(s) detected — fix task injected",
+                                    )
+                except Exception as _drift_exc:
+                    logger.debug("🏗️  [Drift] Scan skipped: %s", _drift_exc)
 
     # Wait for any remaining active tasks to drain
     remaining = [t for t in active_tasks.values() if not t.done()]

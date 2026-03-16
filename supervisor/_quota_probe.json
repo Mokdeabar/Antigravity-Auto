@@ -1,39 +1,40 @@
 {
   "snapshots": {
     "gemini-3.1-pro-preview": {
-      "remaining_pct": 75.1,
-      "resets_in_s": 84840,
-      "resets_at": 1773760149.8767579,
-      "probed_at": 1773675309.8767579,
+      "remaining_pct": 25.4,
+      "resets_in_s": 78660,
+      "resets_at": 1773760141.0704799,
+      "probed_at": 1773681481.0704799,
       "source": "pty_probe"
     },
     "gemini-3-flash-preview": {
-      "remaining_pct": 96.1,
-      "resets_in_s": 84780,
-      "resets_at": 1773760089.8767579,
-      "probed_at": 1773675309.8767579,
+      "remaining_pct": 83.7,
+      "resets_in_s": 82740,
+      "resets_at": 1773760098.7639134,
+      "probed_at": 1773677358.7639134,
       "source": "pty_probe"
     },
     "gemini-2.5-pro": {
-      "remaining_pct": 75.1,
-      "resets_in_s": 84840,
-      "resets_at": 1773760149.8767579,
-      "probed_at": 1773675309.8767579,
+      "remaining_pct": 25.4,
+      "resets_in_s": 78660,
+      "resets_at": 1773760141.0704799,
+      "probed_at": 1773681481.0704799,
       "source": "pty_probe"
     },
     "gemini-2.5-flash": {
-      "remaining_pct": 96.1,
-      "resets_in_s": 84780,
-      "resets_at": 1773760089.8767579,
-      "probed_at": 1773675309.8767579,
+      "remaining_pct": 77.9,
+      "resets_in_s": 78660,
+      "resets_at": 1773760141.0704799,
+      "probed_at": 1773681481.0704799,
       "source": "pty_probe"
     },
     "gemini-2.5-flash-lite": {
       "remaining_pct": 100.0,
-      "resets_in_s": 3180,
-      "resets_at": 1773678489.8767579,
-      "probed_at": 1773675309.8767579,
-      "source": "pty_probe"
+      "resets_in_s": 1140,
+      "resets_at": 0,
+      "probed_at": 1773678504.6407518,
+      "source": "auto_reset_full",
+      "auto_reset": true
     },
     "auto": {
       "remaining_pct": 100.0,
@@ -44,8 +45,8 @@
       "auto_reset": true
     }
   },
-  "last_probe_at": 1773675309.8767579,
+  "last_probe_at": 1773681481.0704799,
   "requests_since_probe": 0,
   "usage_tracking_day": "2026-03-16",
-  "saved_at": 1773675317.5169728
+  "saved_at": 1773681487.6790555
 }
