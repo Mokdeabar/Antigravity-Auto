@@ -12,12 +12,14 @@ Staleness Invalidation: memories are tagged with the pre-execution base_sha.
 If the developer manually changes HEAD, all prior memories are ignored.
 """
 
+from __future__ import annotations
+
 import hashlib
 import logging
 import sqlite3
 import time
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 logger = logging.getLogger("supervisor.episodic_memory")
 
@@ -28,7 +30,7 @@ _DB_PATH = _MEMORY_DIR / "failures.db"
 class EpisodicMemory:
     """SQLite-backed failure memory for the Omni-Brain execution loop."""
 
-    def __init__(self, db_path: Optional[Path] = None):
+    def __init__(self, db_path: Path | None = None):
         self._db_path = db_path or _DB_PATH
         self._db_path.parent.mkdir(parents=True, exist_ok=True)
         self._ensure_gitignore()

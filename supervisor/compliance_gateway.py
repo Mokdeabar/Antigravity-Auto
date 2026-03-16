@@ -22,6 +22,7 @@ the gateway issues a library-swap directive instead of blocking forever.
 """
 
 import ast
+import asyncio
 import json
 import logging
 import os
@@ -83,9 +84,9 @@ class ComplianceGateway:
     # Gate 1: SAST Scan
     # ────────────────────────────────────────────────
 
-    def run_sast_scan(self, cwd: str) -> Tuple[bool, str]:
+    async def run_sast_scan(self, cwd: str) -> Tuple[bool, str]:
         """
-        Run static application security testing.
+        Run static application security testing (async).
         Auto-detects project type (JS/Python) and runs the appropriate tool.
         Returns (passes, report_or_violations).
         """
@@ -98,12 +99,12 @@ class ComplianceGateway:
         violations = []
 
         if has_package_json:
-            npm_ok, npm_report = self._run_npm_audit(cwd)
+            npm_ok, npm_report = await self._run_npm_audit(cwd)
             if not npm_ok:
                 violations.append(npm_report)
 
         if has_python:
-            bandit_ok, bandit_report = self._run_bandit(cwd)
+            bandit_ok, bandit_report = await self._run_bandit(cwd)
             if not bandit_ok:
                 violations.append(bandit_report)
 
@@ -122,21 +123,29 @@ class ComplianceGateway:
 
         return True, "SAST scan passed."
 
-    def _run_npm_audit(self, cwd: str) -> Tuple[bool, str]:
-        """Run npm audit for production dependencies only."""
+    async def _run_npm_audit(self, cwd: str) -> Tuple[bool, str]:
+        """Run npm audit for production dependencies only (async)."""
         try:
-            proc = subprocess.run(
-                ["npm", "audit", "--json", "--production"],
+            proc = await asyncio.create_subprocess_exec(
+                "npm", "audit", "--json", "--omit=dev",
                 cwd=cwd,
-                capture_output=True,
-                text=True,
-                timeout=60,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
             )
+            try:
+                stdout_b, stderr_b = await asyncio.wait_for(proc.communicate(), timeout=60)
+            except asyncio.TimeoutError:
+                proc.kill()
+                await proc.wait()
+                return True, "npm audit timed out, skipping."
+
+            stdout_text = (stdout_b or b"").decode("utf-8", errors="replace")
+
             if proc.returncode == 0:
                 return True, "npm audit: no vulnerabilities."
 
             try:
-                data = json.loads(proc.stdout)
+                data = json.loads(stdout_text)
                 vuln_meta = data.get("metadata", {}).get("vulnerabilities", {})
                 critical = vuln_meta.get("critical", 0)
                 high = vuln_meta.get("high", 0)
@@ -164,23 +173,29 @@ class ComplianceGateway:
 
         except FileNotFoundError:
             return True, "npm not found, skipping npm audit."
-        except subprocess.TimeoutExpired:
-            return True, "npm audit timed out, skipping."
 
-    def _run_bandit(self, cwd: str) -> Tuple[bool, str]:
-        """Run bandit for Python security analysis."""
+    async def _run_bandit(self, cwd: str) -> Tuple[bool, str]:
+        """Run bandit for Python security analysis (async)."""
         try:
-            proc = subprocess.run(
-                ["bandit", "-r", cwd, "-f", "json", "-ll"],  # -ll = medium+ severity
-                capture_output=True,
-                text=True,
-                timeout=60,
+            proc = await asyncio.create_subprocess_exec(
+                "bandit", "-r", cwd, "-f", "json", "-ll",  # -ll = medium+ severity
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
             )
+            try:
+                stdout_b, stderr_b = await asyncio.wait_for(proc.communicate(), timeout=60)
+            except asyncio.TimeoutError:
+                proc.kill()
+                await proc.wait()
+                return True, "bandit timed out, skipping."
+
+            stdout_text = (stdout_b or b"").decode("utf-8", errors="replace")
+
             if proc.returncode == 0:
                 return True, "bandit: no issues found."
 
             try:
-                data = json.loads(proc.stdout)
+                data = json.loads(stdout_text)
                 results = data.get("results", [])
                 high_crit = [
                     r for r in results
@@ -198,8 +213,6 @@ class ComplianceGateway:
 
         except FileNotFoundError:
             return True, "bandit not found, skipping."
-        except subprocess.TimeoutExpired:
-            return True, "bandit timed out, skipping."
 
     # ────────────────────────────────────────────────
     # Gate 2: Semantic Compliance Audit
@@ -400,7 +413,7 @@ class ComplianceGateway:
         reports = []
 
         # Gate 1: SAST
-        sast_ok, sast_report = self.run_sast_scan(cwd)
+        sast_ok, sast_report = await self.run_sast_scan(cwd)
         if not sast_ok:
             reports.append(f"[GATE 1 — SAST] FAILED\n{sast_report}")
             # Check if bypass is needed

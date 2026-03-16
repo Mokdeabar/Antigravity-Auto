@@ -1,0 +1,17 @@
+7255:                     // ── Helper: Widget Header (replaces sectionTitle) ────────
+7256:                     const widgetHeader = (icon, text) =>
+7257:                         `<div class="widget-header">
+7258:                             <span style="font-size:1.1rem;margin-right:2px;">${icon}</span>
+7259:                             ${text}
+7260:                         </div>`;
+...
+7451: 
+7452:                     html += `</div>`; // Close dashboard-grid
+7453:                     statsContent.innerHTML = html;
+7454:                 } catch (e) {
+7455:                     content.innerHTML = `<div class="empty-state" style="color:#FF3B30">⚠ Stats load failed: ${e.message}</div>`;
+7456:                 }
+7457:                 restoreScrolls(_scroll);
+7458:             }
+7459:             window.loadStats = loadStats;
+7460: 

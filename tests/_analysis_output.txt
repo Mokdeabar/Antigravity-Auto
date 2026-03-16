@@ -1,0 +1,123 @@
+======================================================================
+DEAD CODE ANALYSIS
+======================================================================
+
+Orphaned files (not imported by any supervisor module): 19
+  _supervisor_state_ref.py
+  a2a_protocol.py
+  bootstrap.py
+  brain.py
+  config.py
+  council_knowledge.py
+  dev_server_manager.py
+  environment_setup.py
+  error_collector.py
+  git_manager.py
+  health_diagnostics.py
+  incremental_verifier.py
+  launcher.py
+  lighthouse_runner.py
+  loop_detector.py
+  main_old.py
+  supervisor_state.py
+  task_intelligence.py
+  telemetry_hud.py
+
+======================================================================
+UNUSED IMPORTS IN NEW MODULES
+======================================================================
+  a2a_protocol.py:
+    L20: 'annotations' unused
+    L24: 'json' unused
+    L29: 'Path' unused
+    L30: 'Any' unused
+    L30: 'Optional' unused
+  environment_setup.py:
+    L18: 'annotations' unused
+    L22: 'os' unused
+    L26: 'Path' unused
+    L26: 'PurePosixPath' unused
+  dev_server_manager.py:
+    L18: 'annotations' unused
+    L24: 'Optional' unused
+  health_diagnostics.py:
+    L16: 'annotations' unused
+    L20: 'os' unused
+  error_collector.py:
+    L16: 'annotations' unused
+  incremental_verifier.py:
+    L18: 'annotations' unused
+  task_intelligence.py:
+    L19: 'annotations' unused
+    L24: 'defaultdict' unused
+  lighthouse_runner.py:
+    L19: 'annotations' unused
+
+======================================================================
+UNUSED PRIVATE SYMBOLS IN NEW MODULES
+======================================================================
+  a2a_protocol.py: clean
+  environment_setup.py: clean
+  dev_server_manager.py: clean
+  health_diagnostics.py: clean
+  error_collector.py: clean
+  incremental_verifier.py: clean
+  task_intelligence.py: clean
+  lighthouse_runner.py: clean
+
+======================================================================
+MODULE SIZES
+======================================================================
+      16  _supervisor_state_ref.py
+     562  a2a_protocol.py
+    1463  agent_council.py
+    2662  api_server.py
+     308  autonomous_verifier.py
+     359  bootstrap.py
+     193  brain.py
+     103  cli_worker.py
+     440  compliance_gateway.py
+     689  config.py
+     305  council_knowledge.py
+     557  deployment_engine.py
+     353  dev_server_manager.py
+     570  environment_setup.py
+     203  episodic_memory.py
+     373  error_collector.py
+     116  error_memory.py
+     308  external_researcher.py
+    1812  gemini_advisor.py
+     233  git_manager.py
+    5043  headless_executor.py
+     466  health_diagnostics.py
+     350  incremental_verifier.py
+     101  instruction_queue.py
+     198  launcher.py
+     489  lighthouse_runner.py
+     468  local_orchestrator.py
+     148  loop_detector.py
+   10287  main.py
+    4063  main_old.py
+     221  memory_consolidation.py
+     276  merge_arbiter.py
+    1370  phase_manager.py
+     520  polish_engine.py
+      98  reflection_engine.py
+    2147  retry_policy.py
+    1491  sandbox_manager.py
+     818  scheduler.py
+     656  self_evolver.py
+     616  session_memory.py
+     356  skills_loader.py
+     183  supervisor_state.py
+     394  task_intelligence.py
+     120  telemetry_hud.py
+     499  telemetry_ingester.py
+    1813  temporal_planner.py
+     712  tool_server.py
+     265  ts_regression_guard.py
+     750  user_research_engine.py
+     562  visual_qa_engine.py
+     427  workspace_indexer.py
+     334  workspace_transaction.py
+   47866  TOTAL

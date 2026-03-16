@@ -1,0 +1,24 @@
+[project]
+name = "supervisor-ai"
+version = "37.0"
+requires-python = ">=3.12"
+description = "Autonomous AI Supervisor — Headless Docker sandbox + Gemini CLI orchestration"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]  # Line length handled by formatter
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+asyncio_mode = "auto"
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+check_untyped_defs = true
+ignore_missing_imports = true

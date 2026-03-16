@@ -13,11 +13,12 @@ V2 UPGRADE — OpenClaw-Inspired:
   4. JSONL transcript: full audit trail written to _transcript.jsonl.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import time
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger("supervisor.session_memory")
 
@@ -54,7 +55,7 @@ class SessionMemory:
     _PRUNE_MIN_CHARS = 50_000    # Min total chars before pruning kicks in
     _PRUNE_KEEP_LAST = 3         # Keep last N assistant events unpruned
 
-    def __init__(self, project_path: Optional[str] = None):
+    def __init__(self, project_path: str | None = None):
         self._project_path = project_path
         if project_path:
             self._path = Path(project_path) / self._MEMORY_FILENAME
@@ -261,7 +262,7 @@ class SessionMemory:
 
         parts = [
             f"Session running for {duration:.0f} minutes.",
-            f"Goal: {goal[:150]}",
+            f"Goal: {goal}",
         ]
 
         if counters.get("approvals"):
@@ -319,6 +320,15 @@ class SessionMemory:
     def last_agent_status(self) -> str:
         return self._data.get("last_agent_status", "UNKNOWN")
 
+    # V37 FIX (L-7): Public accessors to avoid _data coupling in HUD/telemetry.
+    def get_event_count(self) -> int:
+        """Return the number of events currently in memory."""
+        return len(self._data.get("events", []))
+
+    def get_counter(self, key: str) -> int:
+        """Return a specific counter value by key name."""
+        return self._data.get("counters", {}).get(key, 0)
+
     # ────────────────────────────────────────────────
     # Flush
     # ────────────────────────────────────────────────
@@ -332,7 +342,7 @@ class SessionMemory:
     # Time-Travel Engine (Snapshots)
     # ────────────────────────────────────────────────
 
-    def snapshot_state(self, context_snapshot) -> Optional[str]:
+    def snapshot_state(self, context_snapshot) -> str | None:
         """
         V12 Flagship: Time-Travel Engine.
         Serialize a ContextSnapshot right before taking action.
@@ -379,7 +389,7 @@ class SessionMemory:
             logger.debug("Failed to take Time-Travel snapshot: %s", exc)
             return None
 
-    def get_latest_snapshot(self) -> Optional[dict]:
+    def get_latest_snapshot(self) -> dict | None:
         """Load the most recent pre-action snapshot."""
         try:
             snapshots = sorted(self._snapshots_dir.glob("snapshot_*.json"))

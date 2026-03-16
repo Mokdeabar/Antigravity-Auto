@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supervisor AI : Setup Wizard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        :root {
+            --bg: #fbfbfd;
+            --surface: #ffffff;
+            --card: #ffffff;
+            --border: #d2d2d7;
+            --border-light: rgba(0, 0, 0, 0.08);
+            --accent: #0071e3;
+            --accent-hover: #0077ed;
+            --accent-light: rgba(0, 113, 227, 0.08);
+            --green: #34c759;
+            --green-light: rgba(52, 199, 89, 0.1);
+            --red: #ff3b30;
+            --red-light: rgba(255, 59, 48, 0.1);
+            --orange: #ff9500;
+            --orange-light: rgba(255, 149, 0, 0.1);
+            --text: #1d1d1f;
+            --muted: #86868b;
+            --radius-card: 18px;
+            --radius-btn: 98px;
+            --radius-box: 12px;
+            --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+            --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.47059;
+            letter-spacing: -0.022em;
+        }
+
+        .wizard {
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 24px 20px 80px;
+        }
+
+        header {
+            text-align: center;
+            padding: 48px 0 32px;
+        }
+
+        header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.005em;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        header h1 svg {
+            width: 28px;
+            height: 28px;
+            color: var(--accent);
+        }
+
+        header p {
+            color: var(--muted);
+            font-size: 15px;
+            font-weight: 400;
+            margin-bottom: 4px;
+        }
+
+        .progress-bar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(251, 251, 253, 0.85);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            padding: 16px 0 12px;
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 24px;
+        }
+
+        .progress-track {
+            height: 4px;
+            background: #e5e5ea;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 2px;
+            transition: width 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .step {
+            display: none;
+            animation: moveUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        @keyframes moveUp {
+            0% {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .step-card {
+            background: var(--card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-card);
+            box-shadow: var(--shadow-card);
+            padding: 32px;
+            margin-bottom: 20px;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .step-card:hover {
+            box-shadow: var(--shadow-hover);
+        }
+
+        .step-card h2 {
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.015em;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .step-card h2 .num {
+            background: var(--accent-light);
+            color: var(--accent);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .step-card .subtitle {
+            color: var(--muted);
+            font-size: 14px;
+            font-weight: 400;
+            margin-bottom: 24px;
+        }
+
+        .step-card p,
+        .step-card li {
+            font-size: 15px;
+            line-height: 1.5;
+            color: var(--text);
+            font-weight: 400;
+        }
+
+        .step-card ul,
+        .step-card ol {
+            padding-left: 24px;
+            margin: 12px 0 20px;
+        }
+
+        .step-card li {
+            margin-bottom: 8px;
+        }
+
+        .step-card strong {
+            font-weight: 600;
+            color: #000;
+        }
+
+        .cmd-block {
+            background: #f5f5f7;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-box);
+            padding: 12px 16px;
+            margin: 16px 0;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .cmd-block code {
+            color: #1d1d1f;
+            flex: 1;
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+
+        .cmd-block .copy-btn {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 14px;
+            border-radius: var(--radius-btn);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+        }
+
+        .cmd-block .copy-btn:hover {
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+            transform: scale(1.02);
+        }
+
+        .cmd-block .copy-btn:active {
+            transform: scale(0.96);
+        }
+
+        .cmd-block .copy-btn.copied {
+            background: var(--green);
+            color: white;
+            border-color: var(--green);
+        }
+
+        .info-toggle {
+            background: none;
+            border: none;
+            color: var(--accent);
+            padding: 8px 0;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 8px 0;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-toggle:hover {
+            color: var(--accent-hover);
+        }
+
+        .info-toggle .arrow {
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            display: inline-block;
+            font-size: 10px;
+        }
+
+        .info-toggle.open .arrow {
+            transform: rotate(90deg);
+        }
+
+        .info-panel {
+            display: none;
+            background: #f5f5f7;
+            border-radius: var(--radius-box);
+            padding: 16px 20px;
+            margin: 8px 0 16px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text);
+        }
+
+        .info-panel.open {
+            display: block;
+            animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideDown {
+            0% {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .info-panel strong {
+            color: #000;
+        }
+
+        .info-panel p {
+            margin-bottom: 8px;
+        }
+
+        .info-panel p:last-child {
+            margin-bottom: 0;
+        }
+
+        .dl-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--accent);
+            color: #ffffff;
+            padding: 12px 20px;
+            border-radius: var(--radius-btn);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 12px 4px 12px 0;
+            transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+            border: none;
+            cursor: pointer;
+        }
+
+        .dl-btn:hover {
+            background: var(--accent-hover);
+            transform: scale(1.01);
+            box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2);
+        }
+
+        .dl-btn:active {
+            transform: scale(0.98);
+        }
+
+        .dl-btn.green {
+            background: var(--green);
+        }
+
+        .dl-btn.green:hover {
+            background: #32b353;
+            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.2);
+        }
+
+        .dl-btn.orange {
+            background: var(--card);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .check-result {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            margin: 4px;
+            background: #f5f5f7;
+            border: 1px solid var(--border-light);
+        }
+
+        .check-result.pass {
+            background: var(--green-light);
+            color: #1a7b31;
+            border-color: rgba(52, 199, 89, 0.2);
+        }
+
+        .check-result.fail {
+            background: var(--red-light);
+            color: #c41c13;
+            border-color: rgba(255, 59, 48, 0.2);
+        }
+
+        .check-result.unknown {
+            color: var(--muted);
+        }
+
+        .checks-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 16px 0;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 32px;
+            gap: 16px;
+        }
+
+        .nav button {
+            padding: 14px 28px;
+            border-radius: var(--radius-btn);
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+            border: none;
+        }
+
+        .nav .prev {
+            background: #f5f5f7;
+            color: var(--text);
+            border: 1px solid var(--border-light);
+        }
+
+        .nav .prev:hover:not(:disabled) {
+            background: #ebebeb;
+        }
+
+        .nav .next {
+            background: var(--accent);
+            color: #ffffff;
+        }
+
+        .nav .next:hover:not(:disabled) {
+            background: var(--accent-hover);
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2);
+        }
+
+        .nav .prev:disabled,
+        .nav .next:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .step-dots {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex: 1;
+            flex-wrap: wrap;
+        }
+
+        .step-dots .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #d2d2d7;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .step-dots .dot.active {
+            background: var(--accent);
+            transform: scale(1.3);
+        }
+
+        .step-dots .dot.done {
+            background: var(--green);
+        }
+
+        .warn-box {
+            background: var(--orange-light);
+            border: 1px solid rgba(255, 149, 0, 0.2);
+            border-radius: var(--radius-box);
+            padding: 16px 20px;
+            margin: 16px 0;
+            font-size: 14px;
+            color: #b36800;
+            display: flex;
+            gap: 12px;
+            font-weight: 500;
+        }
+
+        .warn-box.red {
+            background: var(--red-light);
+            border-color: rgba(255, 59, 48, 0.2);
+            color: #c41c13;
+        }
+
+        .warn-box .icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            margin: 16px 0;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-box);
+        }
+
+        .table-wrap table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            background: #ffffff;
+        }
+
+        .table-wrap th {
+            text-align: left;
+            padding: 12px 16px;
+            background: #fbfbfd;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .table-wrap td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text);
+        }
+
+        .table-wrap tr:last-child td {
+            border-bottom: none;
+        }
+
+        .step-card img {
+            max-width: 100%;
+            border-radius: var(--radius-box);
+            margin: 16px 0;
+            border: 1px solid var(--border-light);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .run-check-btn {
+            background: #f5f5f7;
+            color: var(--accent);
+            padding: 14px 24px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-btn);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 16px 0;
+            transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .run-check-btn:hover {
+            background: #ebebeb;
+            transform: scale(1.01);
+        }
+
+        .final-card {
+            text-align: center;
+            padding: 56px 32px;
+        }
+
+        .final-card h2 {
+            font-size: 32px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .final-card .emoji {
+            font-size: 80px;
+            margin-bottom: 24px;
+        }
+
+        .step-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 98px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .step-status.done {
+            background: var(--green-light);
+            color: #1a7b31;
+        }
+
+        .step-status.needed {
+            background: var(--red-light);
+            color: #c41c13;
+        }
+
+        .step-status.optional {
+            background: var(--orange-light);
+            color: #b36800;
+        }
+
+        .expected-output {
+            background: #fbfbfd;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-box);
+            padding: 14px 16px;
+            margin: 12px 0;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 13px;
+            color: #1d1d1f;
+            white-space: pre-line;
+            line-height: 1.5;
+        }
+
+        .expected-output .label {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #1a7b31;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .terminal-guide {
+            background: #fbfbfd;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-box);
+            padding: 16px 20px;
+            margin: 16px 0;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text);
+        }
+
+        .terminal-guide h4 {
+            margin: 0 0 12px;
+            color: var(--text);
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .terminal-guide .step-item {
+            display: flex;
+            gap: 8px;
+            margin: 6px 0;
+            align-items: baseline;
+        }
+
+        .terminal-guide .step-num {
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 13px;
+            background: #e5e5ea;
+            color: #1d1d1f;
+            width: 20px;
+            height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wizard">
+        <header>
+            <h1><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" class="title-icon"
+                    style="color:#0071e3;vertical-align:-4px;margin-right:12px;display:inline-block">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>Supervisor AI : Setup Wizard</h1>
+            <p>Follow each step. No experience needed. We'll get you running in minutes.</p>
+        </header>
+        <div class="progress-bar">
+            <div class="progress-track">
+                <div class="progress-fill" id="progressFill" style="width:0%"></div>
+            </div>
+            <div class="progress-label"><span id="progressText">Step 1 of 11</span><span id="progressPct">0%</span>
+            </div>
+        </div>
+
+        <!-- STEP 0: Welcome / Pre-check -->
+        <div class="step active" data-step="0">
+            <div class="step-card">
+                <h2><span class="num">0</span> Welcome : Let's Check Your System</h2>
+                <p class="subtitle">Before we install anything, let's see what you already have.</p>
+
+                <div class="warn-box"
+                    style="border-color:rgba(162,155,254,.3);background:rgba(108,92,231,.08);color:var(--accent2)">
+                    <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"
+                            style="vertical-align:-4px;display:inline-block">
+                            <path
+                                d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.9 1.2 1.5 1.5 2.5" />
+                            <path d="M9 18h6" />
+                            <path d="M10 22h4" />
+                        </svg></span>
+                    <span><strong>Two setup routes:</strong><br>
+                        • <strong>This Wizard</strong> : step-by-step visual guide (you're here now)<br>
+                        • <strong>INSTALL.ps1</strong> : automated PowerShell installer (right-click → Run with
+                        PowerShell)</span>
+                </div>
+
+                <div class="terminal-guide">
+                    <h4><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"
+                            style="vertical-align:-3px;display:inline-block">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                        </svg> New to terminals? Read this first!</h4>
+                    <p>Several steps below ask you to run <strong>commands</strong>. Here's how:</p>
+                    <div class="step-item"><span class="step-num">1.</span> Press the <strong>Windows key</strong> on
+                        your keyboard</div>
+                    <div class="step-item"><span class="step-num">2.</span> Type <strong>PowerShell</strong> and click
+                        <strong>Windows PowerShell</strong>
+                    </div>
+                    <div class="step-item"><span class="step-num">3.</span> A dark window with text appears : this is
+                        the <strong>terminal</strong></div>
+                    <div class="step-item"><span class="step-num">4.</span> Click the <strong>Copy</strong> button next
+                        to any command below</div>
+                    <div class="step-item"><span class="step-num">5.</span> In the terminal,
+                        <strong>right-click</strong> to paste (or Ctrl+V)
+                    </div>
+                    <div class="step-item"><span class="step-num">6.</span> Press <strong>Enter</strong> to run the
+                        command</div>
+                    <p style="margin-top:8px;color:var(--muted);font-size:12px">
+                        <strong>Tips:</strong> If the terminal seems frozen, press Enter : it may be waiting for input.
+                        Some steps say "Run as Administrator" : that means right-click PowerShell and choose "Run as
+                        administrator" instead of just clicking it.
+                    </p>
+                </div>
+
+                <div class="warn-box"
+                    style="border-color:rgba(162,155,254,.3);background:rgba(108,92,231,.08);color:var(--accent2)">
+                    <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"
+                            style="vertical-align:-4px;display:inline-block">
+                            <path
+                                d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.9 1.2 1.5 1.5 2.5" />
+                            <path d="M9 18h6" />
+                            <path d="M10 22h4" />
+                        </svg></span>
+                    <span><strong>Tip:</strong> Double-click <strong>SETUP.bat</strong> in the project folder : it runs
+                        the check automatically and opens this page with results ready.</span>
+                </div>
+                <p>Or click below to copy the check script path, then run it from File Explorer:</p>
+                <button class="run-check-btn" onclick="runCheck()"><svg width="16" height="16" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" class="icon" style="vertical-align:-3px;display:inline-block">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg> Run Setup Check</button>
+                <p style="font-size:12px;color:var(--muted);margin-top:4px">After the check finishes, click "Load
+                    Results" below.</p>
+                <button class="dl-btn green" onclick="loadResults()" style="margin-top:12px"><svg width="16" height="16"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" class="icon" style="vertical-align:-3px;display:inline-block">
+                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                    </svg> Load Results</button>
+                <div id="checkResults" style="margin-top:16px"></div>
+                <button class="info-toggle" onclick="toggleInfo(this)"><svg width="12" height="12" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round" class="arrow"
+                        style="vertical-align:0px;display:inline-block;margin-right:6px">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg> What does the check
+                    look for?</button>
+                <div class="info-panel">
+                    <p>The checker tests for: <strong>Python</strong>, <strong>pip</strong>, <strong>Node.js</strong>,
+                        <strong>npm</strong>, <strong>Git</strong>, <strong>Docker</strong>, <strong>WSL</strong>,
+                        <strong>Gemini CLI</strong>, <strong>Ollama</strong>, the <strong>sandbox Docker image</strong>,
+                        and your <strong>Python packages</strong>.
+                    </p>
+                    <p>If everything is green, you can skip straight to the <strong>First Run</strong> step!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 1: System Requirements -->
+        <div class="step" data-step="1" data-checks="">
+            <div class="step-card">
+                <h2><span class="num">1</span> System Requirements</h2>
+                <p class="subtitle">Make sure your PC meets these minimums</p>
+                <div class="table-wrap">
+                    <table>
+                        <tr>
+                            <th>Requirement</th>
+                            <th>Minimum</th>
+                            <th>Recommended</th>
+                        </tr>
+                        <tr>
+                            <td><strong>OS</strong></td>
+                            <td>Windows 10 64-bit (19041+)</td>
+                            <td>Windows 11 23H2+</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CPU</strong></td>
+                            <td>64-bit with virtualisation</td>
+                            <td>Intel i5 / Ryzen 5+</td>
+                        </tr>
+                        <tr>
+                            <td><strong>RAM</strong></td>
+                            <td>8 GB</td>
+                            <td>16 GB+</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Disk</strong></td>
+                            <td>10 GB free</td>
+                            <td>30 GB+ free</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Internet</strong></td>
+                            <td colspan="2">Required for setup and Gemini API calls</td>
+                        </tr>
+                    </table>
+                </div>
+                <button class="info-toggle" onclick="toggleInfo(this)"><svg width="12" height="12" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round" class="arrow"
+                        style="vertical-align:0px;display:inline-block;margin-right:6px">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg> How to check your
+                    Windows version</button>
+                <div class="info-panel">
+                    <p>Press <strong>Win + R</strong>, type <code>winver</code>, press Enter. You need <strong>Windows
+                            10 build 19045+</strong> or <strong>Windows 11</strong>.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 2: BIOS Virtualisation -->
+        <div class="step" data-step="2">
+            <div class="step-card">
+                <h2><span class="num">2</span> Enable BIOS Virtualisation</h2>
+                <p class="subtitle">Required for Docker & WSL2 : the #1 reason for setup failures</p>
+                <div class="warn-box red"><span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="icon" style="vertical-align:-4px;display:inline-block;color:var(--red)">
+                            <path
+                                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg></span><span>Docker and WSL2 <strong>will not
+                            work</strong> without BIOS virtualisation enabled. Check this first!</span></div>
+                <p><strong>How to check:</strong> Press <strong>Ctrl+Shift+Esc</strong> → Performance tab → CPU → look
+                    for <strong>"Virtualisation: Enabled"</strong>.</p>
+                <p>If it says <strong>Disabled</strong>, you need to enter BIOS:</p>
+                <ol>
+                    <li><strong>Restart</strong> your PC</li>
+                    <li>During boot, press the BIOS key repeatedly:</li>
+                </ol>
+                <div class="table-wrap">
+                    <table>
+                        <tr>
+                            <th>Brand</th>
+                            <th>Key</th>
+                        </tr>
+                        <tr>
+                            <td>Dell</td>
+                            <td>F2</td>
+                        </tr>
+                        <tr>
+                            <td>HP</td>
+                            <td>F10 / Esc</td>
+                        </tr>
+                        <tr>
+                            <td>Lenovo</td>
+                            <td>F1 / F2</td>
+                        </tr>
+                        <tr>
+                            <td>ASUS / MSI</td>
+                            <td>F2 / Del</td>
+                        </tr>
+                        <tr>
+                            <td>Acer</td>
+                            <td>F2 / Del</td>
+                        </tr>
+                    </table>
+                </div>
+                <ol start="3">
+                    <li>Find <strong>Advanced → CPU Configuration</strong></li>
+                    <li>Intel: Enable <strong>"VT-x"</strong> · AMD: Enable <strong>"SVM Mode"</strong></li>
+                    <li><strong>Save & Exit</strong> (F10)</li>
+                </ol>
+                <button class="info-toggle" onclick="toggleInfo(this)"><svg width="12" height="12" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round" class="arrow"
+                        style="vertical-align:0px;display:inline-block;margin-right:6px">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg> Already enabled?
+                    Skip this step</button>
+                <div class="info-panel">
+                    <p>If Task Manager already shows "Virtualisation: Enabled", you're good : click
+                        <strong>Next</strong>.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 3: WSL2 -->
+        <div class="step" data-step="3" data-checks="wsl">
+            <div class="step-card">
+                <h2><span class="num">3</span> Install WSL2</h2>
+                <p class="subtitle">Windows Subsystem for Linux : needed by Docker Desktop</p>
+                <p>Open <strong>PowerShell as Administrator</strong> and run the commands below.</p>
+                <div class="terminal-guide" style="padding:10px 14px;margin:6px 0">
+                    <h4 style="font-size:12px;margin:0 0 4px"><svg width="16" height="16" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" class="icon" style="vertical-align:-3px;display:inline-block">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        </svg> How to open PowerShell as Administrator:</h4>
+                    <div class="step-item"><span class="step-num">1.</span> Press the <strong>Windows key</strong></div>
+                    <div class="step-item"><span class="step-num">2.</span> Type <strong>PowerShell</strong></div>
+                    <div class="step-item"><span class="step-num">3.</span> <strong>Right-click</strong> "Windows
+                        PowerShell"</div>
+                    <div class="step-item"><span class="step-num">4.</span> Click <strong>"Run as
+                            administrator"</strong></div>
+                    <div class="step-item"><span class="step-num">5.</span> Click <strong>Yes</strong> on the popup
+                    </div>
+                </div>
+                <div class="cmd-block"><code>wsl --install</code><button class="copy-btn"
+                        onclick="copyCmd(this)">Copy</button></div>
+                <p><strong>Restart your PC</strong> when prompted. Then open PowerShell (admin) again:</p>
+                <div class="cmd-block"><code>wsl --update</code><button class="copy-btn"
+                        onclick="copyCmd(this)">Copy</button></div>
+                <div class="cmd-block"><code>wsl --set-default-version 2</code><button class="copy-btn"
+                        onclick="copyCmd(this)">Copy</button></div>
+                <p>Verify (in a <strong>new</strong> terminal):</p>
+                <div class="cmd-block"><code>wsl --version</code><button class="copy-btn"
+                        onclick="copyCmd(this)">Copy</button></div>
+                <div class="expected-output"><span class="label">✅ You should see something like:</span>WSL version:
+                    2.x.x.x
+                    Kernel version: 5.15.167.4-1
+                    WSLg version: 1.0.65</div>
+                <button class="info-toggle" onclick="toggleInfo(this)"><svg width="12" height="12" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round" class="arrow"
+                        style="vertical-align:0px;display:inline-block;margin-right:6px">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg> Not working?
+                    Troubleshooting</button>
+                <div class="info-panel">
+                    <p><strong>“wsl is not recognized”</strong> : WSL isn't installed. Run <code>wsl --install</code> as
+                        Administrator, then <strong>restart your PC</strong>.</p>
+                    <p><strong>Version shows 1.x</strong> : Run: <code>wsl --set-default-version 2</code></p>
+                    <p><strong>wsl --install fails</strong> : Try enabling features manually:</p>
+                    <div class="cmd-block">
+                        <code>dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart</code><button
+                            class="copy-btn" onclick="copyCmd(this)">Copy</button>
+                    </div>
+                    <div class="cmd-block">
+                        <code>dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart</code><button
+                            class="copy-btn" onclick="copyCmd(this)">Copy</button>
+                    </div>
+                    <p>Then restart and run <code>wsl --set-default-version 2</code>.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 4: Git -->
+        <div class="step" data-step="4" data-checks="git">
+            <div class="step-card">
+                <h2><span class="num">4</span> Install Git</h2>
+                <p class="subtitle">Version control for the Supervisor's code checkpoints</p>
+                <a href="https://git-scm.com/downloads/win" target="_blank" class="dl-btn"><svg width="16" height="16"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" class="icon" style="vertical-align:-3px;display:inline-block">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <polyline points="19 12 12 19 5 12" />
+                    </svg> Download Git for
+                    Windows</a>
+                <p style="margin-top:10px">Run the installer : accept all defaults, just click <strong>Next</strong>
+                    through every screen.</p>
+                <p><strong>Or install via terminal.</strong> Open <strong>PowerShell</strong> (Win key → type PowerShell
+                    → click it) and run:</p>
+                <div class="cmd-block">
+                    <code>winget install Git.Git --accept-source-agreements --accept-package-agreements</code><button
+                        class="copy-btn" onclick="copyCmd(this)">Copy</button>
+                </div>
+                <p>Verify (in a <strong>new</strong> terminal):</p>
+                <div class="cmd-block"><code>git --version</code><button class="copy-btn"
+                        onclick="copyCmd(this)">Copy</button></div>
+                <div class="expected-output"><span class="label">✅ You should see something like:</span>git version
+                    2.53.0.windows.1
+                </div>
+                <button class="info-toggle" onclick="toggleInfo(this)"><svg width="12" height="12" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round" class="arrow"
+                        style="vertical-align:0px;display:inline-block;margin-right:6px">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg> Not working?
+                    Troubleshooting</button>
+                <div class="info-panel">
+                    <p><strong>“git is not recognized”</strong> : Close your terminal and open a <strong>new</strong>
+                        one. Git's PATH needs a new window to take effect.</p>
+                    <p><strong>Still not working?</strong> : Reinstall Git: download from <a
+                            href="https://git-scm.com/downloads/win" target="_blank"
+                            style="color:var(--accent)">git-scm.com</a> and check "Add to PATH" during install.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 5: Python -->
+        <div class="step" data-step="5" data-checks="python,pip">
+            <div class="step-card">
+                <h2><span class="num">5</span> Install Python 3.14</h2>
+                <p class="subtitle">The Supervisor's core runtime</p>
+                <a href="https://www.python.org/downloads/" target="_blank" class="dl-btn"><svg width="16" height="16"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" class="icon" style="vertical-align:-3px;display:inline-block">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <polyline points="19 12 12 19 5 12" />
+                    </svg> Download Python</a>
+                <div class="warn-box red"><span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="icon" style="vertical-align:-4px;display:inline-block;color:var(--red)">
+                            <path
+                                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg></span><span><strong>CRITICAL:</strong> On the
+                        installer's first screen, check the box <strong>"Add python.exe to PATH"</strong>. If you miss
+                        this, nothing will work!</span></div>
+                <p>Click <strong>"Install Now"</strong> → wait → <strong>Close</strong>.</p>
+                <p><strong>Or install via terminal.</strong> Open <strong>PowerShell</strong> (Win key → type PowerShell
+                    → click it) and run:</p>
+                <div class="cmd-block">
+                    <code>winget install Python.Python.3.14 --accept-source-agreements --accept-package-agreements</code><button
+                        class="copy-btn" onclick="copyCmd(this)">Copy</button>
+                </div>
+                <p>Verify (open a <strong>new</strong> terminal : close the old one first!):</p>
+                <div class="cmd-block"><code>python --version</code><button class="copy-btn"
+                        onclick="copyCmd(this)">Copy</button></div>
+                <div class="expected-output"><span class="label">✅ You should see something like:</span>Python 3.14.3
+                </div>
+                <div class="cmd-block"><code>pip --version</code><button class="copy-btn"
+                        onclick="copyCmd(this)">Copy</button></div>
+                <div class="expected-output"><span class="label">✅ You should see:</span>pip 24.3.1 from ... (python
+                    3.13)</div>
+                <button class="info-toggle" onclick="toggleInfo(this)"><svg width="12" height="12" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round" class="arrow"
+                        style="vertical-align:0px;display:inline-block;margin-right:6px">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg> Not working?
+                    Troubleshooting</button>
+                <div class="info-panel">
+                    <p><strong>“python is not recognized”</strong> : You missed the "Add python.exe to PATH" checkbox
+                        during install. <strong>Uninstall Python</strong> from Settings → Apps, then reinstall and CHECK
+                        that box on the first screen.</p>
+                    <p><strong>Shows Python 3.12 or older</strong> : That's usually fine. Python 3.10+ works.</p>
+                    <p><strong>“pip is not recognized”</strong> : Try: <code>python -m pip --version</code> instead. If
+                        that works, use <code>python -m pip</code> in place of <code>pip</code> for all commands.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 6: Node.js -->
+        <div class="step" data-step="6" data-checks="node,npm">
+            <div class="step-card">
+                <h2><span class="num">6</span> Install Node.js</h2>
+                <p class="subtitle">Needed for the Gemini CLI and sandbox tooling</p>
+                <a href="https://nodejs.org/" target="_blank" class="dl-btn"><svg width="16" height="16"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" class="icon" style="vertical-align:-3px;display:inline-block">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <polyline points="19 12 12 19 5 12" />
+                    </svg> Download Node.js LTS</a>
+                <p style="margin-top:10px">Download the <strong>LTS</strong> version (20.x or 22.x). Run installer,
+                    accept defaults.</p>
+                <p><strong>Or install via terminal.</strong> Open <strong>PowerShell</strong> (Win key → type PowerShell
+                    → click it) and run:</p>
+                <div class="cmd-block">
+                    <code>winget install OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements</code><button
+                        class="copy-btn" onclick="copyCmd(this)">Copy</button>
+                </div>
+                <p>Verify (in a <strong>new</strong> terminal):</p>
+                <div class="cmd-block"><code>node --version</code><button class="copy-btn"
+                        onclick="copyCmd(this)">Copy</button></div>
+                <div class="expected-output"><span class="label">✅ You should see something like:</span>v25.7.0 (or
+                    v24.x LTS)</div>
+                <div class="cmd-block"><code>npm --version</code><button class="copy-btn"
+                        onclick="copyCmd(this)">Copy</button></div>
+                <div class="expected-output"><span class="label">✅ You should see something like:</span>11.11.0 (any
+                    recent version is fine)
+                </div>
+                <button class="info-toggle" onclick="toggleInfo(this)"><svg width="12" height="12" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round" class="arrow"
+                        style="vertical-align:0px;display:inline-block;margin-right:6px">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg> Not working?
+                    Troubleshooting</button>
+                <div class="info-panel">
+                    <p><strong>“node is not recognized”</strong> : Close your terminal and open a <strong>new</strong>
+                        one. If still failing, restart your PC.</p>
+                    <p><strong>Version is below v18</strong> : Uninstall via Settings → Apps, then re-download the LTS
+                        from <a href="https://nodejs.org" target="_blank" style="color:var(--accent)">nodejs.org</a>.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 7: Docker -->
+        <div class="step" data-step="7" data-checks="docker,docker_daemon">
+            <div class="step-card">
+                <h2><span class="num">7</span> Install Docker Desktop</h2>
+                <p class="subtitle">Sandboxed containers for safe code execution</p>
+                <a href="https://docs.docker.com/desktop/install/windows-install/" target="_blank" class="dl-btn"><svg
+                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" class="icon"
+                        style="vertical-align:-3px;display:inline-block">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <polyline points="19 12 12 19 5 12" />
+                    </svg>
+                    Download Docker Desktop</a>
+                <ol>
+                    <li>Run <code>Docker Desktop Installer.exe</code></li>
+                    <li>✅ Check <strong>"Use WSL 2 instead of Hyper-V"</strong></li>
+                    <li>Click OK → install → <strong>restart PC</strong></li>
+                    <li>After reboot, launch Docker Desktop from Start menu</li>
+                    <li>Accept the agreement · skip sign-in (not required)</li>
+                    <li>Wait for the whale icon to stop animating</li>
+                </ol>
+                <div class="warn-box"><span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="icon" style="vertical-align:-4px;display:inline-block;color:var(--orange)">
+                            <polygon points="12 2 22 22 2 22"></polygon>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg></span><span>Docker Desktop must be <strong>running</strong>
+                        every time you use Supervisor. Auto-start: Docker Desktop → ⚙️ Settings → General →
+                        <strong>"Start when you sign in"</strong></span></div>
+                <p>Verify:</p>
+                <div class="cmd-block"><code>docker --version</code><button class="copy-btn"
+                        onclick="copyCmd(this)">Copy</button></div>
+                <div class="expected-output"><span class="label">✅ You should see something like:</span>Docker version
+                    27.x.x, build
+                    bde2b89</div>
+                <div class="cmd-block"><code>docker info</code><button class="copy-btn"
+                        onclick="copyCmd(this)">Copy</button></div>
+                <div class="expected-output"><span class="label">✅ You should see something like (first few
+                        lines):</span>Client:
+                    Docker Engine : Community
+                    Server:
+                    Containers: 0
+                    Running: 0</div>
+                <button class="info-toggle" onclick="toggleInfo(this)"><svg width="12" height="12" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round" class="arrow"
+                        style="vertical-align:0px;display:inline-block;margin-right:6px">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg> Not working?
+                    Troubleshooting</button>
+                <div class="info-panel">
+                    <p><strong>“docker is not recognized”</strong> : Docker Desktop isn't installed, or you need to open
+                        a new terminal window.</p>
+                    <p><strong>“error during connect” or “daemon is not running”</strong> : Open Docker Desktop from the
+                        Start menu and wait for the whale icon to stop animating. Docker must be
+                        <strong>running</strong> every time you use Supervisor.
+                    </p>
+                    <p><strong>Tip:</strong> Set Docker to start automatically: Docker Desktop → ⚙️ Settings → General →
+                        <strong>"Start when you sign in"</strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 8: Gemini CLI -->
+        <div class="step" data-step="8" data-checks="gemini">
+            <div class="step-card">
+                <h2><span class="num">8</span> Install & Authenticate Gemini CLI</h2>
+                <p class="subtitle">The AI brain : sends prompts to Google's Gemini models</p>
+                <p><strong>Install:</strong> Open <strong>PowerShell</strong> (Win key → type PowerShell → click it) and
+                    run:</p>
+                <div class="cmd-block"><code>npm install -g @google/gemini-cli</code><button class="copy-btn"
+                        onclick="copyCmd(this)">Copy</button></div>
+                <p><strong>Authenticate:</strong> Run <code>gemini</code>, select "Login with Google", sign in with your
+                    Google account.</p>
+                <div class="cmd-block"><code>gemini</code><button class="copy-btn" onclick="copyCmd(this)">Copy</button>
+                </div>
+                <div class="expected-output"><span class="label">✅ You should see something like:</span>? Login with
+                    Google (Use arrow keys)
+                    ❯ Login with Google
+                    Use an API Key</div>
+                <p style="font-size:12px;color:var(--muted)">A browser will open → sign in → grant permissions → return
+                    to terminal → press Ctrl+C to exit.</p>
+                <button class="info-toggle" onclick="toggleInfo(this)"><svg width="12" height="12" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round" class="arrow"
+                        style="vertical-align:0px;display:inline-block;margin-right:6px">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg> Not working?
+                    Troubleshooting</button>
+                <div class="info-panel">
+                    <p><strong>“gemini is not recognized”</strong> : Gemini CLI isn't installed. Run
+                        <code>npm install -g @google/gemini-cli</code> again.
+                    </p>
+                    <p><strong>"npm is not recognized"</strong> : Node.js isn't installed correctly. Go back to Step 6.
+                    </p>
+                    <p><strong>Browser doesn't open</strong> : Check your default browser settings. Try running
+                        <code>gemini</code> again.
+                    </p>
+                </div>
+                <button class="info-toggle" onclick="toggleInfo(this)"><svg width="12" height="12" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round" class="arrow"
+                        style="vertical-align:0px;display:inline-block;margin-right:6px">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg> Free tier limits &
+                    paid plans</button>
+                <div class="info-panel">
+                    <p><strong>Free (Google account):</strong> 60 req/min · 1,000 req/day · Gemini 2.5 Pro + Gemini 3 ·
+                        1M token context</p>
+                    <p><strong>AI Pro ($19.99/mo):</strong> Higher limits</p>
+                    <p><strong>AI Ultra ($249.99/mo):</strong> 1500 Thinking/day · 500 Pro/day · 200 Agent/day · 30TB
+                        storage</p>
+                    <p>Sign in with the Google account linked to your subscription.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 9: Ollama -->
+        <div class="step" data-step="9" data-checks="ollama" data-optional="true">
+            <div class="step-card">
+                <h2><span class="num">9</span> Install Ollama <span
+                        style="font-size:13px;color:var(--muted);font-weight:400">(Optional)</span></h2>
+                <p class="subtitle">Local AI brain for faster offline tasks : recommended but not required</p>
+                <a href="https://ollama.com/download" target="_blank" class="dl-btn"><svg width="16" height="16"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" class="icon" style="vertical-align:-3px;display:inline-block">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <polyline points="19 12 12 19 5 12" />
+                    </svg> Download Ollama</a>
+                <p style="margin-top:10px">Run <code>OllamaSetup.exe</code>. If SmartScreen warns, click "More info" →
+                    "Run anyway".</p>
+                <p>Then pull the models. <strong>Run these in any terminal</strong> (PowerShell or Command Prompt):</p>
+                <div class="cmd-block"><code>ollama pull llama3</code><button class="copy-btn"
+                        onclick="copyCmd(this)">Copy</button></div>
+                <div class="cmd-block"><code>ollama pull llava</code><button class="copy-btn"
+                        onclick="copyCmd(this)">Copy</button></div>
+                <p style="font-size:12px;color:var(--muted)">~4.7 GB each. llama3 = text tasks, llava = visual analysis.
+                </p>
+                <button class="info-toggle" onclick="toggleInfo(this)"><svg width="12" height="12" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round" class="arrow"
+                        style="vertical-align:0px;display:inline-block;margin-right:6px">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg> Can I skip
+                    this?</button>
+                <div class="info-panel">
+                    <p>Yes! The Supervisor works fine without Ollama : all tasks go through Gemini CLI instead. You can
+                        install it later.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 10: Project Setup + Dependencies + Docker Image -->
+        <div class="step" data-step="10" data-checks="python_packages,sandbox_image">
+            <div class="step-card">
+                <h2><span class="num">10</span> Project Setup</h2>
+                <p class="subtitle">Install dependencies and build the sandbox</p>
+
+                <p><strong>1. Make sure the folder exists:</strong></p>
+                <div class="cmd-block"><code>C:\Users\YOUR_USERNAME\Desktop\Experiments\Antigravity Auto\</code><button
+                        class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+                <p style="font-size:12px;color:var(--muted)">Replace YOUR_USERNAME with your Windows username.</p>
+
+                <p><strong>2. Install Python packages.</strong> Open a terminal and navigate to the project folder:</p>
+                <div class="terminal-guide" style="padding:10px 14px;margin:6px 0">
+                    <h4 style="font-size:12px;margin:0 0 4px"><svg width="16" height="16" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" class="icon" style="vertical-align:-3px;display:inline-block">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                        </svg> How to navigate to the project folder:</h4>
+                    <div class="step-item"><span class="step-num">1.</span> Open <strong>PowerShell</strong> (Win key →
+                        type PowerShell → click it)</div>
+                    <div class="step-item"><span class="step-num">2.</span> Type:
+                        <code>cd "C:\Users\YOUR_USERNAME\Desktop\Experiments\Antigravity Auto"</code>
+                    </div>
+                    <div class="step-item"><span class="step-num">3.</span> Press <strong>Enter</strong></div>
+                </div>
+                <div class="cmd-block"><code>pip install --upgrade -r requirements.txt</code><button class="copy-btn"
+                        onclick="copyCmd(this)">Copy</button></div>
+                <p>Verify:</p>
+                <div class="cmd-block">
+                    <code>python -c "import fastapi, uvicorn, aiohttp, psutil; print('All packages OK')"</code><button
+                        class="copy-btn" onclick="copyCmd(this)">Copy</button>
+                </div>
+                <div class="expected-output"><span class="label">✅ You should see:</span>All packages OK</div>
+                <button class="info-toggle" onclick="toggleInfo(this)"><svg width="12" height="12" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round" class="arrow"
+                        style="vertical-align:0px;display:inline-block;margin-right:6px">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg> Package install
+                    failed?</button>
+                <div class="info-panel">
+                    <p><strong>"No module named ..."</strong> : A package is missing. Run the pip install command again.
+                    </p>
+                    <p><strong>"pip is not recognized"</strong> : Try:
+                        <code>python -m pip install --upgrade -r requirements.txt</code>
+                    </p>
+                    <p><strong>Permission error</strong> : Add <code>--user</code> flag:
+                        <code>pip install --user -r requirements.txt</code>
+                    </p>
+                </div>
+
+                <p><strong>3. Build the Docker sandbox image</strong> (3-10 min). Run from the <strong>same
+                        terminal</strong>:</p>
+                <div class="cmd-block">
+                    <code>cd supervisor && docker build -t supervisor-sandbox -f Dockerfile.sandbox .</code><button
+                        class="copy-btn" onclick="copyCmd(this)">Copy</button>
+                </div>
+                <p>Verify:</p>
+                <div class="cmd-block"><code>docker images supervisor-sandbox</code><button class="copy-btn"
+                        onclick="copyCmd(this)">Copy</button></div>
+                <div class="expected-output"><span class="label">✅ You should see something like:</span>REPOSITORY TAG
+                    IMAGE ID CREATED
+                    SIZE
+                    supervisor-sandbox latest abc123def456 1 minute ago 850MB</div>
+                <button class="info-toggle" onclick="toggleInfo(this)"><svg width="12" height="12" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round" class="arrow"
+                        style="vertical-align:0px;display:inline-block;margin-right:6px">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg> Docker build
+                    failed?</button>
+                <div class="info-panel">
+                    <p><strong>"Cannot connect to the Docker daemon"</strong> : Docker Desktop isn't running. Open it
+                        from the Start menu and wait.</p>
+                    <p><strong>"Dockerfile not found"</strong> : Make sure you're in the project root folder. Run:
+                        <code>dir supervisor\Dockerfile.sandbox</code>
+                    </p>
+                    <p><strong>Network errors during build</strong> : Check your internet connection and try again.</p>
+                </div>
+
+                <p><strong>4. Create a project folder</strong> under Experiments for each project, e.g.:</p>
+                <div class="cmd-block"><code>mkdir "C:\Users\YOUR_USERNAME\Desktop\Experiments\My Project"</code><button
+                        class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+            </div>
+        </div>
+
+        <!-- STEP 11: First Run -->
+        <div class="step" data-step="11">
+            <div class="step-card final-card">
+                <div class="emoji"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                        style="color:#0071e3;display:inline-block;margin-bottom:12px">
+                        <path
+                            d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+                        <path
+                            d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+                        <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
+                        <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+                    </svg></div>
+                <h2>You're Ready!</h2>
+                <p class="subtitle">Everything is installed. Time to launch!</p>
+                <p style="margin:16px 0">Make sure <strong>Docker Desktop is running</strong>, then:</p>
+                <button class="dl-btn green" style="font-size:16px;padding:14px 28px" onclick="launchCC()"><svg
+                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round" class="arrow"
+                        style="vertical-align:-3px;display:inline-block;margin-right:4px">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg> Launch
+                    Command Centre</button>
+                <p style="font-size:12px;color:var(--muted);margin-top:8px">Opens Command Centre.bat : your browser will
+                    open to http://localhost:8420</p>
+                <div style="text-align:left;margin-top:28px">
+                    <p><strong>In the dashboard:</strong></p>
+                    <ol>
+                        <li>Enter your <strong>project path</strong></li>
+                        <li>Enter your <strong>goal</strong> (describe what you want built)</li>
+                        <li>Click <strong>Launch</strong></li>
+                    </ol>
+                </div>
+                <button class="run-check-btn" onclick="runCheck()" style="margin:20px auto"><svg width="16" height="16"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" class="icon" style="vertical-align:-3px;display:inline-block">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg> Run Final Check</button>
+                <button class="dl-btn green" onclick="loadResults()"><svg width="16" height="16" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" class="icon" style="vertical-align:-3px;display:inline-block">
+                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                    </svg> Load Results</button>
+                <div id="finalCheckResults" style="margin-top:16px"></div>
+            </div>
+        </div>
+
+        <!-- NAV -->
+        <div class="nav">
+            <button class="prev" id="btnPrev" onclick="go(-1)" disabled>← Back</button>
+            <div class="step-dots" id="dots"></div>
+            <button class="next" id="btnNext" onclick="go(1)">Next →</button>
+        </div>
+    </div>
+
+    <script>
+        const TOTAL = 12; let cur = 0;
+        const fill = document.getElementById('progressFill'), pText = document.getElementById('progressText'), pPct = document.getElementById('progressPct');
+        const dots = document.getElementById('dots'), btnP = document.getElementById('btnPrev'), btnN = document.getElementById('btnNext');
+        const steps = document.querySelectorAll('.step');
+
+        // Build dots
+        for (let i = 0; i < TOTAL; i++) { const d = document.createElement('div'); d.className = 'dot' + (i === 0 ? ' active' : ''); d.onclick = () => { cur = i; render() }; dots.appendChild(d) }
+
+        // Load saved step
+        const saved = localStorage.getItem('setup_step'); if (saved) { cur = parseInt(saved) || 0 }
+        render();
+
+        function render() {
+            steps.forEach(s => s.classList.remove('active'));
+            steps[cur].classList.add('active');
+            const pct = Math.round((cur / (TOTAL - 1)) * 100);
+            fill.style.width = pct + '%';
+            pText.textContent = `Step ${cur + 1} of ${TOTAL}`;
+            pPct.textContent = pct + '%';
+            btnP.disabled = cur === 0;
+            btnN.disabled = cur === TOTAL - 1;
+            btnN.textContent = cur === TOTAL - 2 ? 'Finish! 🎉' : 'Next →';
+            document.querySelectorAll('.step-dots .dot').forEach((d, i) => {
+                d.className = 'dot' + (i === cur ? ' active' : '') + (i < cur ? ' done' : '');
+            });
+            localStorage.setItem('setup_step', cur);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        function go(dir) { cur = Math.max(0, Math.min(TOTAL - 1, cur + dir)); render() }
+
+        function copyCmd(btn) {
+            const code = btn.parentElement.querySelector('code').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                btn.textContent = 'Copied!'; btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied') }, 1500);
+            });
+        }
+        function toggleInfo(btn) {
+            btn.classList.toggle('open');
+            const panel = btn.nextElementSibling; panel.classList.toggle('open');
+        }
+        function showToast(msg) {
+            let t = document.getElementById('toast');
+            if (!t) { t = document.createElement('div'); t.id = 'toast'; t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#ffffff;border:1px solid var(--border);color:#1d1d1f;padding:14px 22px;border-radius:12px;font-size:14px;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,.15);max-width:500px;width:90%;word-break:break-all;overflow-wrap:break-word;text-align:center;line-height:1.6;animation:fadeIn .3s ease'; document.body.appendChild(t) }
+            t.innerHTML = msg; t.style.display = 'block';
+            setTimeout(() => { t.style.display = 'none' }, 8000);
+        }
+        function runCheck() {
+            const p = location.href.replace(/SETUP\.html.*/i, '').replace('file:///', '').replace(/\//g, '\\') + 'check_setup.bat';
+            navigator.clipboard.writeText(p).then(() => {
+                showToast('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon" style="vertical-align:-3px;display:inline-block"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg> Path copied! Open <strong>File Explorer</strong>, navigate to the project folder, and <strong>double-click check_setup.bat</strong>.<br><br>Or paste this in a terminal: <code style="color:var(--accent2)">' + p + '</code>');
+            }).catch(() => {
+                showToast('Open <strong>File Explorer</strong> → navigate to the project folder → <strong>double-click check_setup.bat</strong>');
+            });
+        }
+        function launchCC() {
+            const p = location.href.replace(/SETUP\.html.*/i, '').replace('file:///', '').replace(/\//g, '\\') + 'Command Centre.bat';
+            navigator.clipboard.writeText(p).then(() => {
+                showToast('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon" style="vertical-align:-3px;display:inline-block"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg> Path copied! Open <strong>File Explorer</strong>, navigate to the project folder, and <strong>double-click Command Centre.bat</strong>.<br><br>Or paste this in a terminal: <code style="color:var(--accent2)">' + p + '</code>');
+            }).catch(() => {
+                showToast('Open <strong>File Explorer</strong> → navigate to the project folder → <strong>double-click Command Centre.bat</strong>');
+            });
+        }
+        function loadResults() {
+            // Primary: use pre-loaded JS data (works on file://)
+            if (window._checkResults) {
+                checkData = window._checkResults;
+                renderCheckGrid(checkData);
+                applyStepStatus();
+                return;
+            }
+            // Fallback: fetch JSON (only works on HTTP, avoid CORS error on file://)
+            if (window.location.protocol !== 'file:') {
+                fetch('check_results.json?t=' + Date.now()).then(r => r.json()).then(data => {
+                    checkData = data;
+                    renderCheckGrid(data);
+                    applyStepStatus();
+                }).catch(() => {
+                    showLoadError();
+                });
+            } else {
+                showLoadError();
+            }
+
+            function showLoadError() {
+                const msg = '<p style="color:var(--red);font-size:13px">No check results found. Run <strong>SETUP.bat</strong> (double-click it in the project folder) or <strong>check_setup.bat</strong> first, then re-open this page.</p>';
+                if (document.getElementById('checkResults')) document.getElementById('checkResults').innerHTML = msg;
+                if (document.getElementById('finalCheckResults')) document.getElementById('finalCheckResults').innerHTML = msg;
+            }
+        }
+        // Per-step status mapping: step data-checks -> check_results keys
+        let checkData = null;
+        function applyStepStatus() {
+            if (!checkData) return;
+            document.querySelectorAll('.step[data-checks]').forEach(step => {
+                const keys = step.dataset.checks;
+                if (!keys) return;
+                const isOptional = step.dataset.optional === 'true';
+                const checks = keys.split(',');
+                // Remove any existing status banner
+                const existing = step.querySelector('.step-status');
+                if (existing) existing.remove();
+                const allOk = checks.every(k => checkData[k] && checkData[k].ok === true);
+                const banner = document.createElement('div');
+                if (allOk) {
+                    banner.className = 'step-status done';
+                    banner.innerHTML = '<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"color:#1a7b31;vertical-align:-2px;display:inline-block;margin-right:6px\"><polyline points=\"20 6 9 17 4 12\"/></svg> Already done : you can skip this step!';
+                } else if (isOptional) {
+                    banner.className = 'step-status optional';
+                    banner.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="title-icon" style="color:#0071e3;vertical-align:-4px;margin-right:8px;display:inline-block"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> Optional : not installed yet, but not required';
+                } else {
+                    banner.className = 'step-status needed';
+                    banner.innerHTML = '<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"color:var(--red);vertical-align:-2px;display:inline-block;margin-right:6px\"><line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"/><line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"/></svg> Action needed : follow the steps below';
+                }
+                // Insert at top of step-card
+                const card = step.querySelector('.step-card');
+                if (card) card.insertBefore(banner, card.children[0]);
+            });
+        }
+
+        // Try auto-loading results on page load
+        function autoLoad() {
+            // Primary: check_results.js loaded via script tag (works on file://)
+            if (window._checkResults) {
+                checkData = window._checkResults;
+                renderCheckGrid(checkData);
+                applyStepStatus();
+                return;
+            }
+            // Fallback: fetch JSON (works when served over HTTP)
+            if (window.location.protocol !== 'file:') {
+                fetch('check_results.json?t=' + Date.now()).then(r => r.json()).then(data => {
+                    checkData = data;
+                    renderCheckGrid(data);
+                    applyStepStatus();
+                }).catch(() => { /* Silent fail for CORS/file:// */ });
+            }
+        }
+        function renderCheckGrid(data) {
+            const items = [
+                ['Python', data.python], ['pip', data.pip], ['Node.js', data.node], ['npm', data.npm],
+                ['Git', data.git], ['Docker', data.docker], ['Docker Daemon', data.docker_daemon],
+                ['WSL', data.wsl], ['Gemini CLI', data.gemini], ['Ollama', data.ollama],
+                ['Sandbox Image', data.sandbox_image], ['Python Packages', data.python_packages]
+            ];
+            let html = '<div class="checks-grid">';
+            items.forEach(([name, val]) => {
+                const ok = val && val.ok === true; const cls = ok ? 'pass' : 'fail';
+                const ver = (val && val.version) ? ` (${val.version})` : '';
+                html += `<span class="check-result ${cls}">${ok ? '✅' : '❌'} ${name}${ver}</span>`;
+            });
+            html += '</div><p style="font-size:11px;color:var(--muted);margin-top:8px">Checked: ' + ((data.checked_at) || 'unknown') + '</p>';
+            if (document.getElementById('checkResults')) document.getElementById('checkResults').innerHTML = html;
+            if (document.getElementById('finalCheckResults')) document.getElementById('finalCheckResults').innerHTML = html;
+        }
+        setTimeout(() => autoLoad(), 100);
+
+        // Keyboard nav
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowRight' && cur < TOTAL - 1) go(1);
+            if (e.key === 'ArrowLeft' && cur > 0) go(-1);
+        });
+    </script>
+    <!-- Auto-load check results (written by check_setup.bat / SETUP.bat) -->
+    <script>
+        // Create script tag dynamically to avoid console errors if file doesn't exist yet
+        const script = document.createElement('script');
+        script.src = 'check_results.js';
+        script.onerror = function () { /* suppress ERR_FILE_NOT_FOUND */ };
+        document.head.appendChild(script);
+    </script>
+    <!-- Re-trigger autoLoad after external script loads -->
+    <script>setTimeout(() => autoLoad(), 50)</script>
+</body>
+
+</html>

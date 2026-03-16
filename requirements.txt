@@ -1,14 +1,29 @@
-# Supervisor AI V35 — Host Intelligence + Command Centre
-# Core
+# Supervisor AI V40 — Host Intelligence + Command Centre
+# Uses >= minimums so 'pip install --upgrade -r requirements.txt' fetches
+# the latest compatible versions. Transitive deps (pydantic, starlette)
+# are listed explicitly so pip's resolver keeps them compatible.
+
+# Core — async HTTP for Ollama brain communication
 aiohttp>=3.9.0
 
-# V35 Command Centre (API Bridge + WebSocket Glass Brain)
+# V44 Command Centre (API Bridge + WebSocket Glass Brain)
 fastapi>=0.115.0
 uvicorn[standard]>=0.32.0
 websockets>=13.0
 
-# Analysis
+# FastAPI transitive deps — listed explicitly so pip resolves them together
+# (prevents solo upgrades from breaking version locks, e.g. pydantic-core)
+pydantic>=2.10.0
+starlette>=0.40.0
+
+# V44 System Health monitoring (CPU, memory, process management)
+psutil>=5.9.0
+
+# HTML parsing for workspace analysis
 beautifulsoup4>=4.12.0
+
+# Windows timezone data (Python's zoneinfo needs this on Windows)
+tzdata>=2024.1
 
 # Optional: Visual QA screenshot compression
 # Pillow>=10.0.0

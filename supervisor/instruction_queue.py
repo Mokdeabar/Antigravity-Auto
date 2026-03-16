@@ -1,7 +1,7 @@
 """
 instruction_queue.py — User Instruction Queue.
 
-Thin wrapper around asyncio.Queue for the V35 Command Centre.
+Thin wrapper around asyncio.Queue for the V44 Command Centre.
 The UI pushes instructions via POST /api/instruct, and the
 monitoring loop in main.py drains them at the top of each cycle.
 
@@ -9,11 +9,12 @@ Thread-safe because asyncio.Queue is coroutine-safe within
 the same event loop.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Optional
 
 logger = logging.getLogger("supervisor.instruction_queue")
 
@@ -37,7 +38,7 @@ class Instruction:
 
 class InstructionQueue:
     """
-    Async instruction queue for the V35 Command Centre.
+    Async instruction queue for the V44 Command Centre.
 
     Usage:
         queue = InstructionQueue()
@@ -64,7 +65,7 @@ class InstructionQueue:
         if len(self._history) > 200:
             self._history = self._history[-200:]
 
-        logger.info("📬 Instruction queued: '%s' (source=%s)", text[:80], source)
+        logger.info("📬 Instruction queued: '%s' (source=%s)", text, source)
 
         # Notify subscribers
         for cb in self._on_push_callbacks:
@@ -75,7 +76,7 @@ class InstructionQueue:
 
         return instruction
 
-    def pop_nowait(self) -> Optional[Instruction]:
+    def pop_nowait(self) -> Instruction | None:
         """Non-blocking pop. Returns None if queue is empty."""
         try:
             return self._queue.get_nowait()

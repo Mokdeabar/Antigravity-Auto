@@ -9,12 +9,13 @@ Uses subprocess for reliability (not terminal automation) since
 git commands don't need the IDE's terminal UI.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import os
 import subprocess
 from pathlib import Path
-from typing import Optional
 
 from . import config
 
@@ -35,6 +36,10 @@ def _run_git(args: list[str], cwd: str, timeout: int = 30) -> tuple[bool, str]:
             text=True,
             timeout=timeout,
             cwd=cwd,
+            # V37 FIX (L-5): shell=True only on Windows where git.exe needs
+            # shell PATH resolution for tools installed via winget/scoop.
+            # On non-Windows, shell=False (default) avoids injection risk.
+            # Safe here because args are a list (not a user-provided string).
             shell=config.IS_WINDOWS,
         )
 
@@ -192,9 +197,9 @@ def create_github_repo(project_path: str, repo_name: str, private: bool = True) 
 def full_git_flow(
     project_path: str,
     commit_message: str = "Auto-commit by Supervisor AI",
-    remote_url: Optional[str] = None,
+    remote_url: str | None = None,
     create_repo: bool = False,
-    repo_name: Optional[str] = None,
+    repo_name: str | None = None,
 ) -> bool:
     """
     Run the full git workflow: init → add → commit → push.

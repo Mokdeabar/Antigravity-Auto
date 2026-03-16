@@ -10,14 +10,128 @@ On FAILURE: `git reset --hard <SHA>` + `git clean -fd` annihilates all tracked
 
 On SUCCESS: `git add . && git commit --amend` overwrites the pre-execution lock
             into a single clean commit. The Git history shows one entry.
+
+V40: WorkspaceFileLock — per-file asyncio mutex for concurrent worker safety.
 """
 
+from __future__ import annotations
+
+import asyncio
 import subprocess
 import logging
+from collections import defaultdict
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Tuple
 
 logger = logging.getLogger("supervisor.workspace_transaction")
+
+
+# ────────────────────────────────────────────────
+# V40: File-Level Mutex for Concurrent Workers
+# ────────────────────────────────────────────────
+
+class WorkspaceFileLock:
+    """
+    Two-tier concurrency manager for the DAG worker pool.
+
+    TIER 1 — Global Sandbox Lock (`acquire_sandbox()`):
+        Serializes ALL access to the single Docker container. Reserved for
+        bulk operations like `sync_files_to_sandbox()` where the entire
+        workspace is being copied. NOT used for normal task execution.
+
+    TIER 2 — Per-File Locks (`acquire_files(paths)`) [V41: ACTIVE]:
+        Fine-grained asyncio mutex on individual file paths. Two workers
+        touching different files run concurrently; two workers touching
+        the SAME file serialize only on that file. Locks are acquired
+        in sorted path order to prevent deadlocks between workers.
+
+        Used after task execution to protect shared state mutation
+        (recording file changes, updating planner progress) when
+        workers happen to modify overlapping files.
+
+    Design Rationale (V41):
+        Docker's daemon handles concurrent `docker cp` and `docker exec`
+        to different destination paths safely. The global lock (Tier 1)
+        was creating a parallel illusion — 3 workers would queue behind
+        each other. Per-file locks (Tier 2) allow true parallel execution
+        while preventing corruption when two tasks touch the same file.
+
+    Usage:
+        lock = get_workspace_lock()
+
+        # Tier 1: Global (bulk sync only)
+        async with lock.acquire_sandbox():
+            await sandbox.sync_files_to_sandbox()
+
+        # Tier 2: Per-file (normal task execution — V41 ACTIVE)
+        async with lock.acquire_files(changed_files):
+            all_files_changed.extend(changed_files)
+            planner.mark_complete(task_id)
+    """
+
+    def __init__(self):
+        self._locks: dict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
+        self._global_lock = asyncio.Lock()  # Tier 1: Serializes all sandbox exec
+        self._contention_count = 0          # How many times a lock was already held
+
+    def _normalize(self, path: str) -> str:
+        """Normalize to forward-slash relative path for consistent locking."""
+        return str(Path(path)).replace("\\", "/").lower()
+
+    class _MultiFileLock:
+        """Context manager that acquires locks on multiple files in sorted order."""
+
+        def __init__(self, locks: list[asyncio.Lock], parent: "WorkspaceFileLock"):
+            self._locks = locks
+            self._parent = parent
+
+        async def __aenter__(self):
+            for lock in self._locks:
+                if lock.locked():
+                    self._parent._contention_count += 1
+                await lock.acquire()
+            return self
+
+        async def __aexit__(self, *args):
+            for lock in reversed(self._locks):
+                lock.release()
+
+    def acquire_files(self, file_paths: list[str]) -> _MultiFileLock:
+        """
+        Acquire locks on a set of file paths. Always acquires in sorted
+        order to prevent deadlocks between workers.
+        """
+        normalized = sorted(set(self._normalize(p) for p in file_paths))
+        locks = [self._locks[p] for p in normalized]
+        return self._MultiFileLock(locks, self)
+
+    def acquire_sandbox(self):
+        """
+        Acquire the global sandbox execution lock. Use when a worker
+        needs exclusive access to the single Docker container.
+        """
+        return self._global_lock
+
+    def get_stats(self) -> dict:
+        """Return lock statistics for debugging and UI display."""
+        active = sum(1 for lock in self._locks.values() if lock.locked())
+        return {
+            "tracked_files": len(self._locks),
+            "active_file_locks": active,
+            "global_lock_held": self._global_lock.locked(),
+            "contention_events": self._contention_count,
+        }
+
+
+_workspace_lock: WorkspaceFileLock | None = None
+
+
+def get_workspace_lock() -> WorkspaceFileLock:
+    """Get or create the singleton WorkspaceFileLock."""
+    global _workspace_lock
+    if _workspace_lock is None:
+        _workspace_lock = WorkspaceFileLock()
+    return _workspace_lock
 
 
 class GitTransactionManager:
@@ -25,7 +139,7 @@ class GitTransactionManager:
 
     def __init__(self, workspace_path: str):
         self.cwd = workspace_path
-        self._pristine_sha: Optional[str] = None
+        self._pristine_sha: str | None = None
 
     def _run_git(self, *args) -> Tuple[int, str, str]:
         """Core wrapper for running git commands."""
@@ -56,7 +170,7 @@ class GitTransactionManager:
         # symbolic-ref fails (code != 0) when HEAD is detached
         return code != 0
 
-    def get_current_sha(self) -> Optional[str]:
+    def get_current_sha(self) -> str | None:
         """Get the current HEAD SHA."""
         code, out, _ = self._run_git("rev-parse", "HEAD")
         return out if code == 0 else None
@@ -106,10 +220,22 @@ class GitTransactionManager:
         """
         logger.info("🧪 Running validation against dirty tree: %s", test_command)
         try:
+            # V37 FIX (H-5): Avoid shell=True where possible.
+            # On non-Windows, parse the command safely with shlex.
+            # On Windows, keep shell=True because npm/npx commands need shell resolution.
+            import shlex
+            from . import config as _cfg
+            if _cfg.IS_WINDOWS:
+                cmd_arg = test_command
+                use_shell = True
+            else:
+                cmd_arg = shlex.split(test_command)
+                use_shell = False
+
             proc = subprocess.run(
-                test_command,
+                cmd_arg,
                 cwd=self.cwd,
-                shell=True,
+                shell=use_shell,
                 capture_output=True,
                 text=True,
                 timeout=120
@@ -148,7 +274,7 @@ class GitTransactionManager:
         logger.info("🧠 Captured dirty diff (%d chars) before hard reset.", len(result))
         return result
 
-    def hard_reset_to_pristine(self, pristine_sha: Optional[str] = None) -> bool:
+    def hard_reset_to_pristine(self, pristine_sha: str | None = None) -> bool:
         """
         Annihilate all tracked and untracked changes.
         `git reset --hard <SHA>` wipes tracked modifications.

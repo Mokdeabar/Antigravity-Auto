@@ -8,11 +8,14 @@ If a merge conflict occurs, the Arbiter extracts the Git conflict markers
 and routes the exact diff to the Local Manager for LLM-assisted resolution.
 """
 
+from __future__ import annotations
+
+import asyncio
 import logging
 import subprocess
 import shutil
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Tuple
 
 logger = logging.getLogger("supervisor.merge_arbiter")
 
@@ -27,8 +30,8 @@ class MergeArbiter:
         self._manager = local_manager
         self._worktree_base = Path(main_repo_path) / _WORKTREE_DIR
 
-    def _run_git(self, *args, cwd: Optional[str] = None) -> Tuple[int, str, str]:
-        """Execute a git command."""
+    def _run_git(self, *args, cwd: str | None = None) -> Tuple[int, str, str]:
+        """Execute a git command (synchronous — for worktree lifecycle ops)."""
         try:
             proc = subprocess.run(
                 ["git", *args],
@@ -38,6 +41,29 @@ class MergeArbiter:
                 timeout=60,
             )
             return proc.returncode, proc.stdout.strip(), proc.stderr.strip()
+        except Exception as e:
+            return -1, "", str(e)
+
+    async def _run_git_async(self, *args, cwd: str | None = None) -> Tuple[int, str, str]:
+        """Execute a git command asynchronously — prevents event loop blocking."""
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "git", *args,
+                cwd=cwd or self._repo,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            try:
+                stdout_b, stderr_b = await asyncio.wait_for(proc.communicate(), timeout=60)
+            except asyncio.TimeoutError:
+                proc.kill()
+                await proc.wait()
+                return -1, "", "Git command timed out after 60s"
+            return (
+                proc.returncode or 0,
+                (stdout_b or b"").decode("utf-8", errors="replace").strip(),
+                (stderr_b or b"").decode("utf-8", errors="replace").strip(),
+            )
         except Exception as e:
             return -1, "", str(e)
 
@@ -95,7 +121,7 @@ class MergeArbiter:
     # Merge Back to Main
     # ────────────────────────────────────────────────
 
-    def merge_worktree(self, node_id: str) -> Tuple[bool, str]:
+    async def merge_worktree(self, node_id: str) -> Tuple[bool, str]:
         """
         Merge a completed worktree's changes back into the main repo.
 
@@ -108,52 +134,48 @@ class MergeArbiter:
         wt_path = str(self._worktree_base / node_id)
 
         # Step 1: Commit changes in the worktree
-        self._run_git("add", "-A", cwd=wt_path)
-        code_s, status, _ = self._run_git("status", "--porcelain", cwd=wt_path)
+        await self._run_git_async("add", "-A", cwd=wt_path)
+        code_s, status, _ = await self._run_git_async("status", "--porcelain", cwd=wt_path)
         if not status:
             self.remove_worktree(node_id)
             return True, "No changes to merge (neutral mutation)."
 
-        self._run_git(
+        await self._run_git_async(
             "commit", "-m", f"V20: parallel node [{node_id}] complete",
             cwd=wt_path,
         )
 
         # Step 2: Get the worktree's HEAD SHA
-        code_h, wt_sha, _ = self._run_git("rev-parse", "HEAD", cwd=wt_path)
+        code_h, wt_sha, _ = await self._run_git_async("rev-parse", "HEAD", cwd=wt_path)
         if code_h != 0:
             self.remove_worktree(node_id)
             return False, "Failed to get worktree HEAD SHA."
 
         # Step 3: Cherry-pick into main repo
-        code_cp, out_cp, err_cp = self._run_git("cherry-pick", wt_sha, "--no-commit")
+        code_cp, out_cp, err_cp = await self._run_git_async("cherry-pick", wt_sha, "--no-commit")
 
         if code_cp == 0:
             # Clean merge — commit it
-            self._run_git("commit", "-m", f"V20: merged parallel node [{node_id}]")
+            await self._run_git_async("commit", "-m", f"V20: merged parallel node [{node_id}]")
             self.remove_worktree(node_id)
             logger.info("✅ Merged [%s] cleanly.", node_id)
             return True, "Merged cleanly."
 
         # Step 4: Conflict detected — attempt LLM resolution
         logger.warning("⚠️ Merge conflict on [%s]. Attempting LLM resolution.", node_id)
-        return self._resolve_conflict(node_id)
+        return await self._resolve_conflict_async(node_id)
 
-    async def resolve_conflict_async(self, node_id: str) -> Tuple[bool, str]:
-        """Async wrapper for conflict resolution with LLM."""
-        return self._resolve_conflict(node_id)
-
-    def _resolve_conflict(self, node_id: str) -> Tuple[bool, str]:
+    async def _resolve_conflict_async(self, node_id: str) -> Tuple[bool, str]:
         """
-        Extract conflict markers and attempt resolution.
+        Extract conflict markers and attempt async resolution.
         If no LLM manager is available, abort the cherry-pick.
         """
         # Extract conflicted files
-        code, status, _ = self._run_git("diff", "--name-only", "--diff-filter=U")
+        code, status, _ = await self._run_git_async("diff", "--name-only", "--diff-filter=U")
         conflicted_files = [f for f in status.split("\n") if f.strip()]
 
         if not conflicted_files:
-            self._run_git("cherry-pick", "--abort")
+            await self._run_git_async("cherry-pick", "--abort")
             self.remove_worktree(node_id)
             return False, "Conflict detected but no conflicted files found."
 
@@ -179,31 +201,47 @@ class MergeArbiter:
                 pass
 
         if not conflict_content and not self._manager:
-            self._run_git("cherry-pick", "--abort")
+            await self._run_git_async("cherry-pick", "--abort")
             self.remove_worktree(node_id)
             return False, f"Merge conflict on {conflicted_files}. No LLM available for resolution."
 
         if self._manager:
-            # Route to LLM for resolution
-            import asyncio
-            try:
-                loop = asyncio.get_running_loop()
-                # If we're already in an async context, we can't use asyncio.run
-                # The caller should use resolve_conflict_async instead
-                self._run_git("cherry-pick", "--abort")
+            # Route to LLM for async resolution
+            resolved = await self._llm_resolve(conflict_content, conflicted_files)
+            if resolved:
+                await self._run_git_async("add", "-A")
+                await self._run_git_async("commit", "-m", f"V20: resolved conflict for [{node_id}]")
                 self.remove_worktree(node_id)
-                return False, f"Merge conflict on {conflicted_files}. LLM resolution requires async context."
-            except RuntimeError:
-                resolved = asyncio.run(self._llm_resolve(conflict_content, conflicted_files))
-                if resolved:
-                    self._run_git("add", "-A")
-                    self._run_git("commit", "-m", f"V20: resolved conflict for [{node_id}]")
-                    self.remove_worktree(node_id)
-                    return True, "Conflict resolved by LLM."
+                return True, "Conflict resolved by LLM."
 
-        self._run_git("cherry-pick", "--abort")
+        await self._run_git_async("cherry-pick", "--abort")
         self.remove_worktree(node_id)
         return False, f"Failed to resolve merge conflict on: {', '.join(conflicted_files)}"
+
+    # Backwards-compatible sync alias for callers that don't await
+    def resolve_conflict_sync(self, node_id: str) -> Tuple[bool, str]:
+        """Sync fallback — runs the async resolver, handles running event loops."""
+        # V74: asyncio.run() crashes if an event loop is already running.
+        # Use run_until_complete() on the existing loop instead.
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            # Already inside an async context — schedule and wait via future
+            import concurrent.futures
+            future = concurrent.futures.Future()
+            async def _wrapper():
+                try:
+                    result = await self._resolve_conflict_async(node_id)
+                    future.set_result(result)
+                except Exception as e:
+                    future.set_exception(e)
+            loop.create_task(_wrapper())
+            return future.result(timeout=120)
+        else:
+            return asyncio.run(self._resolve_conflict_async(node_id))
 
     async def _llm_resolve(self, conflict_blocks: list, files: list) -> bool:
         """Ask the Local Manager to resolve the conflict."""

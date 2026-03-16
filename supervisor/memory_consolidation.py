@@ -12,11 +12,13 @@ Safeguards:
 - Runs as a background cron task during extended idle periods.
 """
 
+from __future__ import annotations
+
 import hashlib
 import json
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 logger = logging.getLogger("supervisor.memory_consolidation")
 
@@ -42,7 +44,7 @@ class MemoryConsolidator:
         "6. Maximum 10 axioms. Rank by frequency. Prune the least frequent.\n"
     )
 
-    def __init__(self, local_manager, workspace_path: Optional[str] = None):
+    def __init__(self, local_manager, workspace_path: str | None = None):
         self._manager = local_manager
         self._workspace = Path(workspace_path) if workspace_path else _MEMORY_DIR.parent
         _MEMORY_DIR.mkdir(parents=True, exist_ok=True)

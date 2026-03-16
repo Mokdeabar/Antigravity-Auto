@@ -17,6 +17,8 @@ Pipeline:
   7. FEATURE_EPIC.md Generation — structured epic for the Temporal Planner
 """
 
+from __future__ import annotations
+
 import hashlib
 import json
 import logging
@@ -24,7 +26,6 @@ import os
 import re
 import time
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger("supervisor.user_research_engine")
 
@@ -110,7 +111,7 @@ class UserResearchEngine:
 
         self._feedback_store: list[dict] = []
         self._clusters: dict[str, dict] = {}
-        self._vision: Optional[str] = None
+        self._vision: str | None = None
 
         self._load_state()
         self._load_vision()
@@ -443,7 +444,7 @@ class UserResearchEngine:
         prompt = (
             "You are a product strategist. Evaluate whether this feature request "
             "aligns with the product vision.\n\n"
-            f"PRODUCT VISION:\n{self._vision[:3000]}\n\n"
+            f"PRODUCT VISION:\n{self._vision}\n\n"
             f"REQUESTED FEATURE: {feature_name}\n"
             f"DESCRIPTION: {description}\n\n"
             "Return a JSON object:\n"
@@ -548,7 +549,7 @@ class UserResearchEngine:
     # 7. FEATURE_EPIC.md Generation
     # ─────────────────────────────────────────────────────────
 
-    async def generate_feature_epic(self, cluster_data: dict) -> Optional[str]:
+    async def generate_feature_epic(self, cluster_data: dict) -> str | None:
         """
         Generate FEATURE_EPIC.md for a cluster that crossed the threshold.
 

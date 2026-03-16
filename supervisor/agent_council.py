@@ -22,13 +22,14 @@ Council Session Flow:
 Each agent is a Gemini prompt-persona powered by gemini_advisor.
 """
 
+from __future__ import annotations
+
 import asyncio
 import ast
 import json
 import logging
 import time
 from pathlib import Path
-from typing import Optional
 
 from . import config
 from .gemini_advisor import ask_gemini, ask_gemini_json, call_gemini_with_file_json
@@ -172,7 +173,7 @@ class Resolution:
         self.agent_chain: list[str] = []
         self.actions_log: list[dict] = []
         self.rounds_used: int = 0
-        self.code_patch: Optional[dict] = None  # {file, code} if code was generated
+        self.code_patch: dict | None = None  # {file, code} if code was generated
         self.page = None  # updated page reference if it changed
 
 
@@ -233,7 +234,7 @@ async def _ask_agent(
     screenshot_path: str = "",
     expect_json: bool = True,
     kb_context: str = "",
-) -> Optional[dict]:
+) -> dict | None:
     """
     Call a specialist agent via Gemini CLI.
 
@@ -259,6 +260,7 @@ async def _ask_agent(
         logger.info("🧠  Routing %s to LocalManager...", agent_name)
         try:
             manager = LocalManager()
+            await manager.initialize()  # V37 FIX (H-1): Async init
             # Local LLM is text-only. Strip screenshots from context.
             raw_local_json = await manager.ask_local_model(
                 system_prompt=persona, 
@@ -310,17 +312,81 @@ async def _ask_agent(
 # The Council
 # ─────────────────────────────────────────────────────────────
 
+# V74: Cross-session council memory (Audit §4.7)
+class CouncilMemory:
+    """Persist council insights across sessions."""
+
+    def __init__(self, project_path: str = ""):
+        self._insights: list[dict] = []
+        self._path = None
+        if project_path:
+            import pathlib
+            self._path = pathlib.Path(project_path) / ".ag-supervisor" / "council_memory.json"
+            self._load()
+
+    def record(self, issue_type: str, diagnosis: str, action: str, resolved: bool) -> None:
+        """Record a council outcome for future reference."""
+        import time as _t
+        self._insights.append({
+            "issue_type": issue_type,
+            "diagnosis": diagnosis[:200],
+            "action": action,
+            "resolved": resolved,
+            "timestamp": _t.time(),
+        })
+        # Keep last 50 insights
+        if len(self._insights) > 50:
+            self._insights = self._insights[-50:]
+        self._persist()
+
+    def get_context(self, issue_type: str, max_entries: int = 5) -> str:
+        """Get relevant past council insights for an issue type."""
+        relevant = [i for i in reversed(self._insights) if i.get("issue_type") == issue_type]
+        if not relevant:
+            return ""
+        lines = ["PAST COUNCIL INSIGHTS (from previous sessions):"]
+        for entry in relevant[:max_entries]:
+            status = "✅ Resolved" if entry.get("resolved") else "❌ Unresolved"
+            lines.append(f"  - {status} via {entry.get('action', '?')}: {entry.get('diagnosis', '?')[:100]}")
+        return "\n".join(lines)
+
+    def _persist(self) -> None:
+        if not self._path:
+            return
+        try:
+            import json as _j
+            self._path.parent.mkdir(parents=True, exist_ok=True)
+            self._path.write_text(_j.dumps(self._insights, indent=2), encoding="utf-8")
+        except Exception:
+            pass
+
+    def _load(self) -> None:
+        if not self._path or not self._path.exists():
+            return
+        try:
+            import json as _j
+            self._insights = _j.loads(self._path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
+
 class AgentCouncil:
     """
     Orchestrates specialist agents in a structured diagnostic session.
+
+    V74 Upgrades (Audit §4.7):
+      - Full Swarm Debate on 3+ consecutive failures (not just LOW confidence)
+      - Reviewer agent validates Fixer code patches before application
+      - Cross-session council memory via CouncilMemory
 
     Usage:
         council = AgentCouncil()
         resolution = await council.convene(issue, page, context)
     """
 
-    def __init__(self):
+    def __init__(self, project_path: str = ""):
         self._session_log: list[dict] = []
+        self._memory = CouncilMemory(project_path)
 
     async def convene(
         self,
@@ -390,38 +456,50 @@ class AgentCouncil:
             # ── Phase 1: DIAGNOSTICIAN ────────────────────
             # V12 Time-Travel: Load the snapshot taken right before we intervened
             snapshot_context = self._load_snapshot_text()
-
-            diag_prompt = self._build_diagnostician_prompt(
-                issue, logs, kb_context, resolution.actions_log, round_num, snapshot_context
+            # V40: Build combined Fast Council prompt (Diagnostician + Fixer + Auditor)
+            council_prompt = self._build_fast_council_prompt(
+                issue, logs, kb_context,
+                resolution.actions_log, round_num,
+                snapshot_context=snapshot_context,
             )
 
             diag_result = await _ask_agent(
-                "diagnostician", diag_prompt, screenshot_path,
+                "council", council_prompt, screenshot_path,
             )
 
             if not diag_result:
-                logger.warning("🏛️  Diagnostician returned nothing — using fallback.")
+                logger.warning("🏛️  Council returned nothing — using fallback.")
                 diag_result = {
                     "diagnosis": "Unable to analyze",
-                    "route_to": "fixer",
+                    "route_to": "direct",
                     "recommended_action": "REINJECT",
                     "confidence": "LOW",
                 }
 
             diagnosis = diag_result.get("diagnosis", "unknown")
-            route_to = diag_result.get("route_to", "fixer").lower()
+            route_to = diag_result.get("route_to", "direct").lower()
             recommended_action = diag_result.get("recommended_action", "REINJECT").upper()
             action_detail = diag_result.get("action_detail", "")
             confidence = diag_result.get("confidence", "MEDIUM")
 
             resolution.diagnosis = diagnosis
-            resolution.agent_chain.append("diagnostician")
+            resolution.agent_chain.append("council")
+
+            # V40: Log audit grade from fast council (merged auditor)
+            audit_grade = diag_result.get("audit_grade", "")
+            audit_suggestions = diag_result.get("audit_suggestions", "")
 
             print(f"  {M}🔍 Diagnosis: {diagnosis[:70]}{R}")
-            print(f"  {M}📋 Route to: {route_to.upper()} | Action: {recommended_action} | Confidence: {confidence}{R}")
+            print(f"  {M}📋 Route: {route_to.upper()} | Action: {recommended_action} | Confidence: {confidence}{R}")
+            if audit_grade:
+                print(f"  {M}📋 Council audit: {audit_grade}{R}")
 
-            # ── Phase 2: SWARM DEBATE (Architect + Debugger Parallel) ──
-            specialist_needed = route_to in ("debugger", "architect", "fixer", "swarm")
+            # V74: Swarm Debate triggers on LOW confidence OR 3+ consecutive failures
+            # (Audit §4.7: use full multi-agent flow for stubborn issues)
+            specialist_needed = (
+                (confidence == "LOW" and route_to in ("debugger", "architect"))
+                or issue.consecutive_count >= 3
+            )
 
             if specialist_needed:
                 print(f"  {B}{Y}⚡ Launching Swarm Debate (Architect || Debugger) ⚡{R}")
@@ -501,17 +579,11 @@ class AgentCouncil:
                         resolution.resolved = True
                         resolution.rounds_used = round_num
 
-                        # ── Phase 5: AUDITOR reviews ──────
-                        auditor_result = await self._call_auditor(
-                            issue, diagnosis, resolution.actions_log, kb_context,
-                        )
-                        if auditor_result:
-                            resolution.agent_chain.append("auditor")
-                            audit_grade = auditor_result.get("grade", "PASS")
-                            suggestions = auditor_result.get("suggestions", "")
-                            print(f"  {G}📋 Auditor grade: {audit_grade}{R}")
-                            if suggestions:
-                                print(f"  {Y}📋 Suggestions: {suggestions[:60]}{R}")
+                        # V40: Auditor merged into Fast Council — log grade from Phase 1
+                        if audit_grade:
+                            print(f"  {G}📋 Council audit grade: {audit_grade}{R}")
+                            if audit_suggestions:
+                                print(f"  {Y}📋 Suggestions: {audit_suggestions[:60]}{R}")
 
                         # Record to KB
                         kb.record_resolution(
@@ -526,6 +598,15 @@ class AgentCouncil:
 
                         print(f"\n  {B}{G}✅ Council resolved issue in round {round_num}!{R}\n")
                         logger.info("🏛️  ✅ Council resolved issue in round %d.", round_num)
+
+                        # V74: Record success to cross-session memory
+                        self._memory.record(
+                            issue_type=issue.issue_type,
+                            diagnosis=diagnosis,
+                            action=recommended_action,
+                            resolved=True,
+                        )
+
                         return resolution
 
             # ── If not resolved, update logs for next round ─
@@ -550,8 +631,25 @@ class AgentCouncil:
                 issue, diagnosis, logs, kb_context,
             )
             if fixer_result:
-                resolution.code_patch = fixer_result
                 resolution.agent_chain.append("fixer")
+
+                # V74: Reviewer validates Fixer output before commit
+                reviewer_result = await self._call_reviewer(
+                    issue, fixer_result, diagnosis,
+                )
+                if reviewer_result:
+                    resolution.agent_chain.append("reviewer")
+                    reviewer_verdict = reviewer_result.get("verdict", "APPROVE").upper()
+                    if reviewer_verdict == "REJECT":
+                        logger.warning(
+                            "🏛️  Reviewer REJECTED fixer patch: %s",
+                            reviewer_result.get("reason", "unknown")[:100],
+                        )
+                        resolution.code_patch = None  # Don't apply rejected patch
+                    else:
+                        resolution.code_patch = fixer_result
+                else:
+                    resolution.code_patch = fixer_result
 
         # Record failure to KB
         kb.record_resolution(
@@ -562,6 +660,14 @@ class AgentCouncil:
             resolution=f"UNRESOLVED after {_COUNCIL_MAX_ROUNDS} rounds",
             success=False,
             agent_chain=resolution.agent_chain,
+        )
+
+        # V74: Record to cross-session memory
+        self._memory.record(
+            issue_type=issue.issue_type,
+            diagnosis=resolution.diagnosis,
+            action=resolution.action,
+            resolved=False,
         )
 
         print(f"\n  {Y}⚠️ Council couldn't resolve after {_COUNCIL_MAX_ROUNDS} rounds.{R}\n")
@@ -585,7 +691,7 @@ class AgentCouncil:
         except Exception as exc:
             return f"Failed to load snapshot: {exc}"
 
-    def _build_diagnostician_prompt(
+    def _build_fast_council_prompt(
         self,
         issue: Issue,
         logs: str,
@@ -594,7 +700,10 @@ class AgentCouncil:
         round_num: int,
         snapshot_context: str = "",
     ) -> str:
-        """Build the Diagnostician's prompt."""
+        """
+        V40: Combined Fast Council prompt — merges Diagnostician + Fixer + Auditor
+        into a single structured LLM payload.
+        """
         history_str = ""
         if actions_log:
             history_str = "\n\nPREVIOUS ACTIONS THIS SESSION:\n"
@@ -605,27 +714,32 @@ class AgentCouncil:
             f"ISSUE TYPE: {issue.issue_type}\n"
             f"TRIGGER: {issue.trigger}\n"
             f"CONSECUTIVE COUNT: {issue.consecutive_count}\n"
-            f"GOAL: {issue.goal[:300]}\n"
+            f"GOAL: {issue.goal}\n"
             f"ROUND: {round_num}/{_COUNCIL_MAX_ROUNDS}\n\n"
             f"TIME-TRAVEL SNAPSHOT (Universe state 1s BEFORE failure):\n{snapshot_context}\n\n"
             f"PAST SIMILAR ISSUES FROM KNOWLEDGE BASE:\n{kb_context}\n\n"
             f"RECENT SUPERVISOR LOGS:\n{logs}\n"
             f"{history_str}\n\n"
             "A screenshot of the IDE is attached.\n\n"
+            "You are the COUNCIL — a single-pass agent that combines the roles of "
+            "Diagnostician (root cause analysis), Fixer (action plan), and Auditor (quality review).\n\n"
             "ANALYZE and respond with JSON:\n"
             '{\n'
             '  "diagnosis": "precise root cause analysis",\n'
-            '  "route_to": "debugger" | "architect" | "fixer",\n'
+            '  "route_to": "debugger" | "architect" | "direct",\n'
             '  "recommended_action": "REINJECT" | "GHOST_HOTKEY" | "CLICK_SELECTOR" | '
             '"SCREENSHOT" | "RESTART_HOST" | "EVOLVE" | "RUN_COMMAND",\n'
             '  "action_detail": "CSS selector, command, or specific instructions",\n'
-            '  "confidence": "HIGH" | "MEDIUM" | "LOW"\n'
+            '  "confidence": "HIGH" | "MEDIUM" | "LOW",\n'
+            '  "fix_instructions": "step-by-step fix plan if applicable",\n'
+            '  "audit_grade": "PASS" | "NEEDS_IMPROVEMENT",\n'
+            '  "audit_suggestions": "improvements for future similar issues"\n'
             '}\n'
         )
 
     async def _call_debugger(
         self, issue: Issue, diagnosis: str, logs: str, screenshot_path: str, kb_context: str,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """Call the Debugger for deep error analysis."""
         # Include relevant source code
         source = _read_module_source("main.py")[:8000]
@@ -650,7 +764,7 @@ class AgentCouncil:
 
     async def _call_architect(
         self, issue: Issue, diagnosis: str, logs: str, kb_context: str,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """Call the Architect for structural design."""
         all_source = _read_all_module_sources(15000)
 
@@ -670,7 +784,7 @@ class AgentCouncil:
 
     async def _call_synthesizer(
         self, issue: Issue, diagnosis: str, dbg_res: dict, arch_res: dict, kb_context: str,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """Call the Synthesizer to resolve the Swarm Debate."""
         dbg_str = json.dumps(dbg_res or {}, indent=2)
         arch_str = json.dumps(arch_res or {}, indent=2)
@@ -700,7 +814,7 @@ class AgentCouncil:
         action_result: dict,
         screenshot_path: str,
         kb_context: str,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """Call the Tester to validate the fix."""
         prompt = (
             f"ORIGINAL ISSUE: {issue.trigger}\n"
@@ -723,7 +837,7 @@ class AgentCouncil:
         diagnosis: str,
         actions_log: list[dict],
         kb_context: str,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """Call the Auditor to review the resolution."""
         actions_str = json.dumps(actions_log, indent=2)
 
@@ -744,7 +858,7 @@ class AgentCouncil:
 
     async def _call_fixer_for_code(
         self, issue: Issue, diagnosis: str, logs: str, kb_context: str,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """
         Call the Fixer to generate a code patch for self-evolution.
         Returns {file, code} dict or None.
@@ -770,6 +884,42 @@ class AgentCouncil:
             "- Ensure valid Python syntax\n"
         )
         return await _ask_agent("fixer", prompt, kb_context=kb_context)
+
+    async def _call_reviewer(
+        self, issue: Issue, fixer_result: dict, diagnosis: str,
+    ) -> dict | None:
+        """
+        V74: Reviewer agent validates Fixer's code patch before it's applied.
+
+        Checks:
+          - Patch addresses the actual diagnosis
+          - No unintended side effects or regressions
+          - Code quality and completeness
+
+        Returns {verdict: "APPROVE"|"REJECT", reason: str} or None.
+        """
+        file_name = fixer_result.get("file", "unknown")
+        code_preview = str(fixer_result.get("code", ""))[:5000]
+        description = fixer_result.get("description", "")
+
+        prompt = (
+            f"You are the REVIEWER — a meticulous code auditor.\n\n"
+            f"The Fixer agent has proposed a code patch to resolve an issue.\n"
+            f"Your job is to validate it BEFORE it gets applied.\n\n"
+            f"ORIGINAL ISSUE: {issue.trigger}\n"
+            f"DIAGNOSIS: {diagnosis}\n"
+            f"FIX DESCRIPTION: {description}\n"
+            f"TARGET FILE: {file_name}\n"
+            f"PROPOSED CODE (first 5000 chars):\n```\n{code_preview}\n```\n\n"
+            "REVIEW CHECKLIST:\n"
+            "1. Does the patch actually address the diagnosed issue?\n"
+            "2. Could it introduce new bugs or regressions?\n"
+            "3. Does it preserve all existing functionality?\n"
+            "4. Is the Python syntax valid?\n"
+            "5. Are there any security concerns?\n\n"
+            'Respond with JSON: {"verdict": "APPROVE" or "REJECT", "reason": "explanation"}\n'
+        )
+        return await _ask_agent("reviewer", prompt)
 
     # ─────────────────────────────────────────────────────
     # Action execution
@@ -871,6 +1021,7 @@ class AgentCouncil:
                 import json
 
                 manager = LocalManager()
+                await manager.initialize()  # V37 FIX (H-1): Async init
                 worker = CLIWorker()
                 project_cwd = str(config.get_project_path() or ".")
                 git_tx = GitTransactionManager(project_cwd)
@@ -983,6 +1134,7 @@ class AgentCouncil:
                 import asyncio
 
                 manager = LocalManager()
+                await manager.initialize()  # V37 FIX (H-1): Async init
                 project_cwd = str(config.get_project_path() or ".")
                 memory = EpisodicMemory()
                 reflector = ReflectionEngine(manager)
@@ -1044,7 +1196,7 @@ class AgentCouncil:
                     if len(batch) == 1:
                         # ── SEQUENTIAL PATH (single node, no worktree overhead) ──
                         node = batch[0]
-                        print(f"  {config.ANSI_CYAN}📋 Executing: [{node.task_id}] {node.description[:80]}{R}")
+                        print(f"  {config.ANSI_CYAN}📋 Executing: [{node.task_id}] {node.description}{R}")
 
                         # V21: Pre-research knowledge gaps
                         if node.knowledge_gaps:
@@ -1096,20 +1248,7 @@ class AgentCouncil:
                         else:
                             tests_passed, test_logs = git_tx.run_tests(test_cmd)
 
-                        if tests_passed:
-                            # V23: VISUAL PHASE — render and inspect frontend nodes
-                            if node.is_visual:
-                                print(f"  {config.ANSI_MAGENTA}👁️ Visual QA for [{node.task_id}]...{R}")
-                                vqa_ok, vqa_msg = await visual_qa.run_visual_qa(
-                                    node.task_id, node.description, project_cwd,
-                                    dev_cmd=dev_cmd, port=dev_port,
-                                )
-                                if not vqa_ok:
-                                    tests_passed = False
-                                    test_logs = vqa_msg
-                                    print(f"  {config.ANSI_RED}👁️ Visual QA FAILED: {vqa_msg[:100]}{R}")
-                                else:
-                                    print(f"  {config.ANSI_GREEN}👁️ Visual QA PASSED: {vqa_msg[:80]}{R}")
+                        # V40: Per-node Visual QA removed — reserved for final deployment pass
 
                         if tests_passed:
                             # V24: COMPLIANCE GATE — SAST + semantic + financial audit
@@ -1196,15 +1335,7 @@ class AgentCouncil:
                                 # In worktree, red phase may not apply (code already written)
                                 # Run green phase directly
                                 passed, logs = wt_verifier.run_green_phase(t_path, test_cmd)
-                                # V23: Visual QA in worktree
-                                if passed and node.is_visual:
-                                    vqa_ok, vqa_msg = await visual_qa.run_visual_qa(
-                                        node.task_id, node.description, wt_path,
-                                        dev_cmd=dev_cmd, port=dev_port,
-                                    )
-                                    if not vqa_ok:
-                                        passed = False
-                                        logs = vqa_msg
+                                # V40: Per-node Visual QA removed — reserved for final deployment pass
                                 # V24: Compliance gate in worktree
                                 if passed:
                                     wt_diff_proc = subprocess.run(
@@ -1240,7 +1371,7 @@ class AgentCouncil:
                             node_id, passed, logs = result
                             if passed:
                                 print(f"  {config.ANSI_GREEN}✅ Node [{node_id}] PASSED in worktree!{R}")
-                                merge_ok, merge_msg = arbiter.merge_worktree(node_id)
+                                merge_ok, merge_msg = await arbiter.merge_worktree(node_id)
                                 if merge_ok:
                                     new_sha = git_base.get_current_sha() or ""
                                     planner.mark_complete(node_id, new_sha)
@@ -1276,7 +1407,7 @@ class AgentCouncil:
                 memory.close()
                 researcher.teardown()  # V21: Wipe RAG store
                 verifier.teardown()    # V22: Purge .ag-tests/
-                visual_qa.stop_dev_server()  # V23: Ensure server stopped
+                # V40: VQA dev server cleanup handled lazily at deployment time
                 arbiter.prune_worktrees()
                 if planner.is_epic_complete():
                     progress = planner.get_progress()

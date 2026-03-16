@@ -1,0 +1,55 @@
+7296:                         </div>`;
+7297: 
+7298:                     // Start the Dashboard Grid
+7299:                     let html = `<div class="dashboard-grid">`;
+7300: 
+7301:                     // ═══════════════════════════════════════════════════════
+7302:                     // WIDGET 1: Overview KPIs
+7303:                     // ═══════════════════════════════════════════════════════
+7304:                     const pctColor = pct >= 80 ? 'var(--accent-green)' : pct >= 40 ? '#FF9500' : 'var(--accent-blue)';
+7305:                     html += `<div class="stat-widget full-width">
+7306:                         ${widgetHeader('📊', 'Project Overview')}
+7307:                         <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;">
+7308:                             ${metricCard(`${pct}%`, 'Progress', `${done} of ${total} tasks`, pctColor, '🎯')}
+7309:                             ${metricCard(stateRes.tasks_completed || done, 'Tasks Done', 'this session', 'var(--accent-green)', '✅')}
+7310:                             ${metricCard(fmtTime(uptime), 'Uptime', 'session duration', 'var(--accent-blue)', '⏱')}
+7311:                             ${metricCard(stateRes.error_count || 0, 'Errors', stateRes.error_count > 0 ? 'need attention' : 'all clear',
+7312:                                 stateRes.error_count > 0 ? '#FF3B30' : 'var(--accent-green)', stateRes.error_count > 0 ? '⚠️' : '✓')}
+7313:                         </div>
+7314:                     </div>`;
+7315: 
+7316:                     // ═══════════════════════════════════════════════════════
+7317:                     // WIDGET 2: DAG Breakdown
+7318:                     // ═══════════════════════════════════════════════════════
+7319:                     const barSeg = (count, color, label) => {
+7320:                         const w = total > 0 ? (count / total * 100) : 0;
+7321:                         return w > 0 ? `<div style="width:${w}%;background:${color};height:100%;transition:width 0.5s;" title="${count} ${label}"></div>` : '';
+7322:                     };
+7323: 
+7324:                     html += `<div class="stat-widget">
+7325:                         ${widgetHeader('🔀', 'DAG Execution')}
+7326:                         <div>
+7327:                             <div style="height:10px;border-radius:5px;background:rgba(0,0,0,0.04);overflow:hidden;display:flex;margin-bottom:14px;">
+7328:                                 ${barSeg(done, '#34C759', 'complete')}${barSeg(running, '#007AFF', 'running')}${barSeg(pending, '#FF9500', 'pending')}${barSeg(failed, '#FF3B30', 'failed')}${barSeg(cancelled, '#A1A1A6', 'cancelled')}${barSeg(locked, '#86868B', 'locked')}
+7329:                             </div>
+7330:                             <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+7331:                                 <span class="status-chip complete">${done} Complete</span>
+7332:                                 <span class="status-chip running">${running} Running</span>
+7333:                                 <span class="status-chip pending">${pending} Pending</span>
+7334:                                 <span class="status-chip failed">${failed} Failed</span>
+7335:                                 ${cancelled > 0 ? `<span class="status-chip" style="background:var(--bg-canvas);color:#A1A1A6;border:1px solid var(--border-light);">${cancelled} Cancelled</span>` : ''}
+7336:                             </div>
+7337:                             <div style="display:flex;gap:20px;font-size:0                    html += `<div class="stat-widget">
+7338:                         ${widgetHeader('⚡', 'Orchestration Budget')}
+7339:                         <div style="display:flex;flex-direction:column;gap:16px;">
+7340:                             <div style="background:var(--bg-canvas);border:1px solid var(--border-light);border-radius:var(--radius-md);padding:16px 18px;">
+7341:                                 <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px;">
+7342:                                     <div style="font-size:0.75rem;font-weight:600;color:var(--text-secondary);">Daily Budget</div>
+7343:                                     <div style="display:flex;align-items:baseline;gap:6px;">
+7344:                                         <span style="font-size:1.6rem;font-weight:800;color:var(--text-primary);font-family:var(--font-mono);line-height:1;">${budUsed}</span>
+7345:                                         <span style="font-size:0.8rem;color:var(--text-tertiary);font-family:var(--font-mono);">/ ${budLimit}</span>
+7346:                                     </div>
+7347:                                 </div>
+7348:                                 <div style="height:6px;border-radius:3px;background:rgba(0,0,0,0.06);overflow:hidden;margin-bottom:12px;">
+7349:                                     <div style="width:${budPct}%;height:100%;border-radius:3px;background:${budPct > 90 ? '#FF3B30' : budPct > 70 ? '#FF9500' : '#007AFF'};transition:width 0.5s;"></div>
+7350:                                 </div>

@@ -1,0 +1,20 @@
+7331:                                 <span class="status-chip complete">${done} Complete</span>
+7332:                                 <span class="status-chip running">${running} Running</span>
+7333:                                 <span class="status-chip pending">${pending} Pending</span>
+7334:                                 <span class="status-chip failed">${failed} Failed</span>
+7335:                                 ${cancelled > 0 ? `<span class="status-chip" style="background:var(--bg-canvas);color:#A1A1A6;border:1px solid var(--border-light);">${cancelled} Cancelled</span>` : ''}
+7336:                             </div>
+7337:                             <div style="display:flex;gap:20px;font-size:0.75rem;color:var(--text-secondary);background:var(--bg-canvas);padding:12px 16px;border-radius:var(--radius-md);border:1px solid var(--border-light);">
+7338:                                 <span>\u23f1 Last: <b style="color:var(--text-primary);">${lastDuration !== '\u2014' ? lastDuration + 's' : '\u2014'}</b></span>
+7339:                                 <span>\ud83d\udcc8 Avg: <b style="color:var(--text-primary);">${avgDuration !== '\u2014' ? avgDuration + 's' : '\u2014'}</b></span>
+7340:                                 <span>\ud83d\udd04 Audit: <b style="color:var(--text-primary);">${stateRes.audit_cycle || 0}</b></span>
+7341:                                 <span>\ud83d\udcc1 Files: <b style="color:var(--text-primary);">${stateRes.files_changed_count || 0}</b></span>
+7342:                             </div>
+7343:                         </div>
+7344:                     </div>`;
+7345: 
+7346:                     // ═══════════════════════════════════════════════
+7347:                     // WIDGET 3: System Resources
+7348:                     // ═══════════════════════════════════════════════
+7349:                     if (Object.keys(sysH).length) {
+7350:                         html += `<div class="stat-widget">

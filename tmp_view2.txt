@@ -1,0 +1,77 @@
+7404:                     }
+7405: 
+7406:                     html += `</div>`; // Close grid
+7407:                     statsContent.innerHTML = html;�══════════════════════════════════════
+7408:                     const budUsed = budgetRes.daily_used || 0;
+7409:                     const budLimit = budgetRes.daily_limit || 0;
+7410:                     const budPct = budLimit > 0 ? Math.round(budUsed / budLimit * 100) : 0;
+7411:                     const workers = budgetRes.workers_current || budgetRes.effective_workers || 0;
+7412:                     const workersMax = budgetRes.workers_max || 6;
+7413: 
+7414:                                 <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px;">
+7415:                                     <span style="font-size:1.5rem;font-weight:800;color:var(--text-primary);font-family:var(--font-mono);">${budUsed}</span>
+7416:                                     <span style="font-size:0.82rem;color:var(--text-tertiary);">/ ${budLimit} requests</span>
+7417:                                 </div>
+7418:                                 <div style="height:6px;border-radius:3px;background:rgba(0,0,0,0.06);overflow:hidden;margin-bottom:10px;">
+7419:                                     <div style="width:${budPct}%;height:100%;border-radius:3px;background:${budPct > 90 ? '#FF3B30' : budPct > 70 ? '#FF9500' : '#007AFF'};transition:width 0.5s;"></div>
+7420:                                 </div>
+7421:                                 <div style="display:flex;gap:16px;font-size:0.75rem;color:var(--text-secondary);">
+7422:                                     <span>⚡ Lite calls: <b style="color:var(--text-primary);">${liteRes.calls_today || 0}</b></span>
+7423:                                     <span>🔄 Fallbacks: <b style="color:var(--text-primary);">${liteRes.fallback_count || 0}</b></span>
+7424:                                 </div>
+7425:                             </div>
+7426:                             <div style="background:var(--bg-surface);border:1px solid var(--border-light);border-radius:var(--radius-md);padding:18px 20px;">
+7427:                                 <div style="font-size:0.73rem;font-weight:600;color:var(--text-secondary);margin-bottom:10px;">Workers</div>
+7428:                                 <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+7429:                                     ${Array.from({length: workersMax}, (_, i) =>
+7430:                                         `<div style="width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;
+7431:                                             ${i < workers
+7432:                                                 ? 'background:rgba(0,122,255,0.12);color:#007AFF;border:1px solid rgba(0,122,255,0.3);'
+7433:                                                 : 'background:var(--bg-canvas);color:var(--text-tertiary);border:1px solid var(--border-light);'}">${i + 1}</div>`
+7434:                                     ).join('')}
+7435:                                 </div>
+7436:                                 <div style="font-size:0.82rem;color:var(--text-primary);font-weight:600;margin-bottom:6px;">
+7437:                                     ${workers}/${workersMax} active
+7438:                                 </div>
+7439:                                 <div style="font-size:0.72rem;color:var(--text-tertiary);margin-top:4px;">Mode: <b style="color:var(--text-secondary);text-transform:uppercase;">${stateRes.execution_mode || 'auto'}</b></div>
+7440:                             </div>
+7441:                         </div>
+7442:                     </div>`;
+7443: 
+7444:                     // ═══════════════════════════════════════════════════════
+7445:                     // SECTION 6: Phase Progress
+7446:                     // ═══════════════════════════════════════════════════════
+7447:                     const phases = phasesRes.phases || [];
+7448:                     const currentPhase = phasesRes.current_phase || 1;
+7449:                     if (phases.length > 0) {
+7450:                         html += `<div style="margin-bottom:24px;">
+7451:                             ${sectionTitle('🏗', 'Phase Progress')}
+7452:                             <div style="background:var(--bg-surface);border:1px solid var(--border-light);border-radius:var(--radius-md);overflow:hidden;">`;
+7453: 
+7454:                         phases.forEach((ph, i) => {
+7455:                             const stats = ph._stats || { total: 0, done: 0, pct: 0 };
+7456:                             const isCurrent = (i + 1) === currentPhase;
+7457:                             const phPct = stats.pct || 0;
+7458:                             const phColor = phPct >= 100 ? '#34C759' : isCurrent ? '#007AFF' : 'var(--text-tertiary)';
+7459:                             html += `<div style="display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--border-light);
+7460:                                 ${isCurrent ? 'background:rgba(0,122,255,0.03);' : ''}">
+7461:                                 <span style="font-size:0.72rem;font-weight:700;color:${isCurrent ? '#007AFF' : 'var(--text-tertiary)'};min-width:20px;font-family:var(--font-mono);">${i + 1}</span>
+7462:                                 <span style="flex:1;font-size:0.82rem;font-weight:${isCurrent ? '600' : '500'};color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+7463:                                     ${escapeHtml(ph.name || ph.title || `Phase ${i+1}`)}
+7464:                                     ${isCurrent ? '<span style="font-size:0.65rem;padding:2px 6px;border-radius:6px;background:rgba(0,122,255,0.12);color:#007AFF;margin-left:6px;font-weight:700;">ACTIVE</span>' : ''}
+7465:                                 </span>
+7466:                                 <div style="width:100px;height:4px;border-radius:2px;background:rgba(0,0,0,0.06);overflow:hidden;flex-shrink:0;">
+7467:                                     <div style="width:${phPct}%;height:100%;background:${phColor};border-radius:2px;transition:width 0.5s;"></div>
+7468:                                 </div>
+7469:                                 <span style="font-size:0.72rem;font-family:var(--font-mono);color:${phColor};min-width:56px;text-align:right;font-weight:600;">
+7470:                                     ${stats.done}/${stats.total} · ${phPct}%
+7471:                                 </span>
+7472:                             </div>`;
+7473:                         });
+7474:                         html += '</div></div>';
+7475:                     }
+7476: 
+7477:                     content.innerHTML = html;
+7478:                 } catch (e) {
+7479:                     content.innerHTML = `<div class="empty-state" style="color:#FF3B30">⚠ Stats load failed: ${e.message}</div>`;
+7480:                 }

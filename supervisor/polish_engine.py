@@ -14,6 +14,8 @@ Core capabilities:
   6. User Injection Port — Monitor for live feedback without breaking flow
 """
 
+from __future__ import annotations
+
 import hashlib
 import json
 import logging
@@ -21,7 +23,6 @@ import os
 import re
 import time
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger("supervisor.polish_engine")
 
@@ -410,7 +411,7 @@ class PolishEngine:
     # 6. User Injection Port
     # ─────────────────────────────────────────────────────────
 
-    def check_user_injection(self) -> Optional[str]:
+    def check_user_injection(self) -> str | None:
         """
         Check if the user has dropped a feedback file for
         mid-execution injection.

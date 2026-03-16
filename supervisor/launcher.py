@@ -1,5 +1,5 @@
 """
-launcher.py — V35 Command Centre Standalone Launcher.
+launcher.py — V44 Command Centre Standalone Launcher.
 
 Starts the API server in STANDBY mode (no engine, no goal required).
 The user opens http://localhost:8420, selects a project from the launcher,
@@ -9,7 +9,7 @@ Usage:
     python -m supervisor.launcher
     python supervisor/launcher.py
 
-This is the recommended entry point for the V35 Command Centre.
+This is the recommended entry point for the V44 Command Centre.
 """
 
 import asyncio
@@ -20,6 +20,13 @@ import subprocess
 import sys
 import webbrowser
 from pathlib import Path
+
+# V42: Ensure UTF-8 output on Windows to prevent UnicodeEncodeError
+# when printing box-drawing characters to cp1252 terminals.
+if sys.platform == "win32" and not os.environ.get("PYTHONIOENCODING"):
+    os.environ["PYTHONIOENCODING"] = "utf-8"
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 # Ensure the supervisor package is importable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -102,7 +109,7 @@ async def _run_engine(state: SupervisorState, goal: str, project_path: str):
         state.status = "initializing"
         await state.broadcast_state()
 
-        logger.info("🚀 Engine starting: goal=%s, project=%s", goal[:60], project_path)
+        logger.info("🚀 Engine starting: goal=%s, project=%s", goal, project_path)
         await run(goal, project_path, dry_run=False, existing_state=state)
 
     except Exception as e:
@@ -130,17 +137,50 @@ async def main():
     # ── Create shared state (no goal yet — standby mode) ──
     state = SupervisorState(goal="", project_path="")
 
+    # ── V73: Early PTY probe — warm up Gemini CLI while user browses ──
+    # Start the /stats probe NOW so the PTY is warm (~25s cold start)
+    # by the time the user picks a project. Stored on state so run()
+    # can reuse it instead of spawning a duplicate.
+    import threading
+    def _early_probe():
+        try:
+            from supervisor.retry_policy import get_quota_probe
+            _qp = get_quota_probe()
+            for _m in list(_qp._snapshots.keys()):
+                _qp._auto_reset_if_due(_m)
+            _count = _qp.run_stats_probe()
+            if _count:
+                logger.info("📊  [Early] PTY probe: %d models loaded from CLI /stats.", _count)
+            else:
+                logger.info("📊  [Early] PTY probe returned no data — estimation active.")
+        except Exception as _exc:
+            logger.debug("📊  [Early] Probe failed: %s", _exc)
+
+    state._early_probe_thread = threading.Thread(
+        target=_early_probe, daemon=True, name="early-pty-probe"
+    )
+    state._early_probe_thread.start()
+    logger.info("📊  [Early] Background PTY probe started at Command Centre open.")
+
     # Wire up the run callback so the UI can launch the engine
     state._run_callback = lambda goal, path: _run_engine(state, goal, path)
 
-    print(f"""
+    try:
+        print(f"""
   {C}╔══════════════════════════════════════════════════╗
-  ║        ⚡ Supervisor AI — V35 Command Centre      ║
+  ║        ⚡ Supervisor AI — V62 Command Centre      ║
   ║                                                    ║
   ║   {G}http://localhost:{port}{C}                            ║
   ║                                                    ║
   ║   Standing by. Select a project in the UI.         ║
   ╚══════════════════════════════════════════════════╝{R}
+""")
+    except UnicodeEncodeError:
+        # Fallback for terminals that can't render box-drawing chars (cp1252)
+        print(f"""
+  {C}=== Supervisor AI - V62 Command Centre ==={R}
+  {G}http://localhost:{port}{R}
+  Standing by. Select a project in the UI.
 """)
 
     # ── Open browser automatically ──

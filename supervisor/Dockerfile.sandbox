@@ -5,7 +5,7 @@
 # ZERO credentials or AI tools are installed inside this container.
 #
 # Build:  docker build -t supervisor-sandbox .
-# Size:   ~300MB
+# Size:   ~1.1 GB (full-stack capable: Node 22, Python, PG, Redis, MongoDB)
 
 FROM debian:bookworm-slim AS base
 
@@ -18,7 +18,9 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LC_ALL=C.UTF-8 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    NODE_ENV=development
+    NODE_ENV=development \
+    # Allow large project builds without OOM on complex TS/Vite projects
+    NODE_OPTIONS=--max-old-space-size=4096
 
 # ── System packages ──────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -27,51 +29,205 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
     python3-venv \
     python3-dev \
+    # PHP (for PHP project preview via php -S)
+    php-cli \
     # Node.js prerequisites
     curl \
+    wget \
     ca-certificates \
     gnupg \
-    # Build essentials (needed for native node modules and C extensions)
+    # Build essentials (native node modules, C extensions, Rust-backed pip packages)
     build-essential \
+    pkg-config \
+    # SSL/TLS + FFI — needed to compile cryptography, cffi, httpx, pycurl, etc.
+    libssl-dev \
+    libffi-dev \
+    # PostgreSQL dev headers — needed for psycopg2 compilation
+    libpq-dev \
+    # SQLite — used by Django default DB, many tutorials, small apps
+    sqlite3 \
+    libsqlite3-dev \
     # Git (for git operations inside the sandbox)
     git \
+    # Archive utilities — scripts that download/extract assets need these
+    unzip \
+    zip \
     # Process utilities
     procps \
-    # Network utilities (for port checking)
+    psmisc \
+    # Network utilities (port checking + fuser for port cleanup)
     iproute2 \
     net-tools \
     # Text utilities
     jq \
+    # Privilege escalation for data service management (postgres, redis, mongod)
+    sudo \
+    # ── Data services ─────────────────────────────────
+    # PostgreSQL 16 (full server + client for full-stack projects)
+    postgresql \
+    postgresql-client \
+    # Redis (in-memory cache / pub-sub)
+    redis-server \
+    # ── Media processing ──────────────────────────────
+    # ffmpeg: video/audio transcoding, thumbnail generation, HLS streaming
+    ffmpeg \
+    # imagemagick: image conversion, resizing, PDF→image for many backends
+    imagemagick \
     && rm -rf /var/lib/apt/lists/*
 
-# ── Node.js 20 LTS via NodeSource ────────────────────────────
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+# ── MongoDB (from MongoDB official repo) ─────────────────────
+# Provides mongod + mongosh for projects that need a document store.
+RUN curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc \
+    | gpg --dearmor -o /usr/share/keyrings/mongodb-server-7.0.gpg \
+    && echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] \
+    https://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main" \
+    > /etc/apt/sources.list.d/mongodb-org-7.0.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends mongodb-org \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /var/lib/mongodb /var/log/mongodb \
+    && chown -R mongodb:mongodb /var/lib/mongodb /var/log/mongodb
+
+# ── Node.js 22 LTS via NodeSource ────────────────────────────
+# Node 22 is current LTS (released Oct 2024).
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# ── Python dev tools (for linting/testing inside sandbox) ─────
-RUN pip3 install --no-cache-dir --break-system-packages \
-    pyflakes \
-    flake8 \
-    pytest \
-    black \
-    && pip3 cache purge 2>/dev/null || true
+# ── npm, pnpm, yarn — all package managers available ─────────
+# Projects use whichever they were scaffolded with. Having all three
+# globally avoids "pnpm not found" / "yarn not found" errors.
+RUN npm install -g npm@latest \
+    && npm install -g pnpm yarn \
+    && npm cache clean --force
 
-# ── npm global dev tools (for linting/serving) ───────────────
+# ── npm global dev tools ──────────────────────────────────────
+# Session start also upgrades these via _upgrade_sandbox_tooling().
+# - nodemon/tsx/ts-node: hot-reload and TS execution for Node backends
+# - prisma: CLI needed even when the ORM is a local dep (npx fallback)
+# - concurrently: run frontend + backend in one command (many fullstack setups use it)
+# - cross-env: set env vars cross-platform in npm scripts
 RUN npm install -g \
     eslint \
     typescript \
     serve \
+    vite \
+    @vitejs/plugin-react \
+    @vitejs/plugin-vue \
+    nodemon \
+    ts-node \
+    tsx \
+    prisma \
+    concurrently \
+    cross-env \
     && npm cache clean --force
 
-# ── Non-root sandbox user ────────────────────────────────────
-# SECURITY: Container runs as non-root to prevent privilege escalation
-# if a malicious package is downloaded or a rogue command is executed.
-RUN useradd -m -s /bin/bash -d /home/sandbox sandbox
+# ── Python web framework pre-installs ────────────────────────
+# Pre-installing the most common Python web packages eliminates the
+# per-project pip install wait for the majority of use cases.
+# Projects that need different versions will override via requirements.txt.
+RUN pip3 install --no-cache-dir --break-system-packages \
+    # ASGI servers
+    uvicorn[standard] \
+    gunicorn \
+    # Web frameworks
+    fastapi \
+    flask \
+    django \
+    # ORM / DB
+    sqlalchemy \
+    alembic \
+    psycopg2-binary \
+    pymongo \
+    motor \
+    aiosqlite \
+    # Redis
+    redis \
+    aioredis \
+    # HTTP clients
+    httpx \
+    aiohttp \
+    requests \
+    # Data validation / settings
+    pydantic \
+    pydantic-settings \
+    python-dotenv \
+    # Auth helpers
+    python-jose[cryptography] \
+    passlib[bcrypt] \
+    # Task queues
+    celery \
+    # Dev / test tools
+    pyflakes \
+    flake8 \
+    pytest \
+    pytest-asyncio \
+    black \
+    # Email
+    emails \
+    && pip3 cache purge 2>/dev/null || true
+
+# ── PostgreSQL dev configuration ─────────────────────────────
+# Trust auth for local connections — no passwords in dev mode.
+RUN pg_version=$(ls /etc/postgresql/ 2>/dev/null | head -1) \
+    && if [ -n "$pg_version" ]; then \
+    sed -i "s/^#listen_addresses = 'localhost'/listen_addresses = '127.0.0.1'/" \
+    /etc/postgresql/$pg_version/main/postgresql.conf; \
+    sed -i "s|^local\s\+all\s\+all\s\+peer|local   all             all                                     trust|" \
+    /etc/postgresql/$pg_version/main/pg_hba.conf; \
+    sed -i "s|^host\s\+all\s\+all\s\+127.0.0.1/32\s\+.*|host    all             all             127.0.0.1/32            trust|" \
+    /etc/postgresql/$pg_version/main/pg_hba.conf; \
+    sed -i "s|^host\s\+all\s\+all\s\+::1/128\s\+.*|host    all             all             ::1/128                 trust|" \
+    /etc/postgresql/$pg_version/main/pg_hba.conf; \
+    fi
+
+# ── Sandbox user & sudo configuration ────────────────────────
+# Grant sandbox user passwordless sudo ONLY for data service start/stop/status.
+RUN useradd -m -s /bin/bash -d /home/sandbox sandbox \
+    && echo "sandbox ALL=(ALL) NOPASSWD: \
+    /usr/bin/service postgresql *, \
+    /usr/sbin/service postgresql *, \
+    /usr/bin/pg_ctlcluster *, \
+    /usr/bin/service redis-server *, \
+    /usr/sbin/service redis-server *, \
+    /usr/bin/redis-server *, \
+    /usr/bin/service mongod *, \
+    /usr/sbin/service mongod *, \
+    /usr/bin/mongod *" > /etc/sudoers.d/sandbox-services \
+    && chmod 0440 /etc/sudoers.d/sandbox-services
+
+# ── PostgreSQL: create sandbox role ──────────────────────────
+# Pre-create a 'sandbox' superuser + database so projects connect immediately.
+USER postgres
+RUN service postgresql start \
+    && sleep 2 \
+    && psql -c "CREATE ROLE sandbox WITH SUPERUSER CREATEDB CREATEROLE LOGIN;" 2>/dev/null || true \
+    && psql -c "CREATE DATABASE sandbox OWNER sandbox;" 2>/dev/null || true \
+    && service postgresql stop \
+    && sleep 1
+USER root
 
 # ── Workspace setup ──────────────────────────────────────────
 RUN mkdir -p /workspace && chown sandbox:sandbox /workspace
 WORKDIR /workspace
+
+# ── Global .npmrc — sensible defaults for all npm installs ───
+# legacy-peer-deps: prevents peer dep conflicts that block installs
+# fund/audit: suppress noise that slows CI-style installs
+# prefer-offline: use local cache when available (faster re-installs)
+# update-notifier=false: suppress "npm update available" banner
+# loglevel=error: only show real errors, not notices/warnings
+RUN printf "legacy-peer-deps=true\nfund=false\naudit=false\nprefer-offline=true\nupdate-notifier=false\nloglevel=error\n" \
+    > /etc/npmrc \
+    && mkdir -p /home/sandbox \
+    && printf "legacy-peer-deps=true\nfund=false\naudit=false\nprefer-offline=true\nupdate-notifier=false\nloglevel=error\n" \
+    > /home/sandbox/.npmrc \
+    && chown sandbox:sandbox /home/sandbox/.npmrc
+
+# ── Global pip.conf — prevent cache bloat in container ───────
+RUN mkdir -p /etc/pip \
+    && printf "[global]\nno-cache-dir = true\ntrusted-host = pypi.org\n           files.pythonhosted.org\n" \
+    > /etc/pip.conf
 
 # ── Git configuration ────────────────────────────────────────
 RUN git config --global --add safe.directory /workspace \

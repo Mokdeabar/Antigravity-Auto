@@ -279,3 +279,148 @@ class WorkspaceMap:
             out += "\n"
 
         return out.strip()
+
+    def extract_relevant_bodies(
+        self,
+        context_text: str,
+        file_paths: list[str],
+        max_total_chars: int = 50000,
+    ) -> str:
+        """
+        V41 AST Context Slicing — extract only the function/class bodies
+        that match symbols found in the context text.
+
+        For Python: uses ast to extract exact node source ranges.
+        For JS/TS: uses regex-based function detection with brace counting.
+        Falls back to head-truncated raw source for unparseable files.
+
+        Returns a formatted string of code slices, capped at max_total_chars.
+        """
+        if not self.index:
+            self.load()
+
+        # Extract keywords from context (goal, task description, etc.)
+        keywords = set(re.findall(r'[a-zA-Z_][a-zA-Z0-9_]{3,}', context_text.lower()))
+
+        parts: list[str] = []
+        total_chars = 0
+
+        for rel_path in file_paths:
+            if total_chars >= max_total_chars:
+                break
+
+            full_path = self.project_path / rel_path
+            if not full_path.exists() or not full_path.is_file():
+                continue
+
+            try:
+                source = full_path.read_text(encoding="utf-8")
+            except Exception:
+                continue
+
+            budget = max_total_chars - total_chars
+            if budget <= 0:
+                break
+
+            # Route to the appropriate slicer
+            if rel_path.endswith(".py"):
+                sliced = self._slice_python(source, keywords, budget)
+            elif rel_path.endswith((".js", ".ts", ".jsx", ".tsx")):
+                sliced = self._slice_jsts(source, keywords, budget)
+            else:
+                # Non-parseable files: head-truncated raw source
+                sliced = source[:min(2000, budget)]
+
+            if sliced:
+                header = f"\n--- {rel_path} ---\n"
+                parts.append(header + sliced)
+                total_chars += len(header) + len(sliced)
+
+        return "".join(parts)
+
+    def _slice_python(self, source: str, keywords: set[str], budget: int) -> str:
+        """Extract Python function/class bodies matching keywords via AST."""
+        try:
+            tree = ast.parse(source)
+        except SyntaxError:
+            return source[:min(2000, budget)]
+
+        slices: list[str] = []
+        # Always include imports (they're small and provide context)
+        for node in ast.iter_child_nodes(tree):
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                seg = ast.get_source_segment(source, node)
+                if seg:
+                    slices.append(seg)
+
+        # Extract function and class bodies that match keywords
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                name_lower = node.name.lower()
+                # Match if function name is in keywords OR any keyword is in the name
+                if name_lower in keywords or any(kw in name_lower for kw in keywords if len(kw) >= 5):
+                    seg = ast.get_source_segment(source, node)
+                    if seg:
+                        slices.append(seg)
+
+        if not slices:
+            # No matches — include function/class signatures only (compact)
+            sigs = []
+            for node in ast.iter_child_nodes(tree):
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    sigs.append(f"def {node.name}(...)  # line {node.lineno}")
+                elif isinstance(node, ast.ClassDef):
+                    sigs.append(f"class {node.name}:  # line {node.lineno}")
+            return "\n".join(sigs)[:budget] if sigs else source[:min(1000, budget)]
+
+        result = "\n\n".join(slices)
+        return result[:budget]
+
+    def _slice_jsts(self, source: str, keywords: set[str], budget: int) -> str:
+        """Extract JS/TS function/class bodies matching keywords via regex + brace counting."""
+        lines = source.splitlines()
+        slices: list[str] = []
+
+        # Collect import lines (always include)
+        for line in lines:
+            stripped = line.strip()
+            if stripped.startswith(("import ", "const ", "require(")):
+                if "import " in stripped or "require(" in stripped:
+                    slices.append(line)
+
+        # Find function/class declarations matching keywords
+        for i, line in enumerate(lines):
+            # Check if this line declares a function or class
+            match = JS_FUNC_RE.search(line) or JS_CLASS_RE.search(line)
+            if not match:
+                continue
+
+            name = match.group(1) or (match.group(2) if match.lastindex >= 2 else None)
+            if not name:
+                continue
+
+            name_lower = name.lower()
+            if name_lower not in keywords and not any(kw in name_lower for kw in keywords if len(kw) >= 5):
+                continue
+
+            # Extract body via brace-depth counting
+            body_lines = [line]
+            depth = line.count('{') - line.count('}')
+            for j in range(i + 1, len(lines)):
+                body_lines.append(lines[j])
+                depth += lines[j].count('{') - lines[j].count('}')
+                if depth <= 0:
+                    break
+            slices.append("\n".join(body_lines))
+
+        if not slices:
+            # No matches — return signatures only
+            sigs = []
+            for i, line in enumerate(lines):
+                m = JS_FUNC_RE.search(line) or JS_CLASS_RE.search(line)
+                if m:
+                    sigs.append(f"{line.strip()}  // line {i+1}")
+            return "\n".join(sigs)[:budget] if sigs else source[:min(1000, budget)]
+
+        result = "\n\n".join(slices)
+        return result[:budget]

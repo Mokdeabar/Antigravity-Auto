@@ -83,14 +83,15 @@ def update_hud() -> str:
             "- **Status:** `ONLINE (Background Thread)`",
             "",
             "## 📚 Memory Cortex",
-            f"- **Events in RAM:** `{len(mem._data.get('events', []))}`",
-            f"- **Compaction Cycles:** `{mem._data.get('counters', {}).get('compactions', 0)}`",
+            # V37 FIX (L-7): Use public API instead of accessing private _data dict.
+            f"- **Events in RAM:** `{mem.get_event_count()}`",
+            f"- **Compaction Cycles:** `{mem.get_counter('compactions')}`",
             f"- **Council KB Entries:** `{kb_count}`",
             "",
             "## ⚡ Operational Metrics",
             f"- **Approvals:** `{mem.total_approvals}`",
-            f"- **Vision Calls:** `{mem._data.get('counters', {}).get('vision_calls', 0)}`",
-            f"- **Errors Crushed:** `{mem._data.get('counters', {}).get('errors_resolved', 0)}`",
+            f"- **Vision Calls:** `{mem.get_counter('vision_calls')}`",
+            f"- **Errors Crushed:** `{mem.get_counter('errors_resolved')}`",
         ]
         
         # Inject recent activity log

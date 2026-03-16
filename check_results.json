@@ -1,0 +1,11 @@
+{ 
+  "python": {"ok": true, "version": "Python 3.13.12"}, 
+  "pip": {"ok": true, "version": "26.0.1"}, 
+  "node": {"ok": true, "version": "v22.15.0"}, 
+  "npm": {"ok": true, "version": "10.8.3"}, 
+  "git": {"ok": true, "version": "git version 2.53.0.windows.1"}, 
+  "docker": {"ok": true, "version": "Docker version 29.2.1, build a5c7197"}, 
+  "docker_daemon": {"ok": true}, 
+  "wsl": {"ok": true, "version": "W"}, 
+  "gemini": {"ok": true, "version": "operable program or batch file."}, 
+  "ollama": {"ok": true, "version": "operable program or batch file."}, 

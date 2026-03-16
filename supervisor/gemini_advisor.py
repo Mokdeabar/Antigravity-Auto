@@ -1,5 +1,5 @@
 """
-gemini_advisor.py — Centralized Gemini CLI Interface (V9: OpenClaw-Enhanced).
+gemini_advisor.py — Centralized Gemini CLI Interface (V60: cwd-aware subprocess).
 
 Every module that needs Gemini's intelligence calls through here.
 Provides async, sync, and JSON-parsing variants with built-in:
@@ -18,7 +18,11 @@ V9 UPGRADE — OpenClaw-Inspired:
      warns when approaching configurable limits.
 """
 
+from __future__ import annotations
+
 import asyncio
+from dataclasses import dataclass
+import hashlib
 import json
 import logging
 import os
@@ -27,7 +31,6 @@ import subprocess
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
 
 from . import config
 from .retry_policy import (
@@ -46,15 +49,130 @@ logger = logging.getLogger("supervisor.gemini_advisor")
 
 # ─────────────────────────────────────────────────────────────
 # Session cache — avoid asking the exact same question twice.
-# Keys are the first 200 chars of the prompt, values are responses.
+# Keys are SHA256 hashes of the full prompt.
+# Values are (response, timestamp) tuples for TTL-based eviction.
 # ─────────────────────────────────────────────────────────────
-_session_cache: dict[str, str] = {}
+_session_cache: dict[str, tuple[str, float]] = {}  # key → (response, epoch)
 _MAX_CACHE_SIZE = 50
+_CACHE_TTL_S = 300  # 5 minutes — stale responses are evicted after this
+
+# V74: System prompt — establishes role and constraints to reduce
+# conversational filler and placeholder code from Gemini.
+GEMINI_SYSTEM_PROMPT = (
+    "You are a senior full-stack engineer working inside an automated build system. "
+    "Your code will be written directly to files and immediately built/tested. "
+    "Always produce complete, working code — never use placeholders, TODOs, or '...' stubs. "
+    "Output only the requested format (JSON, code, or markdown) — no conversational text. "
+    "If you encounter an error, fix the root cause — never suppress or ignore errors."
+)
+
+# ─────────────────────────────────────────────────────────────
+# V55: Status callback — lets main.py push Gemini attempt events
+# to the UI (operation label + activity feed) without threading
+# state through every ask_gemini call site.
+# Register once at startup via set_gemini_status_callback().
+# ─────────────────────────────────────────────────────────────
+_gemini_status_cb: 'Callable[[str, str], None] | None' = None
+
+
+def set_gemini_status_callback(fn: 'Callable[[str, str], None] | None') -> None:
+    """
+    Register a callback that receives (event_type, message) whenever
+    ask_gemini changes state. event_type is one of:
+      'attempt'    — starting an attempt
+      'retry'      — attempt failed, retrying with delay
+      'ratelimit'  — rate-limited, waiting or switching model
+      'success'    — response received
+    """
+    global _gemini_status_cb
+    _gemini_status_cb = fn
+
+
+def _cb(event: str, msg: str) -> None:
+    """Fire the status callback if registered, silently ignoring errors."""
+    if _gemini_status_cb:
+        try:
+            _gemini_status_cb(event, msg)
+        except Exception:
+            pass
+# ─────────────────────────────────────────────────────────────
+# V55: Global stop flag — lets main.py cancel in-flight Gemini
+# subprocesses immediately on safe-stop instead of waiting for
+# the full per-call timeout (potentially 600s).
+# ─────────────────────────────────────────────────────────────
+_stop_requested: bool = False
+
+
+def set_gemini_stop(value: bool) -> None:
+    """Signal all in-flight _call_gemini_async calls to abort immediately."""
+    global _stop_requested
+    _stop_requested = value
+
+
+# ─────────────────────────────────────────────────────────────
+# V73: Post-call quota probe — runs /stats after every Gemini
+# CLI call to keep quota data fresh for pause/resume decisions.
+# ─────────────────────────────────────────────────────────────
+
+_post_call_count = 0  # V74: Counter for probe frequency optimization
+
+
+def _post_call_probe(model: str = "") -> None:
+    """
+    V73: Record usage and run /stats probe after a successful Gemini call.
+    V74: Stats probe runs every 5th call to reduce ~1s overhead per call.
+
+    Called after every ask_gemini / stream_gemini / call_gemini_with_file.
+    Runs in a background thread to avoid blocking the async event loop.
+    All errors are swallowed — probe failures must never break calls.
+    """
+    global _post_call_count
+    _post_call_count += 1
+    _run_stats = (_post_call_count % 5 == 1)  # Run on 1st, 6th, 11th, etc.
+
+    import threading
+    def _probe_bg():
+        try:
+            from .retry_policy import get_daily_budget, get_quota_probe
+            _budget = get_daily_budget()
+            _budget.record_request()
+            _qp = get_quota_probe()
+            _qp.record_usage(model)
+            # V74: Only run expensive stats probe every 5th call
+            if _run_stats:
+                _qp.run_stats_probe()
+        except Exception:
+            pass
+    threading.Thread(target=_probe_bg, daemon=True, name="post-call-probe").start()
+
+
+def _post_call_probe_sync(model: str = "") -> None:
+    """
+    V73: Synchronous version of _post_call_probe for sync call paths.
+    V74: Stats probe runs every 5th call (shared counter with async version).
+    Runs inline since we're already in a blocking context.
+    """
+    global _post_call_count
+    _post_call_count += 1
+    _run_stats = (_post_call_count % 5 == 1)
+
+    try:
+        from .retry_policy import get_daily_budget, get_quota_probe
+        _budget = get_daily_budget()
+        _budget.record_request()
+        _qp = get_quota_probe()
+        _qp.record_usage(model)
+        # V74: Only run expensive stats probe every 5th call
+        if _run_stats:
+            _qp.run_stats_probe()
+    except Exception:
+        pass
+
 
 
 def _cache_key(prompt: str) -> str:
-    """Create a cache key from the first 200 chars of the prompt."""
-    return prompt.strip()[:200]
+    """Create a collision-resistant cache key from the full prompt using SHA256."""
+    return hashlib.sha256(prompt.strip().encode('utf-8')).hexdigest()
 
 
 def _strip_markdown_fences(text: str) -> str:
@@ -69,7 +187,7 @@ def _strip_markdown_fences(text: str) -> str:
 # Model Resolution — delegated to ModelFailoverChain
 # ─────────────────────────────────────────────────────────────
 
-_cached_best_model: Optional[str] = None
+_cached_best_model: str | None = None
 
 
 def _get_best_model(prompt: str = "") -> str:
@@ -127,9 +245,47 @@ def _probe_and_cache_model(preferred: str) -> str:
             cached_time = datetime.fromisoformat(data["timestamp"])
             age_hours = (datetime.now(timezone.utc) - cached_time).total_seconds() / 3600
             if age_hours < ttl_hours and data.get("model"):
-                model = data["model"]
-                logger.info("🧠  Using cached best model: %s (%.1fh old)", model, age_hours)
-                return model
+                # V73: Before returning cached model, check if the failover
+                # chain has a higher-priority model available (e.g. from a
+                # recovery promotion). The chain's active model takes priority.
+                chain = get_failover_chain()
+                chain_active = chain.get_active_model()
+                if chain_active and chain_active != model:
+                    # Chain promoted a better model — prefer it over stale cache.
+                    # chain._models is ordered by priority (0 = highest).
+                    try:
+                        chain_idx = chain._models.index(chain_active)
+                    except ValueError:
+                        chain_idx = 999
+                    try:
+                        cache_idx = chain._models.index(model)
+                    except ValueError:
+                        cache_idx = 999
+                    if chain_idx < cache_idx:
+                        logger.info(
+                            "🧠  Disk cache has %s but failover chain promoted %s — using chain model.",
+                            model, chain_active,
+                        )
+                        # Update disk cache to the promoted model
+                        cache_path.write_text(
+                            json.dumps({"model": chain_active, "timestamp": datetime.now(timezone.utc).isoformat()}),
+                            encoding="utf-8",
+                        )
+                        return chain_active
+                # V52: Check if cached model is on cooldown before returning it
+                if chain._is_available(model, time.time()):
+                    logger.info("🧠  Using cached best model: %s (%.1fh old)", model, age_hours)
+                    return model
+                else:
+                    # Cached model is on cooldown — get the best available one
+                    active = chain.get_active_model()
+                    if active:
+                        logger.info(
+                            "🧠  Cached model %s is on cooldown — using %s instead",
+                            model, active,
+                        )
+                        return active
+                    logger.warning("🧠  Cached model %s on cooldown, all models exhausted", model)
     except Exception as exc:
         logger.debug("Could not read model cache: %s", exc)
 
@@ -143,6 +299,13 @@ def _probe_and_cache_model(preferred: str) -> str:
     R = config.ANSI_RESET
 
     for model in config.GEMINI_MODEL_PROBE_LIST:
+        # V73: Skip image-gen models — they can't handle text probes
+        if config.classify_model(model) == "image":
+            continue
+        # V73: Skip probing if stop has been requested
+        if _stop_requested:
+            logger.info("🧠  Stop requested — aborting model probe.")
+            break
         try:
             logger.info("🧠  Probing model: %s …", model)
             print(f"  {M}🧠 Probing model: {model} …{R}", end=" ", flush=True)
@@ -155,7 +318,7 @@ def _probe_and_cache_model(preferred: str) -> str:
 
             result = subprocess.run(
                 cmd,
-                capture_output=True, text=True, timeout=30,
+                capture_output=True, text=True, timeout=60,
                 shell=config.IS_WINDOWS, encoding='utf-8', errors='replace',
                 env={**os.environ, 'PYTHONIOENCODING': 'utf-8'},
             )
@@ -244,6 +407,9 @@ async def ask_gemini(
     timeout: int | None = None,
     use_cache: bool = True,
     max_retries: int | None = None,
+    all_files: bool = False,
+    cwd: str | None = None,
+    model: str | None = None,
 ) -> str:
     """
     Send a prompt to Gemini CLI and return the response.
@@ -257,6 +423,14 @@ async def ask_gemini(
         timeout:     Override the default timeout (seconds).
         use_cache:   If True, check/update the session cache.
         max_retries: Override RetryPolicy max attempts.
+        all_files:   If True, prepend '@./' for file expansion.
+        cwd:         Working directory for the Gemini CLI subprocess.
+                     CRITICAL for audit tasks: @./ file expansion reads
+                     from this dir, so it MUST be the project path, not
+                     the supervisor directory.
+        model:       V73: Explicit model override. When set, this model
+                     is used instead of auto-selection. Use for audit/
+                     planning calls that must run on pro-tier models.
 
     Returns:
         The raw text response from Gemini CLI.
@@ -271,15 +445,48 @@ async def ask_gemini(
     budget = get_context_budget()
     attempts = max_retries if max_retries is not None else policy.max_attempts
 
-    # Check cache.
+    # Check cache (with TTL validation).
     if use_cache and key in _session_cache:
-        logger.debug("🧠  Cache hit for prompt (%.60s…)", key)
-        return _session_cache[key]
+        _cached_resp, _cached_time = _session_cache[key]
+        if (time.time() - _cached_time) < _CACHE_TTL_S:
+            logger.debug("🧠  Cache hit for prompt (hash=%s)", key[:16])
+            return _cached_resp
+        else:
+            # TTL expired — evict stale entry
+            del _session_cache[key]
+            logger.debug("🧠  Cache expired for prompt (hash=%s)", key[:16])
+
+    # V74: Proactive context budget diagnostic — suggests @file references
+    # for large content blocks. Respects 1M token limit but NEVER truncates.
+    _prompt_len = len(prompt)
+    if _prompt_len > 100_000:
+        _sections = prompt.split('\n\n')
+        _large_sections = [(i, len(s)) for i, s in enumerate(_sections) if len(s) > 10_000]
+        if _large_sections:
+            logger.info(
+                "📊  Large prompt detected (%d chars, ~%d tokens). "
+                "%d section(s) > 10K chars could use @file references for efficiency:",
+                _prompt_len, _prompt_len // 4, len(_large_sections),
+            )
+            for idx, size in _large_sections[:5]:
+                logger.info("📊    Section %d: %d chars (~%d tokens)", idx, size, size // 4)
+    elif _prompt_len > config.PROMPT_SIZE_WARN_CHARS:
+        logger.warning(
+            "📊  Prompt approaching limit: %d chars (%.0f%% of %d max). "
+            "Consider using @file references for large code blocks.",
+            _prompt_len, (_prompt_len / config.PROMPT_SIZE_MAX_CHARS) * 100,
+            config.PROMPT_SIZE_MAX_CHARS,
+        )
+    # V74: Prepend system prompt if the caller hasn't included one.
+    # headless_executor.py already provides its own system context via the
+    # mandate/sections pattern, so we check to avoid double-injection.
+    if not any(kw in prompt[:500].lower() for kw in ("senior", "automated build system", "you are a")):
+        prompt = f"{GEMINI_SYSTEM_PROMPT}\n\n{prompt}"
 
     # Glass Brain: show what we're sending.
     _glass_brain_send(prompt)
 
-    last_error: Optional[Exception] = None
+    last_error: Exception | None = None
     rate_tracker = get_rate_tracker()
 
     # OpenClaw pattern: budget-triggered auto-pruning.
@@ -294,9 +501,10 @@ async def ask_gemini(
         except Exception as exc:
             logger.debug("📊  Auto-compaction failed (non-critical): %s", exc)
 
-    # Smart model selection based on prompt complexity
-    # _get_best_model already handles rate limit cooldowns internally
-    model = _get_best_model(prompt)
+    # V73: If caller specified an explicit model, use it directly.
+    # Otherwise, auto-select the best model based on prompt + failover chain.
+    if not model:
+        model = _get_best_model(prompt)
 
     if not model:
         raise RuntimeError("ALL_MODELS_EXHAUSTED: Every available model is on cooldown.")
@@ -307,10 +515,11 @@ async def ask_gemini(
 
     async def _inner_retry_loop():
         nonlocal model
-        last_err: Optional[Exception] = None
+        last_err: Exception | None = None
         for attempt in range(attempts):
+            _cb('attempt', f'🧠 Gemini attempt {attempt + 1}/{attempts} — sending to {model}…')
             try:
-                response = await _call_gemini_async(prompt, timeout, model=model)
+                response = await _call_gemini_async(prompt, timeout, model=model, all_files=all_files, cwd=cwd)
                 if not response:
                     raise RuntimeError("Gemini CLI returned an empty response.")
 
@@ -323,6 +532,9 @@ async def ask_gemini(
                 # Report success to failover chain.
                 chain.report_success(model)
 
+                # V73: Post-call quota probe
+                _post_call_probe(model)
+
                 # Feed router adaptive learning.
                 router = get_router()
                 tier = router.classify(prompt)
@@ -330,10 +542,11 @@ async def ask_gemini(
 
                 # Cache the response.
                 if use_cache:
+                    # Evict oldest entry if at capacity
                     if len(_session_cache) >= _MAX_CACHE_SIZE:
-                        oldest_key = next(iter(_session_cache))
+                        oldest_key = min(_session_cache, key=lambda k: _session_cache[k][1])
                         del _session_cache[oldest_key]
-                    _session_cache[key] = response
+                    _session_cache[key] = (response, time.time())
 
                 logger.info(
                     "🧠  Gemini response (%d chars, attempt %d/%d, model=%s): %.120s…",
@@ -346,6 +559,12 @@ async def ask_gemini(
                 error_text = str(exc)
                 _glass_brain_error(f"Attempt {attempt + 1}/{attempts} failed: {exc}")
 
+                # V73: Stop cancellation — NOT a model failure.
+                # Break immediately without cooldowns or failure reporting.
+                if "safe stop requested" in error_text.lower():
+                    logger.info("🧠  Gemini call cancelled by safe stop — no model cooldown.")
+                    break
+
                 # ── Rate limit detection ──
                 if RateLimitTracker.is_rate_limit_error(error_text):
                     wait_s = rate_tracker.record_rate_limit(model, error_text)
@@ -353,6 +572,7 @@ async def ask_gemini(
                     alt_model = rate_tracker.suggest_alternative_model(model)
                     if alt_model != model:
                         logger.info("⚡  Rate-limited on %s → switching to %s", model, alt_model)
+                        _cb('ratelimit', f'⚡️ Rate-limited on {model} — switching to {alt_model}')
                         model = alt_model
                         # Don't wait the full cooldown if we have an alternative
                         await asyncio.sleep(min(5.0, wait_s))
@@ -360,6 +580,7 @@ async def ask_gemini(
                     else:
                         # Already on Flash, must wait
                         logger.info("⚡  Rate-limited on %s, waiting %ds", model, wait_s)
+                        _cb('ratelimit', f'⚡️ Rate-limited — all models exhausted, waiting {int(wait_s)}s for cooldown')
                         await asyncio.sleep(min(wait_s, config.RATE_LIMIT_MAX_WAIT_S))
                         continue
 
@@ -374,12 +595,18 @@ async def ask_gemini(
 
                 if policy.should_retry(attempt):
                     delay = policy.delay_for(attempt)
+                    # Classify the error type for the UI label
+                    _err_summary = 'timeout' if 'timed out' in str(exc).lower() else str(exc)[:60]
+                    _cb('retry',
+                        f'🧠 Gemini attempt {attempt + 1}/{attempts} failed ({_err_summary}) — '
+                        f'retrying in {delay:.0f}s on {model}')
                     logger.warning(
                         "🧠  Gemini CLI attempt %d/%d failed: %s — retrying in %.1fs (model: %s) …",
                         attempt + 1, attempts, exc, delay, model,
                     )
                     await asyncio.sleep(delay)
                 else:
+                    _cb('retry', f'🧠 Gemini all {attempts} attempts exhausted — giving up')
                     logger.error(
                         "🧠  Gemini CLI failed after %d attempts: %s",
                         attempt + 1, exc,
@@ -400,11 +627,104 @@ async def ask_gemini(
         )
 
 
+async def stream_gemini(
+    prompt: str,
+    timeout: int | None = None,
+    max_retries: int | None = None,
+    cwd: str | None = None,
+    model_override: str | None = None,
+):
+    """
+    Async generator that streams the response from Gemini CLI.
+    Wraps _stream_gemini_async with full retry, failover, and budget tracking.
+    """
+    timeout = timeout or config.GEMINI_TIMEOUT_SECONDS
+    policy = get_retry_policy()
+    chain = get_failover_chain()
+    budget = get_context_budget()
+    attempts = max_retries if max_retries is not None else policy.max_attempts
+
+    _glass_brain_send(prompt)
+    last_error: Exception | None = None
+    rate_tracker = get_rate_tracker()
+
+    if budget.should_prune():
+        try:
+            from .session_memory import SessionMemory
+            SessionMemory().compact_history()
+        except Exception:
+            pass
+
+    model = model_override or _get_best_model(prompt)
+    if not model:
+        raise RuntimeError("ALL_MODELS_EXHAUSTED")
+
+    for attempt in range(attempts):
+        _cb('attempt', f'🧠 Gemini streaming attempt {attempt + 1}/{attempts} — targeting {model}…')
+        try:
+            full_response = []
+            async for chunk in _stream_gemini_async(prompt, timeout, model=model, cwd=cwd):
+                full_response.append(chunk)
+                yield chunk
+
+            if not full_response:
+                raise RuntimeError("Gemini CLI returned an empty stream.")
+
+            response_str = "".join(full_response)
+            _glass_brain_receive(response_str)
+            budget.record(len(prompt), len(response_str), model=model)
+            chain.report_success(model)
+
+            # V73: Post-call quota probe
+            _post_call_probe(model)
+
+            router = get_router()
+            tier = router.classify(prompt)
+            router.record_outcome(tier, success=True)
+            return
+
+        except Exception as exc:
+            last_error = exc
+            error_text = str(exc)
+            _glass_brain_error(f"Stream attempt {attempt + 1}/{attempts} failed: {exc}")
+
+            if RateLimitTracker.is_rate_limit_error(error_text):
+                wait_s = rate_tracker.record_rate_limit(model, error_text)
+                alt_model = rate_tracker.suggest_alternative_model(model)
+                if alt_model != model:
+                    _cb('ratelimit', f'⚡️ Rate-limited on {model} — switching to {alt_model}')
+                    model = alt_model
+                    await asyncio.sleep(min(5.0, wait_s))
+                    continue
+                else:
+                    _cb('ratelimit', f'⚡️ Rate-limited — waiting {int(wait_s)}s')
+                    await asyncio.sleep(min(wait_s, config.RATE_LIMIT_MAX_WAIT_S))
+                    continue
+
+            chain.report_failure(model)
+            model = chain.get_active_model()
+
+            router = get_router()
+            tier = router.classify(prompt)
+            router.record_outcome(tier, success=False)
+
+            if policy.should_retry(attempt):
+                delay = policy.delay_for(attempt)
+                _err_summary = 'timeout' if 'timed out' in str(exc).lower() else str(exc)[:60]
+                _cb('retry', f'🧠 Stream failed ({_err_summary}) — retrying in {delay:.0f}s on {model}')
+                await asyncio.sleep(delay)
+            else:
+                _cb('retry', f'🧠 Gemini all {attempts} stream attempts exhausted')
+
+    raise RuntimeError(f"Gemini CLI stream failed after {attempts} attempts: {last_error}")
+
+
+
 async def ask_gemini_json(
     prompt: str,
     timeout: int | None = None,
     use_cache: bool = True,
-) -> Optional[dict]:
+) -> dict | None:
     """
     Call Gemini CLI and parse a JSON object from the response.
     V9: Uses balanced-brace extraction for robustness.
@@ -421,6 +741,110 @@ async def ask_gemini_json(
 
     logger.warning("🧠  Failed to extract JSON from Gemini response: %.200s", raw[:200])
     return None
+
+
+# ─────────────────────────────────────────────────────────────
+# V74: Parallel Gemini Calls (Audit §4.2)
+# ─────────────────────────────────────────────────────────────
+
+@dataclass
+class BatchResult:
+    """Result of a single prompt within a batch call."""
+    index: int
+    prompt_id: str
+    response: str = ""
+    success: bool = True
+    error: str = ""
+    duration_s: float = 0.0
+
+
+async def batch_ask_gemini(
+    prompts: list[dict],
+    max_concurrency: int | None = None,
+    timeout: int | None = None,
+    use_cache: bool = True,
+    model: str | None = None,
+) -> list[BatchResult]:
+    """
+    V74: Send multiple independent prompts to Gemini in parallel.
+
+    Uses asyncio.Semaphore for concurrency control so we don't exceed
+    rate limits. Each prompt gets full retry/failover handling via the
+    existing ask_gemini() function.
+
+    Args:
+        prompts: List of dicts with keys:
+            - "prompt" (str): The prompt text (required)
+            - "id" (str): Optional identifier for the prompt
+            - "cwd" (str): Optional working directory override
+        max_concurrency: Max parallel calls (default: config.MAX_CONCURRENT_WORKERS)
+        timeout: Per-call timeout override
+        use_cache: Whether to use the session cache
+        model: Model override for all calls
+
+    Returns:
+        List of BatchResult in the same order as input prompts.
+
+    Example:
+        results = await batch_ask_gemini([
+            {"prompt": "Review file A", "id": "review-a"},
+            {"prompt": "Review file B", "id": "review-b"},
+            {"prompt": "Review file C", "id": "review-c"},
+        ], max_concurrency=3)
+        for r in results:
+            if r.success:
+                print(f"{r.prompt_id}: {r.response[:100]}")
+    """
+    if not prompts:
+        return []
+
+    concurrency = max_concurrency or config.MAX_CONCURRENT_WORKERS
+    semaphore = asyncio.Semaphore(concurrency)
+    results: list[BatchResult] = [
+        BatchResult(index=i, prompt_id=p.get("id", f"batch-{i}"))
+        for i, p in enumerate(prompts)
+    ]
+
+    async def _run_one(idx: int, prompt_dict: dict, result: BatchResult) -> None:
+        """Execute a single prompt with semaphore-controlled concurrency."""
+        async with semaphore:
+            start = time.time()
+            try:
+                response = await ask_gemini(
+                    prompt=prompt_dict["prompt"],
+                    timeout=timeout,
+                    use_cache=use_cache,
+                    cwd=prompt_dict.get("cwd"),
+                    model=model,
+                )
+                result.response = response
+                result.success = True
+            except Exception as exc:
+                result.success = False
+                result.error = str(exc)[:500]
+                logger.warning(
+                    "🧠  [Batch] Prompt %s failed: %s",
+                    result.prompt_id, str(exc)[:100],
+                )
+            finally:
+                result.duration_s = round(time.time() - start, 1)
+
+    # Launch all tasks concurrently (semaphore controls actual parallelism)
+    tasks = [
+        _run_one(i, p, results[i])
+        for i, p in enumerate(prompts)
+    ]
+    await asyncio.gather(*tasks, return_exceptions=True)
+
+    # Summary
+    succeeded = sum(1 for r in results if r.success)
+    total_time = sum(r.duration_s for r in results)
+    logger.info(
+        "🧠  [Batch] %d/%d prompts succeeded (%.1fs total, %d concurrent)",
+        succeeded, len(results), total_time, concurrency,
+    )
+
+    return results
 
 
 # ─────────────────────────────────────────────────────────────
@@ -471,9 +895,11 @@ async def call_gemini_with_file(
     prompt_file = tmp_dir / f"prompt_{uuid.uuid4().hex}.txt"
     prompt_file.write_text(prompt, encoding="utf-8")
 
-    last_error: Optional[Exception] = None
+    last_error: Exception | None = None
 
-    for attempt in range(policy.max_attempts):
+    # V37 FIX (H-2): Ensure temp file is always cleaned up, even on success.
+    try:
+      for attempt in range(policy.max_attempts):
         try:
             if config.IS_WINDOWS:
                 cmd_str = f'"{gemini_cmd}" -m "{model}" -- "{file_ref}" < "{prompt_file.absolute()}"'
@@ -552,6 +978,9 @@ async def call_gemini_with_file(
             # Report success to failover chain.
             chain.report_success(model)
 
+            # V73: Post-call quota probe
+            _post_call_probe(model)
+
             # Feed router adaptive learning.
             tier = router.classify(prompt)
             router.record_outcome(tier, success=True)
@@ -598,20 +1027,20 @@ async def call_gemini_with_file(
             else:
                 break
 
-    # Cleanup temp file
-    try:
-        prompt_file.unlink(missing_ok=True)
-    except OSError:
-        pass
-
-    raise RuntimeError(f"Gemini CLI with file failed after {policy.max_attempts} attempts: {last_error}")
+      raise RuntimeError(f"Gemini CLI with file failed after {policy.max_attempts} attempts: {last_error}")
+    finally:
+        # V37 FIX (H-2): Always clean up temp file, including on success paths.
+        try:
+            prompt_file.unlink(missing_ok=True)
+        except OSError:
+            pass
 
 
 async def call_gemini_with_file_json(
     prompt: str,
     file_path: str,
     timeout: int | None = None,
-) -> Optional[dict]:
+) -> dict | None:
     """
     Call Gemini CLI with file and parse a JSON object from the response.
 
@@ -672,7 +1101,7 @@ async def call_gemini_with_file_json(
     return None
 
 
-def _extract_json_object(text: str) -> Optional[dict]:
+def _extract_json_object(text: str) -> dict | None:
     """
     Extract a JSON object from text with extreme robustness.
     
@@ -692,41 +1121,51 @@ def _extract_json_object(text: str) -> Optional[dict]:
             continue
 
     # 2. String-aware balanced brace extraction
+    # V37 FIX (H-3): O(n) instead of O(n²) — walk from the first '{' only,
+    # and extract each top-level object sequentially.
     cleaned = _strip_markdown_fences(text)
     valid_objects = []
-    
-    for start_idx in range(len(cleaned)):
-        if cleaned[start_idx] == '{':
-            depth = 0
-            in_string = False
-            escape = False
-            for i in range(start_idx, len(cleaned)):
-                char = cleaned[i]
-                if not escape and char == '"':
-                    in_string = not in_string
-                elif char == '\\' and not escape:
-                    escape = True
-                    continue
-                else:
-                    escape = False
-                    
-                if not in_string:
-                    if char == '{':
-                        depth += 1
-                    elif char == '}':
-                        depth -= 1
-                        if depth == 0:
-                            candidate = cleaned[start_idx:i+1]
-                            try:
-                                obj = json.loads(candidate)
-                                if isinstance(obj, dict):
-                                    valid_objects.append(obj)
-                            except json.JSONDecodeError:
-                                pass
-                            break
-                            
+    pos = 0
+
+    while pos < len(cleaned):
+        start_idx = cleaned.find('{', pos)
+        if start_idx == -1:
+            break
+        depth = 0
+        in_string = False
+        escape = False
+        found_end = False
+        for i in range(start_idx, len(cleaned)):
+            char = cleaned[i]
+            if not escape and char == '"':
+                in_string = not in_string
+            elif char == '\\' and not escape:
+                escape = True
+                continue
+            else:
+                escape = False
+
+            if not in_string:
+                if char == '{':
+                    depth += 1
+                elif char == '}':
+                    depth -= 1
+                    if depth == 0:
+                        candidate = cleaned[start_idx:i+1]
+                        try:
+                            obj = json.loads(candidate)
+                            if isinstance(obj, dict):
+                                valid_objects.append(obj)
+                        except json.JSONDecodeError:
+                            pass
+                        pos = i + 1
+                        found_end = True
+                        break
+        if not found_end:
+            break  # Unclosed brace, stop searching
+
     if valid_objects:
-        # Return the largest valid object by string length
+        # Return the largest valid object by key count
         return max(valid_objects, key=lambda x: len(str(x)))
 
     # 3. Strategy 3: Regex fallback for simpler unnested cases
@@ -774,7 +1213,7 @@ def ask_gemini_sync(
     # Glass Brain: show what we're sending.
     _glass_brain_send(prompt)
 
-    last_error: Optional[Exception] = None
+    last_error: Exception | None = None
 
     for attempt in range(attempts):
         try:
@@ -788,6 +1227,9 @@ def ask_gemini_sync(
             # Track context budget.
             budget.record(len(prompt), len(response), model=model)
             chain.report_success(model)
+
+            # V73: Post-call quota probe (sync)
+            _post_call_probe_sync(model)
 
             logger.info(
                 "🧠  Gemini sync response (%d chars, attempt %d/%d): %.120s…",
@@ -814,24 +1256,19 @@ def ask_gemini_sync(
 def ask_gemini_sync_json(
     prompt: str,
     timeout: int | None = None,
-) -> Optional[dict]:
+) -> dict | None:
     """Synchronous version of ask_gemini_json."""
     try:
         raw = ask_gemini_sync(prompt, timeout=timeout)
     except RuntimeError:
         return None
 
-    cleaned = _strip_markdown_fences(raw)
-    json_match = re.search(r"\{[^}]+\}", cleaned, re.DOTALL)
-    if not json_match:
-        json_match = re.search(r"\{.*\}", cleaned, re.DOTALL)
+    # V37 FIX (H-4): Use the same robust extraction as the async variant.
+    parsed = _extract_json_object(raw)
+    if parsed:
+        return parsed
 
-    if json_match:
-        try:
-            return json.loads(json_match.group(0))
-        except json.JSONDecodeError:
-            pass
-
+    logger.warning("🧠  Failed to extract JSON from sync Gemini response: %.200s", raw[:200])
     return None
 
 
@@ -839,22 +1276,35 @@ def ask_gemini_sync_json(
 # Low-level subprocess wrappers (V8: all include -m model flag)
 # ─────────────────────────────────────────────────────────────
 
-async def _call_gemini_async(prompt: str, timeout: int, model: Optional[str] = None) -> str:
-    """Async subprocess call to the Gemini CLI with -m model flag."""
+async def _call_gemini_async(
+    prompt: str,
+    timeout: int,
+    model: str | None = None,
+    all_files: bool = False,
+    cwd: str | None = None,
+) -> str:
+    """Async subprocess call to the Gemini CLI with stop-aware streaming read."""
     gemini_cmd = config.get_gemini_cli_cmd()
     if not model:
         model = _get_best_model()
         if not model:
             raise RuntimeError("ALL_MODELS_EXHAUSTED")
 
+    # V56: --all_files was deprecated in Gemini CLI v0.11.0 (Oct 2025).
+    # The canonical mechanism is the '@' prefix in the prompt body.
+    # When all_files=True we prepend '@./\n\n' so the CLI's built-in
+    # file-expansion tool loads all project files from the working dir.
+    if all_files:
+        prompt = "@./\n\n" + prompt
+
     if config.IS_WINDOWS:
-        # V32: Use --model flag (current Gemini CLI v0.29+ API)
         cmd_str = f'"{gemini_cmd}" --model "{model}"'
         proc = await asyncio.create_subprocess_shell(
             cmd_str,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            cwd=cwd or None,
             env={**os.environ, 'PYTHONIOENCODING': 'utf-8'},
         )
     else:
@@ -863,29 +1313,278 @@ async def _call_gemini_async(prompt: str, timeout: int, model: Optional[str] = N
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            cwd=cwd or None,
             env={**os.environ, 'PYTHONIOENCODING': 'utf-8'},
         )
 
+    if proc.stdin:
+        try:
+            proc.stdin.write(prompt.encode('utf-8'))
+            await proc.stdin.drain()
+            proc.stdin.close()
+        except Exception:
+            pass
+
+    # Stream stdout in chunks, checking stop flag and timeout every 0.5s.
+    # V73: Activity-aware timeout — large prompts can take 90-120s of
+    # "thinking" before any output starts. We use a generous initial
+    # wait (5× timeout) and then reset the deadline on each chunk received.
+    # A stall MID-stream (no data for `timeout` seconds) still triggers timeout.
+    chunks: list[bytes] = []
+    stderr_chunks: list[bytes] = []
+    bytes_received = 0
+    _PROGRESS_EVERY = 30_000   # report to UI every 30 KB
+    _last_report_at = 0
+    _initial_patience = timeout * 5   # 600s for thinking phase (5× 120s)
+    _stream_patience = timeout         # 120s stall timeout once data flows
+    _loop = asyncio.get_event_loop()
+    deadline = _loop.time() + _initial_patience  # generous first-byte wait
+
     try:
-        stdout, stderr = await asyncio.wait_for(
-            proc.communicate(input=prompt.encode("utf-8")),
-            timeout=timeout,
-        )
-    except asyncio.TimeoutError:
+        while True:
+            # Check global stop flag — kill immediately and propagate
+            if _stop_requested:
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+                raise RuntimeError("Gemini CLI cancelled (safe stop requested)")
+
+            # Check timeout
+            now_t = _loop.time()
+            if now_t > deadline:
+                _phase = "thinking" if bytes_received == 0 else "streaming"
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+                raise RuntimeError(
+                    f"Gemini CLI timed out after {int(now_t - (deadline - (_initial_patience if bytes_received == 0 else _stream_patience)))}s "
+                    f"({_phase} phase, {bytes_received} bytes received)"
+                )
+
+            # Non-blocking read (0.5s window)
+            try:
+                chunk = await asyncio.wait_for(proc.stdout.read(8192), timeout=0.5)
+            except asyncio.TimeoutError:
+                # Nothing yet — check if proc finished
+                if proc.returncode is not None:
+                    break
+                continue
+
+            if chunk == b'':
+                # EOF
+                break
+
+            chunks.append(chunk)
+            bytes_received += len(chunk)
+
+            # V73: Activity-aware — reset deadline on each chunk.
+            # Once we're receiving data, any silence > timeout = stall.
+            deadline = _loop.time() + _stream_patience
+
+            # Progress callback every 30 KB
+            if bytes_received - _last_report_at >= _PROGRESS_EVERY:
+                _last_report_at = bytes_received
+                _cb('progress', f'🧠 Gemini receiving response… {bytes_received // 1024} KB received')
+
+        # Drain stderr quickly
+        try:
+            stderr_data = await asyncio.wait_for(proc.stderr.read(), timeout=2)
+            if stderr_data:
+                stderr_chunks.append(stderr_data)
+        except asyncio.TimeoutError:
+            pass
+
+        await asyncio.wait_for(proc.wait(), timeout=5)
+
+    except RuntimeError:
+        # Re-raise stop/timeout errors
+        raise
+    except Exception as _exc:
         try:
             proc.kill()
         except Exception:
             pass
-        raise RuntimeError(f"Gemini CLI timed out after {timeout}s")
+        raise RuntimeError(f"Gemini CLI stream error: {_exc}") from _exc
+
+    stdout = b''.join(chunks)
+    stderr = b''.join(stderr_chunks)
 
     if proc.returncode != 0:
-        err = stderr.decode("utf-8", errors="replace").strip()
-        raise RuntimeError(f"Gemini CLI exited with code {proc.returncode}: {err[:500]}")
+        err = stderr.decode('utf-8', errors='replace').strip()
+
+        # V65: MCP extension discovery failures are non-fatal.
+        # The Gemini CLI loads MCP extensions at startup (e.g. 'nanobanana').
+        # If a server isn't running in the subprocess context, the CLI may
+        # exit with code 1 even though the model responded correctly.
+        # If stdout has content AND the only errors are MCP-related, accept it.
+        _is_mcp_only_error = (
+            proc.returncode == 1
+            and "MCP error" in err
+            and not any(k in err for k in ("PERMISSION_DENIED", "RESOURCE_EXHAUSTED",
+                                            "INVALID_ARGUMENT", "API key", "quota"))
+        )
+        _stdout_has_content = bool(stdout.strip())
+
+        if _is_mcp_only_error and _stdout_has_content:
+            logger.debug(
+                "⚡  [Gemini] MCP extension error on exit (non-fatal) — model responded OK. "
+                "stderr: %s", err[:200]
+            )
+            # Fall through to return stdout below — don't raise
+        elif _is_mcp_only_error and not _stdout_has_content:
+            # MCP only, but no output — model never ran. Raise for tier fallback.
+            logger.warning(
+                "⚡  [Gemini] MCP extension error caused empty response (code %d). "
+                "Tip: ensure MCP servers are running or remove unused extensions. err: %s",
+                proc.returncode, err[:200]
+            )
+            raise RuntimeError(f"Gemini CLI exited with code {proc.returncode}: {err[:500]}")
+        else:
+            raise RuntimeError(f"Gemini CLI exited with code {proc.returncode}: {err[:500]}")
+
+
+    # Fire final bytes-received callback
+        _cb('success', f'🧠 Gemini responded ({bytes_received // 1024} KB received)')
 
     return stdout.decode("utf-8", errors="replace").strip()
 
 
-def _call_gemini_sync(prompt: str, timeout: int, model: Optional[str] = None) -> str:
+async def _stream_gemini_async(
+    prompt: str,
+    timeout: int,
+    model: str | None = None,
+    all_files: bool = False,
+    cwd: str | None = None,
+):
+    """Async generator yielding chunks from the Gemini CLI subprocess."""
+    gemini_cmd = config.get_gemini_cli_cmd()
+    if not model:
+        model = _get_best_model()
+        if not model:
+            raise RuntimeError("ALL_MODELS_EXHAUSTED")
+
+    if all_files:
+        prompt = "@./\n\n" + prompt
+
+    if config.IS_WINDOWS:
+        cmd_str = f'"{gemini_cmd}" --model "{model}"'
+        proc = await asyncio.create_subprocess_shell(
+            cmd_str,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            cwd=cwd or None,
+            env={**os.environ, 'PYTHONIOENCODING': 'utf-8'},
+        )
+    else:
+        proc = await asyncio.create_subprocess_exec(
+            gemini_cmd, "--model", model,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            cwd=cwd or None,
+            env={**os.environ, 'PYTHONIOENCODING': 'utf-8'},
+        )
+
+    if proc.stdin:
+        try:
+            proc.stdin.write(prompt.encode('utf-8'))
+            await proc.stdin.drain()
+            proc.stdin.close()
+        except Exception:
+            pass
+
+    stderr_chunks: list[bytes] = []
+    bytes_received = 0
+    _PROGRESS_EVERY = 30_000
+    _last_report_at = 0
+    # V73: Activity-aware timeout (same pattern as _call_gemini_async).
+    # Chat prompts are smaller so initial patience is 3× (vs 5× for audits).
+    _initial_patience = timeout * 3
+    _stream_patience = timeout
+    _loop = asyncio.get_event_loop()
+    deadline = _loop.time() + _initial_patience
+    has_yielded = False
+
+    try:
+        while True:
+            if _stop_requested:
+                try: proc.kill()
+                except Exception: pass
+                raise RuntimeError("Gemini CLI cancelled (safe stop requested)")
+
+            now_t = _loop.time()
+            if now_t > deadline:
+                _phase = "thinking" if bytes_received == 0 else "streaming"
+                try: proc.kill()
+                except Exception: pass
+                raise RuntimeError(
+                    f"Gemini CLI timed out after {int(now_t - (deadline - (_initial_patience if bytes_received == 0 else _stream_patience)))}s "
+                    f"({_phase} phase, {bytes_received} bytes received)"
+                )
+
+            try:
+                # Need smaller chunks and faster timeout for smooth streaming
+                chunk = await asyncio.wait_for(proc.stdout.read(1024), timeout=0.1)
+            except asyncio.TimeoutError:
+                if proc.returncode is not None:
+                    break
+                continue
+
+            if chunk == b'':
+                break
+
+            bytes_received += len(chunk)
+            decoded_chunk = chunk.decode("utf-8", errors="replace")
+            if decoded_chunk:
+                has_yielded = True
+                yield decoded_chunk
+
+            # V73: Reset deadline — data is flowing, not stalled.
+            deadline = _loop.time() + _stream_patience
+
+            if bytes_received - _last_report_at >= _PROGRESS_EVERY:
+                _last_report_at = bytes_received
+                _cb('progress', f'🧠 Gemini streaming… {bytes_received // 1024} KB received')
+
+        try:
+            stderr_data = await asyncio.wait_for(proc.stderr.read(), timeout=1)
+            if stderr_data:
+                stderr_chunks.append(stderr_data)
+        except asyncio.TimeoutError:
+            pass
+
+        await asyncio.wait_for(proc.wait(), timeout=5)
+
+    except RuntimeError:
+        raise
+    except Exception as _exc:
+        try: proc.kill()
+        except Exception: pass
+        raise RuntimeError(f"Gemini CLI stream error: {_exc}") from _exc
+
+    if proc.returncode != 0:
+        stderr = b''.join(stderr_chunks)
+        err = stderr.decode('utf-8', errors='replace').strip()
+
+        _is_mcp_only_error = (
+            proc.returncode == 1
+            and "MCP error" in err
+            and not any(k in err for k in ("PERMISSION_DENIED", "RESOURCE_EXHAUSTED",
+                                            "INVALID_ARGUMENT", "API key", "quota"))
+        )
+        
+        if _is_mcp_only_error and has_yielded:
+            logger.debug("⚡  [Gemini] Stream MCP extension error on exit (non-fatal)")
+        elif _is_mcp_only_error and not has_yielded:
+            raise RuntimeError(f"Gemini CLI exited with code {proc.returncode}: {err[:500]}")
+        else:
+            raise RuntimeError(f"Gemini CLI exited with code {proc.returncode}: {err[:500]}")
+
+
+def _call_gemini_sync(prompt: str, timeout: int, model: str | None = None) -> str:
     """Synchronous subprocess call to the Gemini CLI with -m model flag."""
     gemini_cmd = config.get_gemini_cli_cmd()
     if not model:
@@ -926,7 +1625,7 @@ def _call_gemini_sync(prompt: str, timeout: int, model: Optional[str] = None) ->
 # V8: Error Self-Analysis
 # ─────────────────────────────────────────────────────────────
 
-async def _diagnose_gemini_error(error_text: str, original_prompt: str) -> Optional[str]:
+async def _diagnose_gemini_error(error_text: str, original_prompt: str) -> str | None:
     """
     When Gemini CLI fails, feed the error back through Gemini to diagnose it.
 

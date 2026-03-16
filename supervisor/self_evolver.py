@@ -17,6 +17,8 @@ visual context. Reduced log tail from 100 → 50 lines for faster
 processing.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import re
@@ -24,7 +26,6 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Optional
 
 from . import config
 from .gemini_advisor import ask_gemini_sync
@@ -51,7 +52,7 @@ _LOG_FILE = _SUPERVISOR_DIR / "supervisor.log"
 _LOG_TAIL_LINES = 50
 
 
-def _extract_json_balanced(text: str) -> Optional[dict]:
+def _extract_json_balanced(text: str) -> dict | None:
     """
     Extract the outermost JSON object from `text` using balanced-brace
     matching.  This is critical because the 'code' field contains Python
@@ -171,7 +172,7 @@ def _build_single_prompt(
     modules: dict,
     module_listing: str,
     log_tail: str,
-    screenshot_path: Optional[str],
+    screenshot_path: str | None,
 ) -> str:
     """Build the original single-call evolution prompt."""
     prompt = (
@@ -221,8 +222,8 @@ def _council_evolve_pipeline(
     modules: dict,
     module_listing: str,
     log_tail: str,
-    screenshot_path: Optional[str],
-) -> Optional[dict]:
+    screenshot_path: str | None,
+) -> dict | None:
     """
     Multi-agent council pipeline for self-evolution.
 
@@ -402,7 +403,7 @@ def _council_evolve_pipeline(
     return {"file": target_file, "code": patched_code}
 
 
-def self_evolve(traceback_str: str, screenshot_path: Optional[str] = None) -> None:
+def self_evolve(traceback_str: str, screenshot_path: str | None = None) -> None:
     """
     The self-evolution pipeline (synchronous — called from except block).
 
@@ -518,8 +519,33 @@ def self_evolve(traceback_str: str, screenshot_path: Optional[str] = None) -> No
         logger.error("🧬  Gemini returned code that's too short (%d chars). Aborting.", len(patched_code))
         sys.exit(1)
 
-    # ── Step E: Validate the target file exists ────────────
-    target_path = _SUPERVISOR_DIR / target_file
+    # ── Step E: Validate target file against allowlist ──────
+    # V37 SECURITY FIX: Only explicitly allowed files may be overwritten.
+    # This prevents hallucinated filenames or path-traversal from corrupting
+    # critical system files (config.py, __init__.py, self_evolver.py itself).
+    _EVOLUTION_ALLOWLIST = {
+        "main.py", "headless_executor.py", "sandbox_manager.py",
+        "tool_server.py", "gemini_advisor.py", "local_orchestrator.py",
+        "agent_council.py", "session_memory.py", "scheduler.py",
+        "retry_policy.py", "brain.py", "workspace_transaction.py",
+        "compliance_gateway.py", "temporal_planner.py",
+        "user_research_engine.py", "growth_engine.py",
+        "autonomous_verifier.py", "polish_engine.py",
+    }
+
+    if target_file not in _EVOLUTION_ALLOWLIST:
+        logger.error(
+            "🧬  Target file '%s' is NOT in the evolution allowlist. Aborting.",
+            target_file,
+        )
+        sys.exit(1)
+
+    # V37 SECURITY FIX: Path traversal guard.
+    target_path = (_SUPERVISOR_DIR / target_file).resolve()
+    if not str(target_path).startswith(str(_SUPERVISOR_DIR.resolve())):
+        logger.error("🧬  Path traversal detected: '%s'. Aborting.", target_file)
+        sys.exit(1)
+
     if not target_path.exists():
         logger.error("🧬  Target file '%s' does not exist! Aborting.", target_file)
         sys.exit(1)

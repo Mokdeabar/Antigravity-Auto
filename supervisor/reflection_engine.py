@@ -8,8 +8,10 @@ The lesson MUST cite specific function/file names from the test error
 to prevent vague or hallucinated reflections from poisoning the memory.
 """
 
+from __future__ import annotations
+
+import json
 import logging
-from typing import Optional
 
 logger = logging.getLogger("supervisor.reflection_engine")
 
@@ -49,8 +51,7 @@ class ReflectionEngine:
             A concise, grounded natural language lesson string.
             Falls back to a truncated test error if reflection fails.
         """
-        import json
-
+        # V37 FIX (L-1): json import moved to module-level.
         # Truncate inputs to protect the local LLM context window
         diff_truncated = diff_text[:1500] if diff_text else "(no diff)"
         error_truncated = test_error[:1000] if test_error else "(no error)"

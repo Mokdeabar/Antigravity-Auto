@@ -1,0 +1,65 @@
+7396:                                     <div style="width:${phPct}%;height:100%;background:${phColor};border-radius:2px;transition:width 0.5s;"></div>
+7397:                                 </div>
+7398:                                 <span style="font-size:0.75rem;font-family:var(--font-mono);color:${phColor};min-width:60px;text-align:right;font-weight:600;">
+7399:                                     ${stats.done}/${stats.total} · ${phPct}%
+7400:                                 </span>
+7401:                             </div>`;
+7402:                         });
+7403:                         html += '</div></div>';
+7404:                     }
+7405: 
+7406:                     // ===============================================================
+7407:                     // WIDGET 5: AI Budget & Workers
+7408:                     // ===============================================================
+7409:                     const budUsed = budgetRes.daily_used || 0;
+7410:                     const budLimit = budgetRes.daily_limit || 0;
+7411:                     const budPct = budLimit > 0 ? Math.round(budUsed / budLimit * 100) : 0;
+7412:                     const workers = budgetRes.workers_current || budgetRes.effective_workers || 0;
+7413:                     const workersMax = budgetRes.workers_max || 6;
+7414: 
+7415:                     html += `<div class="stat-widget">
+7416:                         ${widgetHeader('\u26a1', 'Orchestration Budget')}
+7417:                         <div style="display:flex;flex-direction:column;gap:16px;">
+7418:                             <div style="background:var(--bg-canvas);border:1px solid var(--border-light);border-radius:var(--radius-md);padding:16px 18px;">
+7419:                                 <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px;">
+7420:                                     <div style="font-size:0.75rem;font-weight:600;color:var(--text-secondary);">Daily Budget</div>
+7421:                                     <div style="display:flex;align-items:baseline;gap:6px;">
+7422:                                         <span style="font-size:1.6rem;font-weight:800;color:var(--text-primary);font-family:var(--font-mono);line-height:1;">${budUsed}</span>
+7423:                                         <span style="font-size:0.8rem;color:var(--text-tertiary);font-family:var(--font-mono);">/ ${budLimit}</span>
+7424:                                     </div>
+7425:                                 </div>
+7426:                                 <div style="height:6px;border-radius:3px;background:rgba(0,0,0,0.06);overflow:hidden;margin-bottom:12px;">
+7427:                                     <div style="width:${budPct}%;height:100%;border-radius:3px;background:${budPct > 90 ? '#FF3B30' : budPct > 70 ? '#FF9500' : '#007AFF'};transition:width 0.5s;"></div>
+7428:                                 </div>
+7429:                                 <div style="display:flex;gap:16px;font-size:0.75rem;color:var(--text-secondary);">
+7430:                                     <span>Lite calls: <b style="color:var(--text-primary);">${liteRes.calls_today || 0}</b></span>
+7431:                                     <span>Fallbacks: <b style="color:var(--text-primary);">${liteRes.fallback_count || 0}</b></span>
+7432:                                 </div>
+7433:                             </div>
+7434:                             <div style="background:var(--bg-canvas);border:1px solid var(--border-light);border-radius:var(--radius-md);padding:16px 18px;">
+7435:                                 <div style="font-size:0.75rem;font-weight:600;color:var(--text-secondary);margin-bottom:12px;">Parallel Workers Active</div>
+7436:                                 <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+7437:                                     ${Array.from({length: workersMax}, (_, i) =>
+7438:                                         `<div style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;
+7439:                                             ${i < workers
+7440:                                                 ? 'background:rgba(0,122,255,0.12);color:#007AFF;border:1px solid rgba(0,122,255,0.3);'
+7441:                                                 : 'background:var(--bg-canvas);color:var(--text-tertiary);border:1px solid var(--border-light);'}">${i + 1}</div>`
+7442:                                     ).join('')}
+7443:                                 </div>
+7444:                                 <div style="font-size:0.75rem;color:var(--text-secondary);">
+7445:                                     Using <b style="color:var(--text-primary);">${workers} of ${workersMax}</b> slots
+7446:                                     <span style="margin-left:8px;padding-left:8px;border-left:1px solid var(--border-light);">Mode: <b style="color:var(--text-primary);text-transform:capitalize;">${stateRes.execution_mode || 'Auto'}</b></span>
+7447:                                 </div>
+7448:                             </div>
+7449:                         </div>
+7450:                     </div>`;
+7451: 
+7452:                     html += `</div>`; // Close dashboard-grid
+7453:                     statsContent.innerHTML = html;
+7454:                 } catch (e) {
+7455:                     content.innerHTML = `<div class="empty-state" style="color:#FF3B30">⚠ Stats load failed: ${e.message}</div>`;
+7456:                 }
+7457:                 restoreScrolls(_scroll);
+7458:             }
+7459:             window.loadStats = loadStats;
+7460: 

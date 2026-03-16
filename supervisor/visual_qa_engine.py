@@ -17,13 +17,15 @@ Pipeline:
   8. Tear down dev server
 """
 
+from __future__ import annotations
+
 import io
 import logging
 import os
 import re
 import time
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Tuple
 
 logger = logging.getLogger("supervisor.visual_qa_engine")
 
@@ -343,3 +345,217 @@ try {{
 
         logger.info("📸  Visual QA result: %s — %s", "PASS" if passes else "FAIL", critique[:80])
         return passes, critique
+
+
+# ─────────────────────────────────────────────────────────────
+# V74: Visual Regression Detection (Audit §4.4)
+# ─────────────────────────────────────────────────────────────
+
+from dataclasses import dataclass, field
+
+
+@dataclass
+class RegressionResult:
+    """Result of a visual regression check."""
+    has_regression: bool = False
+    baseline_path: str = ""
+    current_path: str = ""
+    diff_details: list[str] = field(default_factory=list)
+    score_before: int = 0
+    score_after: int = 0
+    duration_ms: int = 0
+
+    def summary(self) -> str:
+        if not self.has_regression:
+            return f"✅ No visual regression (score: {self.score_after})"
+        return (
+            f"❌ Visual regression detected (score: {self.score_before} → {self.score_after}). "
+            f"Issues: {'; '.join(self.diff_details[:3])}"
+        )
+
+
+class VisualRegressionDetector:
+    """
+    V74: Compares before/after screenshots to detect visual regressions.
+
+    Pipeline:
+      1. save_baseline() — capture and store a "known good" screenshot
+      2. detect_regressions() — capture current state, compare with baseline
+      3. generate_fix_tasks() — create DAG tasks for detected issues
+
+    Usage:
+        detector = VisualRegressionDetector(engine, project_path)
+        await detector.save_baseline("homepage", port=5173)
+        # ... tasks modify UI ...
+        result = await detector.detect_regressions("homepage", port=5173)
+        if result.has_regression:
+            fix_tasks = detector.generate_fix_tasks(result, "homepage")
+    """
+
+    def __init__(self, engine: VisualQAEngine, project_path: str = ""):
+        self._engine = engine
+        self._baselines_dir = Path(project_path) / ".ag-supervisor" / "visual_baselines" if project_path else None
+        if self._baselines_dir:
+            self._baselines_dir.mkdir(parents=True, exist_ok=True)
+
+    async def save_baseline(
+        self,
+        page_name: str,
+        port: int = 5173,
+        url_path: str = "/",
+    ) -> bool:
+        """
+        Capture and store a baseline screenshot for a named page.
+
+        Call this when the UI is in a known-good state (e.g., after
+        a phase completes and tests pass).
+        """
+        if not self._baselines_dir:
+            return False
+
+        baseline_path = str(self._baselines_dir / f"{page_name}_baseline.png")
+        url = f"http://localhost:{port}{url_path}"
+
+        ok, result = await self._engine.capture_screenshot(url, baseline_path)
+        if ok:
+            # Also analyze and store the baseline score
+            passes, critique = await self._engine.analyze_screenshot(
+                baseline_path, f"Baseline capture of {page_name}",
+            )
+            score = self._extract_score(critique)
+            meta_path = self._baselines_dir / f"{page_name}_meta.json"
+            import json as _j
+            _j.loads  # Ensure json is available
+            meta_path.write_text(_j.dumps({
+                "page_name": page_name,
+                "score": score,
+                "url": url,
+                "timestamp": time.time(),
+                "passes_qa": passes,
+            }, indent=2), encoding="utf-8")
+
+            logger.info("📸  Baseline saved for '%s' (score: %d)", page_name, score)
+            return True
+        else:
+            logger.warning("📸  Failed to capture baseline for '%s': %s", page_name, result)
+            return False
+
+    async def detect_regressions(
+        self,
+        page_name: str,
+        port: int = 5173,
+        url_path: str = "/",
+        objective: str = "",
+    ) -> RegressionResult:
+        """
+        Compare current page state against stored baseline.
+
+        Captures a new screenshot, sends BOTH images to Gemini vision
+        for comparison, and reports any regressions.
+        """
+        start = time.time()
+        result = RegressionResult()
+
+        if not self._baselines_dir:
+            return result
+
+        baseline_path = self._baselines_dir / f"{page_name}_baseline.png"
+        meta_path = self._baselines_dir / f"{page_name}_meta.json"
+
+        if not baseline_path.exists():
+            logger.info("📸  No baseline for '%s' — skipping regression check", page_name)
+            return result
+
+        result.baseline_path = str(baseline_path)
+
+        # Load baseline metadata
+        baseline_score = 0
+        if meta_path.exists():
+            try:
+                import json as _j
+                meta = _j.loads(meta_path.read_text(encoding="utf-8"))
+                baseline_score = meta.get("score", 0)
+            except Exception:
+                pass
+        result.score_before = baseline_score
+
+        # Capture current screenshot
+        current_path = str(self._baselines_dir / f"{page_name}_current.png")
+        url = f"http://localhost:{port}{url_path}"
+
+        ok, capture_result = await self._engine.capture_screenshot(url, current_path)
+        if not ok:
+            logger.warning("📸  Failed to capture current screenshot: %s", capture_result)
+            return result
+
+        result.current_path = current_path
+
+        # Analyze current screenshot
+        obj = objective or f"Visual regression check for {page_name}"
+        passes, critique = await self._engine.analyze_screenshot(current_path, obj)
+        current_score = self._extract_score(critique)
+        result.score_after = current_score
+
+        # Detect regression: score drop > 10 or new FAIL
+        if not passes or (baseline_score > 0 and current_score < baseline_score - 10):
+            result.has_regression = True
+            # Extract issues from critique
+            if "Issues:" in critique:
+                issues_part = critique.split("Issues:")[1].strip()
+                result.diff_details = [i.strip() for i in issues_part.split(";") if i.strip()]
+            elif critique:
+                result.diff_details = [critique[:200]]
+
+        result.duration_ms = int((time.time() - start) * 1000)
+
+        if result.has_regression:
+            logger.warning("📸  %s", result.summary())
+        else:
+            logger.info("📸  %s", result.summary())
+
+        return result
+
+    def generate_fix_tasks(
+        self,
+        result: RegressionResult,
+        page_name: str,
+    ) -> list[dict]:
+        """
+        Generate DAG fix tasks for detected visual regressions.
+
+        Returns a list of task dicts compatible with TemporalPlanner.inject_task().
+        """
+        if not result.has_regression:
+            return []
+
+        issues_text = "\n".join(f"- {d}" for d in result.diff_details[:5])
+        desc = (
+            f"[UIUX] Fix visual regression on {page_name} page.\n"
+            f"Visual QA score dropped from {result.score_before} to {result.score_after}.\n"
+            f"Issues detected:\n{issues_text}\n\n"
+            f"REQUIREMENTS:\n"
+            f"- Restore visual quality to at least the baseline score ({result.score_before})\n"
+            f"- Fix all listed visual issues\n"
+            f"- Do NOT break any existing functionality\n"
+            f"- Test responsiveness at 1280x720"
+        )
+
+        task = {
+            "task_id": f"t950-UIUX",
+            "description": desc,
+            "dependencies": [],
+        }
+
+        logger.info(
+            "📸  Generated fix task for '%s' regression (score: %d → %d)",
+            page_name, result.score_before, result.score_after,
+        )
+        return [task]
+
+    @staticmethod
+    def _extract_score(critique: str) -> int:
+        """Extract numeric score from critique string."""
+        import re as _re
+        match = _re.search(r'score:\s*(\d+)', critique)
+        return int(match.group(1)) if match else 0
+

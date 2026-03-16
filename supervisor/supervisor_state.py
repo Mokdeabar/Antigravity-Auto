@@ -1,5 +1,5 @@
 """
-supervisor_state.py — V35 Structured State Machine for the Supervisor.
+supervisor_state.py — V44 Structured State Machine for the Supervisor.
 
 Replaces ad-hoc string comparisons and consecutive_* counters with
 a proper state enum and transition tracking. The state machine logs
@@ -16,10 +16,11 @@ States:
   DEAD        → Unrecoverable failure, shutting down
 """
 
+from __future__ import annotations
+
 import enum
 import logging
 import time
-from typing import Optional
 
 logger = logging.getLogger("supervisor.state")
 
@@ -90,7 +91,7 @@ class StateTracker:
 
     def __init__(self):
         self._state = SupervisorState.BOOTING
-        self._previous_state: Optional[SupervisorState] = None
+        self._previous_state: SupervisorState | None = None
         self._state_entered_at: float = time.time()
         self._consecutive_count: int = 0
         self._transition_count: int = 0
@@ -101,7 +102,7 @@ class StateTracker:
         return self._state
 
     @property
-    def previous_state(self) -> Optional[SupervisorState]:
+    def previous_state(self) -> SupervisorState | None:
         return self._previous_state
 
     @property
@@ -133,6 +134,8 @@ class StateTracker:
         if new_state == old_state:
             self._consecutive_count += 1
         else:
+            # V37 FIX (H-6): Capture duration BEFORE resetting timer.
+            duration_in_old_state = time.time() - self._state_entered_at
             self._previous_state = old_state
             self._state = new_state
             self._state_entered_at = time.time()
@@ -142,7 +145,7 @@ class StateTracker:
             logger.info(
                 "🔄  State: %s → %s (reason: %s, was in %s for %.1fs)",
                 old_state.value, new_state.value, reason,
-                old_state.value, time.time() - self._state_entered_at,
+                old_state.value, duration_in_old_state,
             )
 
         # Keep bounded history

@@ -1,14 +1,15 @@
 """
 local_orchestrator.py — V13 Omni-Brain Reasoning Layer (The Manager)
 
-Interfaces with a local Ollama model (defaulting to llama3).
-Takes raw snapshots, error logs, and the previous Worker output.
+⚠️  DEPRECATED in V64: All Ollama functionality has been replaced by Gemini Lite Intelligence.
+    The /api/lite/ask endpoint in api_server.py now handles Q&A using gemini-2.5-flash-lite
+    with flash model fallback. This file is kept to avoid breaking any residual imports.
+    No active callers remain.
+
+Original purpose: Interfaced with a local Ollama model (defaulting to llama3).
+Took raw snapshots, error logs, and the previous Worker output.
 Outputs a strictly formulated, raw command string detailing the
 exact goal for the Gemini CLI to accomplish.
-
-V14: Vision-First Pipeline — analyze_screenshot() uses a local
-vision-capable Ollama model (e.g. llava) for fast screenshot
-analysis before falling back to Gemini CLI.
 """
 
 import asyncio
@@ -30,7 +31,7 @@ class OllamaUnavailable(RuntimeError):
     """V32: Raised when Ollama fails to boot or respond. Non-fatal."""
     pass
 
-def ensure_ollama_running(model_name: str, host: str) -> None:
+async def ensure_ollama_running(model_name: str, host: str) -> None:
     """
     Autonomous Local LLM Bootstrapper.
     Guarantees the local Ollama inference engine is alive and serving before the main loop begins.
@@ -57,46 +58,35 @@ def ensure_ollama_running(model_name: str, host: str) -> None:
         
         ollama_bin = shutil.which("ollama")
         
-        if not ollama_bin:
-            logger.warning("🧠 Ollama binary not found in PATH. Initiating Zero-Touch Installation...")
-            print(f"\n  {config.ANSI_YELLOW}⬇️ Ollama not found. Initiating autonomous installation...{config.ANSI_RESET}")
-            
-            try:
-                if platform.system() == "Windows":
-                    print(f"  {config.ANSI_CYAN}⚙️ Running Winget to install Ollama...{config.ANSI_RESET}")
-                    subprocess.run(
-                        ["winget", "install", "-e", "--id", "Ollama.Ollama", 
-                         "--accept-source-agreements", "--accept-package-agreements"], 
-                        check=True
-                    )
-                    # PATH Fallback on Windows after installation
-                    ollama_bin = shutil.which("ollama")
-                    if not ollama_bin:
-                        fallback_path = os.path.expanduser("~\\AppData\\Local\\Programs\\Ollama\\ollama.exe")
-                        if os.path.exists(fallback_path):
-                            ollama_bin = fallback_path
-                            logger.info("🧠 Found Ollama at fallback path: %s", ollama_bin)
-                else:
-                    print(f"  {config.ANSI_CYAN}⚙️ Running curl to install Ollama...{config.ANSI_RESET}")
-                    subprocess.run("curl -fsSL https://ollama.com/install.sh | sh", shell=True, check=True)
-                    ollama_bin = shutil.which("ollama") or "ollama"
-                    
-                print(f"  {config.ANSI_GREEN}✅ Ollama installation complete.{config.ANSI_RESET}\n")
-            except Exception as e:
-                print(f"\n{config.ANSI_RED}=====================================================================")
-                print("CRITICAL ERROR: Zero-Touch Installation failed.")
-                print(f"Details: {e}")
-                if platform.system() != "Windows":
-                    print(f"{config.ANSI_YELLOW}If it failed due to sudo permissions, please run manually:\n"
-                          f"curl -fsSL https://ollama.com/install.sh | sh{config.ANSI_RESET}")
-                print("The local orchestrator cannot function without the Ollama engine.")
-                print("Please install Ollama from https://ollama.com/ and restart the supervisor.")
-                print(f"====================================================================={config.ANSI_RESET}\n")
-                raise OllamaUnavailable("Zero-Touch Installation failed. Install Ollama from https://ollama.com/")
-        # ----------------------------
+        # V37 SECURITY FIX: Check Windows fallback path before failing.
+        # The supervisor MUST NOT auto-install system software (mandate constraint).
+        if not ollama_bin and platform.system() == "Windows":
+            fallback_path = os.path.expanduser("~\\AppData\\Local\\Programs\\Ollama\\ollama.exe")
+            if os.path.exists(fallback_path):
+                ollama_bin = fallback_path
+                logger.info("🧠 Found Ollama at Windows fallback path: %s", ollama_bin)
         
-        # Now we know we have the binary path (or 'ollama' in path)
-        cmd_bin = ollama_bin if ollama_bin else "ollama"
+        if not ollama_bin:
+            logger.error("🧠 Ollama binary not found in PATH.")
+            print(f"\n{config.ANSI_RED}=====================================================================")
+            print("  Ollama is not installed.")
+            print("")
+            print("  Please install it manually:")
+            if platform.system() == "Windows":
+                print(f"    winget install Ollama.Ollama")
+            elif platform.system() == "Darwin":
+                print(f"    brew install ollama")
+            else:
+                print(f"    curl -fsSL https://ollama.com/install.sh | sh")
+            print("")
+            print("  After installing, restart the supervisor.")
+            print(f"====================================================================={config.ANSI_RESET}\n")
+            raise OllamaUnavailable(
+                "Ollama is not installed. Install manually from https://ollama.com/ "
+                "and restart the supervisor."
+            )
+        
+        cmd_bin = ollama_bin
         
         try:
             if config.IS_WINDOWS:
@@ -130,7 +120,8 @@ def ensure_ollama_running(model_name: str, host: str) -> None:
                 logger.info("🧠 Ollama engine successfully booted.")
                 print(f"  {config.ANSI_GREEN}✅ Ollama engine online.{config.ANSI_RESET}")
                 break
-            time.sleep(2.0)
+            # V37 FIX (H-1): Use asyncio.sleep instead of blocking time.sleep.
+            await asyncio.sleep(2.0)
             
         if not booted:
             err = "Local Ollama engine failed to boot within 30 seconds."
@@ -184,7 +175,10 @@ class LocalManager:
         self.model_name = model_name
         self.host = host.rstrip("/")
         self._healthy = False  # V32: Track health state
-        ensure_ollama_running(self.model_name, self.host)
+
+    async def initialize(self) -> None:
+        """V37 FIX (H-1): Async initialization. Call after construction."""
+        await ensure_ollama_running(self.model_name, self.host)
         self._healthy = True
 
     def health_check(self) -> bool:
@@ -229,7 +223,8 @@ class LocalManager:
                 "num_predict": 300
             },
             "format": "json",
-            "stream": False  # V32: Kept false for simplicity; streaming requires line-by-line parsing
+            "stream": False,  # V32: Kept false for simplicity; streaming requires line-by-line parsing
+            "keep_alive": "5m",  # V36: Unload from VRAM after 5min idle
         }
 
         # Destructive Command Blocklist
@@ -360,6 +355,7 @@ class LocalManager:
             },
             "format": "json",
             "stream": False,
+            "keep_alive": "5m",  # V36: Unload from VRAM after 5min idle
         }
 
         try:

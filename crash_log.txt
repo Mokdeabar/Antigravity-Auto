@@ -1,0 +1,4 @@
+20:40:21  supervisor.api_server           INFO     🌐 Command Centre starting on http://localhost:8420
+20:40:22  supervisor.api_server           INFO     🔌 WebSocket client connected (1 total)
+20:42:41  supervisor.api_server           INFO     🔌 WebSocket client disconnected (0 remaining)
+^C

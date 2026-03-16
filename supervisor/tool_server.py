@@ -18,6 +18,8 @@ Tool categories:
     - Dev server:       dev_server_check
 """
 
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
@@ -25,7 +27,6 @@ import os
 import re
 from dataclasses import dataclass, field, asdict
 from pathlib import Path, PurePosixPath
-from typing import Optional
 
 from .sandbox_manager import SandboxManager, SandboxError
 
@@ -331,7 +332,7 @@ class ToolServer:
         self,
         command: str,
         timeout: int = 120,
-        workdir: Optional[str] = None,
+        workdir: str | None = None,
     ) -> ShellExecResult:
         """
         Execute a shell command inside the sandbox.
@@ -348,6 +349,32 @@ class ToolServer:
             ShellExecResult with exit code, stdout, stderr.
         """
         result = ShellExecResult(command=command)
+
+        # V74 SECURITY: Strip null bytes and validate against dangerous patterns
+        command = command.replace("\x00", "")
+        _DANGEROUS_PATTERNS = [
+            re.compile(r'\brm\s+(-[rf]+\s+)?/\s*$', re.IGNORECASE),     # rm -rf /
+            re.compile(r'\bdd\s+if=', re.IGNORECASE),                    # dd if= (disk destroy)
+            re.compile(r'\bmkfs\b', re.IGNORECASE),                     # mkfs (format disk)
+            re.compile(r':\(\)\{\s*:\|:&\s*\};:', re.IGNORECASE),       # fork bomb
+            re.compile(r'\b>\s*/dev/[sh]d[a-z]', re.IGNORECASE),        # write to raw disk
+            re.compile(r'\bchmod\s+(-[Rr]\s+)?777\s+/', re.IGNORECASE), # chmod 777 /
+        ]
+        for pattern in _DANGEROUS_PATTERNS:
+            if pattern.search(command):
+                logger.warning("🛡️  [ShellGuard] Blocked dangerous command: %s", command[:100])
+                result.error = "Command blocked by security policy — destructive pattern detected."
+                return result
+
+        # V41 EGRESS FAST-GATE: Auto-detect package manager commands from the AI
+        needs_network = bool(re.search(
+            r'\b(npm i|npm install|pip install|yarn add|yarn install|pnpm add|pnpm install|apt-get|apt install)\b', 
+            command
+        ))
+        
+        if needs_network and hasattr(self.sandbox, 'grant_network'):
+            await self.sandbox.grant_network()
+            
         try:
             cmd_result = await self.sandbox.exec_command(
                 command, timeout=timeout, workdir=workdir
@@ -360,6 +387,10 @@ class ToolServer:
             result.error = str(exc)
         except Exception as exc:
             result.error = f"Unexpected error: {exc}"
+        finally:
+            if needs_network and hasattr(self.sandbox, 'revoke_network'):
+                await self.sandbox.revoke_network()
+                
         return result
 
     # ── Code Intelligence ────────────────────────────────────
@@ -492,7 +523,7 @@ class ToolServer:
             result.error = f"Git status error: {exc}"
         return result
 
-    async def git_diff(self, file_path: Optional[str] = None) -> dict:
+    async def git_diff(self, file_path: str | None = None) -> dict:
         """
         Get git diff for the workspace or a specific file.
 
@@ -522,7 +553,7 @@ class ToolServer:
 
     # ── Dev Server ───────────────────────────────────────────
 
-    async def dev_server_check(self, ports: Optional[list[int]] = None) -> DevServerResult:
+    async def dev_server_check(self, ports: list[int] | None = None) -> DevServerResult:
         """
         Check if a dev server is running inside the sandbox.
 
@@ -626,9 +657,18 @@ class ToolServer:
                 result.total_errors = 1
 
         elif ext in (".ts", ".tsx"):
-            # Try tsc --noEmit if available
+            # V74: Prefer project-local tsc to avoid accidental npx installation
+            tsc_check = await self.sandbox.exec_command(
+                "test -f ./node_modules/.bin/tsc && echo 'local' || echo 'npx'",
+                timeout=5,
+            )
+            tsc_cmd = (
+                f"./node_modules/.bin/tsc --noEmit {_sq(file_path)} 2>&1"
+                if "local" in (tsc_check.stdout or "")
+                else f"npx tsc --noEmit {_sq(file_path)} 2>&1"
+            )
             cmd_result = await self.sandbox.exec_command(
-                f"npx tsc --noEmit {_sq(file_path)} 2>&1",
+                tsc_cmd,
                 timeout=60,
             )
             if cmd_result.exit_code != 0:

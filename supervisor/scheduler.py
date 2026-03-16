@@ -13,12 +13,14 @@ Features:
   - Glass Brain output for job execution
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import os
 import time
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 
 from . import config
 
@@ -115,7 +117,7 @@ class CronScheduler:
 
     def __init__(
         self,
-        state_path: Optional[Path] = None,
+        state_path: Path | None = None,
         actions: Optional[dict[str, Callable]] = None,
     ):
         from . import config
@@ -289,6 +291,59 @@ class CronScheduler:
         except Exception as exc:
             logger.debug("Could not save scheduler state: %s", exc)
 
+    def cleanup_stale_jobs(self) -> int:
+        """
+        Remove stale, completed, and orphaned jobs from the persistent store.
+
+        Prunes:
+          1. Completed one-shots (ran at least once and disabled)
+          2. Jobs whose action has no registered handler (orphaned)
+          3. Duplicate jobs (same action key — keeps the one with highest run_count)
+
+        Returns the number of jobs removed.
+        """
+        before = len(self._jobs)
+        to_remove: list[str] = []
+
+        # 1. Completed one-shots
+        for name, job in self._jobs.items():
+            if job.one_shot and job.run_count > 0:
+                to_remove.append(name)
+
+        # 2. Orphaned actions (no handler registered)
+        for name, job in self._jobs.items():
+            if name not in to_remove and job.action not in self._actions:
+                to_remove.append(name)
+
+        # 3. Deduplicate by action key (keep the one with highest run_count)
+        action_best: dict[str, tuple[str, int]] = {}  # action -> (best_name, run_count)
+        for name, job in self._jobs.items():
+            if name in to_remove:
+                continue
+            key = job.action
+            if key in action_best:
+                existing_name, existing_count = action_best[key]
+                if job.run_count > existing_count:
+                    to_remove.append(existing_name)
+                    action_best[key] = (name, job.run_count)
+                else:
+                    to_remove.append(name)
+            else:
+                action_best[key] = (name, job.run_count)
+
+        # Remove
+        for name in set(to_remove):
+            del self._jobs[name]
+
+        removed = before - len(self._jobs)
+        if removed > 0:
+            self._save_state()
+            logger.info(
+                "⏰  Cleaned %d stale job(s) (%d remaining)",
+                removed, len(self._jobs),
+            )
+        return removed
+
     def __repr__(self) -> str:
         return (
             f"CronScheduler(jobs={len(self._jobs)}, "
@@ -309,7 +364,7 @@ def create_default_scheduler() -> CronScheduler:
       - budget_report: Log context budget every 15 minutes
       - failover_check: Log model failover status every 10 minutes
       - rate_limit_report: Log rate limit stats every 20 minutes
-      - self_improvement: Ask Gemini for improvement suggestions every 60 minutes
+      - self_improvement: DISABLED (V40) — supervisor should not modify itself
     """
     scheduler = CronScheduler()
 
@@ -318,10 +373,12 @@ def create_default_scheduler() -> CronScheduler:
     scheduler.register_action("budget_report", _action_budget_report)
     scheduler.register_action("failover_check", _action_failover_check)
     scheduler.register_action("rate_limit_report", _action_rate_limit_report)
-    scheduler.register_action("self_improvement", _action_self_improvement)
+    # V40: self_improvement and metacognitive_review REMOVED.
+    # The supervisor should focus on user projects, not modify itself.
+    # scheduler.register_action("self_improvement", _action_self_improvement)
+    # scheduler.register_action("metacognitive_review", _action_metacognitive_review)
     scheduler.register_action("workspace_index", _action_workspace_index)
     scheduler.register_action("telemetry_hud_update", _action_telemetry_hud_update)
-    scheduler.register_action("metacognitive_review", _action_metacognitive_review)
     scheduler.register_action("memory_consolidation", _action_memory_consolidation)
 
     # Add default jobs (only if not already loaded from disk)
@@ -355,16 +412,19 @@ def create_default_scheduler() -> CronScheduler:
             "rate_limit_report", "rate_limit_report",
             interval_seconds=1200,  # 20 minutes
         )
-    if "self_improvement" not in scheduler._jobs:
-        scheduler.add_job(
-            "self_improvement", "self_improvement",
-            interval_seconds=config.SELF_IMPROVEMENT_INTERVAL_S,  # 60 minutes
-        )
-    if "metacognitive_review" not in scheduler._jobs:
-        scheduler.add_job(
-            "metacognitive_review", "metacognitive_review",
-            interval_seconds=3600,  # 60 minutes
-        )
+    # V40: self_improvement REMOVED — supervisor does not modify itself.
+    # if "self_improvement" not in scheduler._jobs:
+    #     scheduler.add_job(
+    #         "self_improvement", "self_improvement",
+    #         interval_seconds=config.SELF_IMPROVEMENT_INTERVAL_S,
+    #     )
+    # V40: metacognitive_review REMOVED — calls self_evolve() which modifies
+    # supervisor's own code. Supervisor should focus on projects.
+    # if "metacognitive_review" not in scheduler._jobs:
+    #     scheduler.add_job(
+    #         "metacognitive_review", "metacognitive_review",
+    #         interval_seconds=3600,
+    #     )
     if "memory_consolidation" not in scheduler._jobs:
         scheduler.add_job(
             "memory_consolidation", "memory_consolidation",
@@ -385,52 +445,32 @@ def create_default_scheduler() -> CronScheduler:
             interval_seconds=300,  # Poll production logs every 5 minutes
         )
 
-    # V27: Growth engine experiment evaluation and watcher
-    scheduler.register_action("experiment_evaluator", _action_experiment_evaluator)
-    scheduler.register_action("experiment_watcher", _action_experiment_watcher)
-    if "experiment_evaluator" not in scheduler._jobs:
-        scheduler.add_job(
-            "experiment_evaluator", "experiment_evaluator",
-            interval_seconds=3600,  # Check for matured experiments every hour
-        )
-    if "experiment_watcher" not in scheduler._jobs:
-        scheduler.add_job(
-            "experiment_watcher", "experiment_watcher",
-            interval_seconds=30,  # Check for new experiment epics every 30s
-        )
-    # V28: FinOps cost profiling and refactor watcher
-    scheduler.register_action("finops_monitor", _action_finops_monitor)
-    scheduler.register_action("refactor_watcher", _action_refactor_watcher)
-    if "finops_monitor" not in scheduler._jobs:
-        scheduler.add_job(
-            "finops_monitor", "finops_monitor",
-            interval_seconds=3600,  # Profile costs every hour
-        )
-    if "refactor_watcher" not in scheduler._jobs:
-        scheduler.add_job(
-            "refactor_watcher", "refactor_watcher",
-            interval_seconds=30,  # Check for refactor epics every 30s
-        )
+    # V40: Growth (V27) and FinOps (V28) engines removed — stripped for lean execution.
 
-    # V29: Qualitative Synthesis Engine + Infinite Polish Engine
-    scheduler.register_action("feature_request_watcher", _action_feature_request_watcher)
-    scheduler.register_action("feature_pipeline", _action_feature_pipeline)
-    scheduler.register_action("user_injection_monitor", _action_user_injection_monitor)
-    if "feature_request_watcher" not in scheduler._jobs:
-        scheduler.add_job(
-            "feature_request_watcher", "feature_request_watcher",
-            interval_seconds=60,  # Check for FEATURE_EPIC.md every 60s
-        )
-    if "feature_pipeline" not in scheduler._jobs:
-        scheduler.add_job(
-            "feature_pipeline", "feature_pipeline",
-            interval_seconds=3600,  # Run full clustering pipeline every hour
-        )
-    if "user_injection_monitor" not in scheduler._jobs:
-        scheduler.add_job(
-            "user_injection_monitor", "user_injection_monitor",
-            interval_seconds=10,  # Check for user injection every 10s
-        )
+    # V40 FIX: V29 Qualitative Synthesis Engine + Infinite Polish Engine REMOVED.
+    # The supervisor should strictly follow the user's goals (Gridfall Demolition),
+    # not hallucinate fake support tickets for "CSV Export" features.
+    # scheduler.register_action("feature_request_watcher", _action_feature_request_watcher)
+    # scheduler.register_action("feature_pipeline", _action_feature_pipeline)
+    # scheduler.register_action("user_injection_monitor", _action_user_injection_monitor)
+    # if "feature_request_watcher" not in scheduler._jobs:
+    #     scheduler.add_job(
+    #         "feature_request_watcher", "feature_request_watcher",
+    #         interval_seconds=60,
+    #     )
+    # if "feature_pipeline" not in scheduler._jobs:
+    #     scheduler.add_job(
+    #         "feature_pipeline", "feature_pipeline",
+    #         interval_seconds=3600,
+    #     )
+    # if "user_injection_monitor" not in scheduler._jobs:
+    #     scheduler.add_job(
+    #         "user_injection_monitor", "user_injection_monitor",
+    #         interval_seconds=10,
+    #     )
+
+    # ── Prune stale/orphaned/duplicate jobs from disk ──
+    scheduler.cleanup_stale_jobs()
 
     return scheduler
 
@@ -618,7 +658,7 @@ def _action_metacognitive_review() -> str:
     except Exception as exc:
         return f"Metacognitive review failed: {exc}"
 
-def _action_memory_consolidation() -> str:
+async def _action_memory_consolidation() -> str:
     """V18: Promote recurring episodic lessons into global environmental axioms."""
     try:
         # Concurrency Lock: defer if the agent is busy
@@ -630,18 +670,13 @@ def _action_memory_consolidation() -> str:
 
         from .local_orchestrator import LocalManager
         from .memory_consolidation import MemoryConsolidator
-        import asyncio
 
         manager = LocalManager()
+        await manager.initialize()  # V37 FIX (H-1): Async init
         consolidator = MemoryConsolidator(manager)
 
-        try:
-            loop = asyncio.get_running_loop()
-            future = asyncio.ensure_future(consolidator.consolidate())
-            return "Memory consolidation dispatched."
-        except RuntimeError:
-            result = asyncio.run(consolidator.consolidate())
-            return result
+        result = await consolidator.consolidate()
+        return result
 
     except Exception as exc:
         return f"Memory consolidation failed: {exc}"
@@ -685,6 +720,7 @@ async def _action_telemetry_poll():
         from .local_orchestrator import LocalManager
 
         manager = LocalManager()
+        await manager.initialize()  # V37 FIX (H-1): Async init
         workspace = os.getenv("PROJECT_CWD", ".")
         ingester = TelemetryIngester(manager, workspace)
 
@@ -705,108 +741,7 @@ async def _action_telemetry_poll():
         return f"Telemetry poll failed: {exc}"
 
 
-# ─────────────────────────────────────────────────────────────
-# V27: Growth Engine Actions
-# ─────────────────────────────────────────────────────────────
-
-def _action_experiment_evaluator():
-    """Check for matured A/B experiments (48h+) ready for evaluation."""
-    try:
-        from .growth_engine import GrowthEngine
-        workspace = os.getenv("PROJECT_CWD", ".")
-        engine = GrowthEngine(workspace_path=workspace)
-        pending = engine.get_pending_evaluations()
-
-        if not pending:
-            return "No experiments ready for evaluation."
-
-        results = []
-        for exp in pending:
-            flag = exp.get("flag_name", "")
-            elapsed = exp.get("elapsed_hours", 0)
-            results.append(f"{flag} ({elapsed:.0f}h elapsed)")
-
-        logger.info("🧪 %d experiment(s) ready for evaluation: %s", len(results), results)
-        return f"EXPERIMENTS_READY: {', '.join(results)}"
-
-    except Exception as exc:
-        return f"Experiment evaluator error: {exc}"
-
-
-def _action_experiment_watcher():
-    """Check for EXPERIMENT_EPIC.md and signal the system."""
-    try:
-        from pathlib import Path
-        workspace = Path(os.getenv("PROJECT_CWD", "."))
-        epic_path = workspace / "EXPERIMENT_EPIC.md"
-
-        if epic_path.exists():
-            from . import config
-            state_path = workspace / ".ag-memory" / "temporal_state.json"
-            if state_path.exists():
-                return "Experiment epic detected but an EPIC is already in progress. Queued."
-
-            content = epic_path.read_text(encoding="utf-8")[:200]
-            logger.info("🧪 EXPERIMENT_EPIC.md detected — signaling growth pipeline.")
-            return f"EXPERIMENT_READY: {content}"
-
-        return "No experiment pending."
-    except Exception as exc:
-        return f"Experiment watcher error: {exc}"
-
-
-# ─────────────────────────────────────────────────────────────
-# V28: FinOps Actions
-# ─────────────────────────────────────────────────────────────
-
-def _action_finops_monitor():
-    """Periodic cost profiling — check baselines and flag margin decay."""
-    try:
-        from .finops_engine import FinOpsEngine
-        workspace = os.getenv("PROJECT_CWD", ".")
-        engine = FinOpsEngine(workspace_path=workspace)
-
-        # Look for APM report file
-        from pathlib import Path
-        apm_path = Path(workspace) / ".ag-memory" / "apm_report.json"
-        if not apm_path.exists():
-            return "No APM report available."
-
-        report = json.loads(apm_path.read_text(encoding="utf-8"))
-        has_issues, flagged = engine.ingest_apm_report(report)
-
-        if has_issues:
-            worst = flagged[0]
-            logger.info(
-                "💰 Margin decay detected: %s (+%.1f%%)",
-                worst.get("route"), worst.get("cost_increase_pct", 0),
-            )
-            return f"MARGIN_DECAY: {worst.get('route')} (+{worst.get('cost_increase_pct', 0):.1f}%)"
-
-        return "All routes within cost baseline."
-    except Exception as exc:
-        return f"FinOps monitor error: {exc}"
-
-
-def _action_refactor_watcher():
-    """Check for REFACTOR_EPIC.md and signal the system."""
-    try:
-        from pathlib import Path
-        workspace = Path(os.getenv("PROJECT_CWD", "."))
-        epic_path = workspace / "REFACTOR_EPIC.md"
-
-        if epic_path.exists():
-            state_path = workspace / ".ag-memory" / "temporal_state.json"
-            if state_path.exists():
-                return "Refactor epic detected but an EPIC is already in progress. Queued."
-
-            content = epic_path.read_text(encoding="utf-8")[:200]
-            logger.info("💰 REFACTOR_EPIC.md detected — signaling cost optimization.")
-            return f"REFACTOR_READY: {content}"
-
-        return "No refactor pending."
-    except Exception as exc:
-        return f"Refactor watcher error: {exc}"
+# V40: Growth (V27) and FinOps (V28) engine actions removed.
 
 
 # ─────────────────────────────────────────────────────────────

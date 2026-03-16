@@ -239,6 +239,13 @@ class AutonomousVerifier:
 
     def _run_test(self, test_path: str) -> Tuple[int, str]:
         """Run a single test file."""
+        # V37 FIX (L-6): Validate test path to prevent traversal from LLM-generated node_ids.
+        from pathlib import Path as _Path
+        resolved = _Path(test_path).resolve()
+        ag_tests = _Path(self._workspace) / _AG_TESTS_DIR
+        if not str(resolved).startswith(str(ag_tests.resolve())):
+            return 1, f"Security: test path '{test_path}' is outside {_AG_TESTS_DIR}/"
+
         try:
             proc = subprocess.run(
                 ["python", "-m", "pytest", test_path, "-v", "--tb=short", "--no-header"],
