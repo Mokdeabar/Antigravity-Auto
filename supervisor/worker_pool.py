@@ -6,7 +6,6 @@ for the parallel DAG worker pool.
 """
 
 import logging
-import os
 from pathlib import Path
 
 logger = logging.getLogger("supervisor")

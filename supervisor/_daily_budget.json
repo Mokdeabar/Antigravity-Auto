@@ -41,9 +41,14 @@
       "date": "2026-03-17",
       "calls": 150,
       "bucket": "all"
+    },
+    {
+      "date": "2026-03-17",
+      "calls": 250,
+      "bucket": "all"
     }
   ],
-  "period_call_count": 150,
+  "period_call_count": 250,
   "period_start_date": "2026-03-17",
-  "saved_at": 1773741477.8415987
+  "saved_at": 1773741534.8226986
 }

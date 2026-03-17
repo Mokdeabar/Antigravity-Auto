@@ -2309,21 +2309,6 @@ async def _capture_console_errors(sandbox) -> dict:
         return {"formatted": [], "categories": {}, "raw": []}
 
 
-# ── V74: Error compression for auto-fix prompts ──────────────────────
-# Raw errors can be massive (full Jest/Vite output, 50K+ chars).
-# This extracts only actionable info: error name, file:line, stack context.
-# The CLI still has full @. access to read entire files when needed.
-
-import re as _re_compress
-
-_FILE_LINE_PATTERN = _re_compress.compile(
-    r'(?:'
-    r'at\s+(?:.*?\s+\()?(/[^\s:]+):(\d+)'           # Node.js: at fn (/path:line
-    r'|(/[^\s:]+):(\d+):\d+'                          # Generic: /path:line:col
-    r'|([A-Za-z]:\\\\[^\s:]+):(\d+)'                   # Windows: C:\path:line
-    r'|(\S+\.(?:ts|tsx|js|jsx|py|css))\((\d+),\d+\)'  # TS: file.ts(line,col)
-    r')'
-)
 
 def _compress_errors_for_retry(errors: list[str], max_per_error: int = 1500) -> list[str]:
     """V79: Proxy → supervisor.prompt_builder.compress_errors_for_retry"""
