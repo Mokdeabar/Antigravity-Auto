@@ -116,7 +116,21 @@ def _inject_current_file_states(prompt: str, project_path: str) -> str:
         "[L2/Hint] Added @-file references for %d file(s): %s",
         len(existing), ", ".join(existing),
     )
-    return hint + prompt
+
+    # V75: Large repo optimization — prepend task-scoped file subset
+    # so Gemini CLI focuses context on relevant files instead of loading
+    # the entire repo index via @.
+    tier2_block = ""
+    try:
+        from .file_index import get_file_index
+        _fidx = get_file_index(project_path)
+        if _fidx.is_large_repo():
+            tier2_block = _fidx.get_tier2_context(prompt)
+    except Exception:
+        pass  # Fallback to existing behavior
+
+    prefix = tier2_block + hint if tier2_block else hint
+    return prefix + prompt
 
 
 # ─────────────────────────────────────────────────────────────
@@ -2908,10 +2922,16 @@ class HeadlessExecutor:
             # V69: PROJECT_STATE.md is already injected via @PROJECT_STATE.md
             # by _inject_current_file_states(). No need to read from sandbox.
 
-            # File listing (top-level)
-            file_list = await self.sandbox.list_files(".", max_depth=2)
-            if file_list:
-                parts.append(f"Workspace files ({len(file_list)} total): {', '.join(file_list[:30])}")
+            # V75: Smart directory summary replaces raw depth-2 listing
+            try:
+                from .file_index import get_file_index
+                _fidx = get_file_index(str(self._project_path) if hasattr(self, '_project_path') else ".")
+                parts.append(f"Workspace: {_fidx.get_directory_summary()}")
+            except Exception:
+                # Fallback to old listing
+                file_list = await self.sandbox.list_files(".", max_depth=2)
+                if file_list:
+                    parts.append(f"Workspace files ({len(file_list)} total): {', '.join(file_list[:30])}")
 
         except Exception as exc:
             logger.debug("Context bridge gathering failed (non-fatal): %s", exc)

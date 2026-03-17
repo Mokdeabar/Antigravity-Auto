@@ -219,7 +219,8 @@ def _get_best_model(prompt: str = "") -> str:
                 model = alt
     else:
         chain = get_failover_chain()
-        model = chain.get_active_model()
+        _pro_only = getattr(config, "PRO_ONLY_CODING", False)
+        model = chain.get_active_model(pro_only=_pro_only)
 
     # Still do the initial probe on first call (for Glass Brain output)
     if _cached_best_model is None:
@@ -586,7 +587,8 @@ async def ask_gemini(
 
                 # ── Normal failure handling ──
                 chain.report_failure(model)
-                model = chain.get_active_model()  # Get next model
+                _pro_only = getattr(config, "PRO_ONLY_CODING", False)
+                model = chain.get_active_model(pro_only=_pro_only)  # Get next model
 
                 # Feed router adaptive learning.
                 router = get_router()
@@ -702,7 +704,8 @@ async def stream_gemini(
                     continue
 
             chain.report_failure(model)
-            model = chain.get_active_model()
+            _pro_only = getattr(config, "PRO_ONLY_CODING", False)
+            model = chain.get_active_model(pro_only=_pro_only)
 
             router = get_router()
             tier = router.classify(prompt)
@@ -947,7 +950,8 @@ async def call_gemini_with_file(
 
                 # ── Normal failure ──
                 chain.report_failure(model)
-                model = chain.get_active_model()
+                _pro_only = getattr(config, "PRO_ONLY_CODING", False)
+                model = chain.get_active_model(pro_only=_pro_only)
                 tier = router.classify(prompt)
                 router.record_outcome(tier, success=False)
 
@@ -1000,7 +1004,8 @@ async def call_gemini_with_file(
             _glass_brain_error(f"Gemini CLI with file timed out after {timeout}s")
 
             chain.report_timeout(model)  # V30.6: Timeout ≠ failure, short cooldown
-            model = chain.get_active_model()
+            _pro_only = getattr(config, "PRO_ONLY_CODING", False)
+            model = chain.get_active_model(pro_only=_pro_only)
 
             if policy.should_retry(attempt):
                 delay = policy.delay_for(attempt)
@@ -1018,7 +1023,8 @@ async def call_gemini_with_file(
             _glass_brain_error(f"File call attempt {attempt + 1}/{policy.max_attempts} failed: {exc}")
 
             chain.report_failure(model)
-            model = chain.get_active_model()
+            _pro_only = getattr(config, "PRO_ONLY_CODING", False)
+            model = chain.get_active_model(pro_only=_pro_only)
 
             if policy.should_retry(attempt):
                 delay = policy.delay_for(attempt)
@@ -1205,7 +1211,8 @@ def ask_gemini_sync(
     chain = get_failover_chain()
     budget = get_context_budget()
     attempts = max_retries if max_retries is not None else policy.max_attempts
-    model = chain.get_active_model()
+    _pro_only = getattr(config, "PRO_ONLY_CODING", False)
+    model = chain.get_active_model(pro_only=_pro_only)
 
     if not model:
         raise RuntimeError("ALL_MODELS_EXHAUSTED: Every available model is on cooldown.")
@@ -1240,7 +1247,8 @@ def ask_gemini_sync(
             last_error = exc
             _glass_brain_error(f"Sync attempt {attempt + 1}/{attempts} failed: {exc}")
             chain.report_failure(model)
-            model = chain.get_active_model()
+            _pro_only = getattr(config, "PRO_ONLY_CODING", False)
+            model = chain.get_active_model(pro_only=_pro_only)
 
             if policy.should_retry(attempt):
                 delay = policy.delay_for(attempt)

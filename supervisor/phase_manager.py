@@ -451,16 +451,18 @@ class PhaseManager:
                     )
                     break
 
-            # File tree (skip node_modules / .git / __pycache__)
-            # V74: Cached file tree with 60s TTL (§3.5 — avoids rescanning)
-            import time as _time
-            _cache_key = str(_ws)
-            _now = _time.time()
-            if (
-                not hasattr(self, '_file_tree_cache')
-                or self._file_tree_cache.get('key') != _cache_key
-                or _now - self._file_tree_cache.get('ts', 0) > 60
-            ):
+            # V75: Smart file index — replaces old rglob + 100-file cap
+            # Small repos: shows ALL files with exports (no cap)
+            # Large repos (300+): compressed directory + signature view
+            try:
+                from .file_index import get_file_index
+                _fidx = get_file_index(str(_ws))
+                _tree = _fidx.get_tier1_context()
+                if _tree:
+                    _project_context += f"\n{_tree}\n"
+            except Exception as _fidx_err:
+                # Fallback to basic listing on any error
+                logger.debug("📂  [Phase] FileIndex failed, using basic listing: %s", _fidx_err)
                 _all_files = sorted(
                     str(f.relative_to(_ws))
                     for f in _ws.rglob("*")
@@ -470,17 +472,13 @@ class PhaseManager:
                         ".ag-supervisor", "dist", ".next", "coverage",
                     ))
                 )
-                self._file_tree_cache = {'key': _cache_key, 'ts': _now, 'files': _all_files}
-            else:
-                _all_files = self._file_tree_cache['files']
-
-            if _all_files:
-                _project_context += (
-                    "\nEXISTING FILES IN PROJECT:\n"
-                    + "\n".join(f"  - {f}" for f in _all_files[:100]) + "\n"
-                )
-                if len(_all_files) > 100:
-                    _project_context += f"  … and {len(_all_files) - 100} more files\n"
+                if _all_files:
+                    _project_context += (
+                        "\nEXISTING FILES IN PROJECT:\n"
+                        + "\n".join(f"  - {f}" for f in _all_files[:200]) + "\n"
+                    )
+                    if len(_all_files) > 200:
+                        _project_context += f"  … and {len(_all_files) - 200} more files\n"
 
             # DAG completion history (what tasks have already been done)
             _hist = _ws / ".ag-supervisor" / "dag_history.jsonl"

@@ -544,8 +544,18 @@ async def _run_deep_analysis(
                 _at_refs.append(f"@{_fname}")
         _at_refs_str = " ".join(_at_refs)
 
+        # V75: Inject Tier 1 file index for structural awareness
+        _structure_ctx = ""
+        try:
+            from .file_index import get_file_index
+            _fidx = get_file_index(project_path)
+            _structure_ctx = _fidx.get_tier1_context()
+        except Exception:
+            pass
+
         _prompt = (
             (_at_refs_str + "\n\n" if _at_refs_str else "")
+            + (_structure_ctx + "\n\n" if _structure_ctx else "")
             + "You are a world-class senior engineer conducting a pre-build deep analysis.\n"
             "Think step by step about the following project goal and any available context.\n"
             "The project context files listed above (if any) have been loaded into your context.\n\n"
@@ -5234,7 +5244,9 @@ async def _execute_dag_recursive(
                             )
 
                         # Model is low on quota or same-model retry failed — failover
-                        _next = _fc.get_active_model()
+                        # V74: Respect PRO_ONLY_CODING — don't failover to non-pro
+                        _pro_only_cfg = getattr(config, "PRO_ONLY_CODING", False)
+                        _next = _fc.get_active_model(pro_only=_pro_only_cfg)
                         if _next:
                             # V41 FIX (Bug 2): Update UI header immediately
                             if state:
@@ -5261,6 +5273,12 @@ async def _execute_dag_recursive(
                                 return
                             # Failover also failed — fall through to mark failed
                             logger.warning("⚡  [Pool] %s failover also failed.", node.task_id)
+                        elif _pro_only_cfg:
+                            logger.warning(
+                                "⏸  [Pool] %s rate-limited — no Pro model available. "
+                                "PRO_ONLY_CODING active — skipping failover retry.",
+                                node.task_id,
+                            )
                     except Exception as _foe:
                         logger.debug("⚡  [Pool] Failover retry error: %s", _foe)
                     # If no model available or failover failed, mark failed

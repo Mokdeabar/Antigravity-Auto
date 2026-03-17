@@ -272,6 +272,20 @@ GEMINI_DEFAULT_IMAGE = "gemini-3.1-flash-image-preview"  # Nano Banana 2 — ima
 # panel, classify_task, analyze_errors) remain unaffected.
 PRO_ONLY_CODING = True
 
+# V75: Two-Tier File Index — smart context for large repos
+# Engages when project exceeds LARGE_REPO_THRESHOLD source files.
+# Planners get Tier 1 (compressed directory + export signatures).
+# Workers get Tier 2 (task-scoped dependency subgraph only).
+LARGE_REPO_THRESHOLD = int(os.getenv("LARGE_REPO_THRESHOLD", "300"))
+FILE_INDEX_CACHE_TTL_S = int(os.getenv("FILE_INDEX_CACHE_TTL", "120"))       # 2 min
+FILE_INDEX_TIER2_MAX_FILES = int(os.getenv("FILE_INDEX_TIER2_MAX", "50"))     # max files in worker context
+FILE_INDEX_TIER1_MAX_CHARS = int(os.getenv("FILE_INDEX_TIER1_MAX", "12000")) # max chars for planner tree
+FILE_INDEX_SKIP_DIRS = {
+    "node_modules", ".git", "__pycache__", ".ag-supervisor",
+    "dist", ".next", "coverage", ".cache", ".turbo", "build",
+    ".output", ".nuxt", ".svelte-kit", "vendor", "venv", ".venv",
+}
+
 # Model alias routing (CLI --model shortcuts → canonical names)
 GEMINI_MODEL_ALIASES = {
     "auto":  "auto",                    # Gemini 3 auto-selector (routes between pro/flash)
