@@ -675,20 +675,21 @@ def reload() -> dict:
             _logger.warning("⚙️  config_overrides.json must be a JSON object")
             return applied
 
-        _module = __import__(__name__)
+        import sys
+        _module = sys.modules[__name__]
         for key, value in overrides.items():
             if key not in _RELOADABLE_KEYS:
                 _logger.warning("⚙️  Config key '%s' is not reloadable — skipped", key)
                 continue
 
             old_value = getattr(_module, key, None)
-            # Type-coerce to match original type
-            if isinstance(old_value, int) and not isinstance(value, bool):
+            # V75: Check bool BEFORE int — bool is a subclass of int in Python
+            if isinstance(old_value, bool):
+                value = bool(value)
+            elif isinstance(old_value, int):
                 value = int(value)
             elif isinstance(old_value, float):
                 value = float(value)
-            elif isinstance(old_value, bool):
-                value = bool(value)
 
             setattr(_module, key, value)
             applied[key] = value

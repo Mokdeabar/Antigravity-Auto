@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#007AFF">
+    <link rel="manifest" href="/manifest.json">
     <title>Supervisor AI - Command Centre</title>
     <meta name="description" content="Autonomous AI Command Centre — Living Dashboard">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1212,6 +1214,19 @@
             flex-shrink: 0;
             gap: 8px;
             justify-content: center;
+            /* V78: Horizontal scroll on narrow viewports */
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* hide scrollbar */
+        }
+
+        .tab-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tab-bar .tab {
+            flex-shrink: 0;
         }
 
         .tab {
@@ -1350,6 +1365,12 @@
 
         .tab-panel.active {
             display: flex;
+            animation: tabFadeIn 0.25s ease;
+        }
+
+        @keyframes tabFadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
         /* ── Sub-components for Tabs ── */
@@ -3397,29 +3418,106 @@
         .stats-phase-bar > div { height: 100%; border-radius: 2px; transition: width 0.5s; }
         .stats-phase-pct { font-size: 0.7rem; font-family: var(--font-mono); min-width: 52px; text-align: right; font-weight: 600; }
 
-        /* Empty state */
+        /* V78: Enhanced empty state with icon support */
         .empty-state {
-            padding: 60px;
+            padding: 48px 32px;
             text-align: center;
             color: var(--text-tertiary);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 500;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .empty-state-icon {
+            font-size: 2rem;
+            opacity: 0.35;
+            margin-bottom: 4px;
+        }
+
+        .empty-state-hint {
+            font-size: 0.78rem;
+            color: var(--text-tertiary);
+            opacity: 0.7;
+            margin-top: 2px;
         }
 
         @media (max-width: 900px) {
             .main {
                 grid-template-columns: 1fr;
-                grid-template-rows: auto 1fr;
+                grid-template-rows: 1fr auto;
                 padding: 12px;
                 gap: 12px;
             }
 
             .sidebar {
                 max-height: 300px;
+                order: -1;
             }
 
             .launcher-body {
                 padding: 40px 24px;
+            }
+
+            .launcher-hero h1 {
+                font-size: 1.6rem;
+            }
+
+            .launcher-hero p {
+                font-size: 0.9rem;
+            }
+
+            .lqp-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header {
+                padding: 12px 16px;
+            }
+
+            .launcher-body {
+                padding: 24px 16px;
+            }
+
+            .launcher-hero {
+                margin-bottom: 28px;
+            }
+
+            .launcher-hero h1 {
+                font-size: 1.35rem;
+            }
+
+            .projects-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .create-section {
+                padding: 16px;
+                margin-bottom: 32px;
+            }
+
+            .launch-panel {
+                padding: 20px;
+                margin-top: 32px;
+            }
+
+            .main {
+                padding: 8px;
+                gap: 8px;
+            }
+
+            .lqp-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            .tab {
+                padding: 6px 10px;
+                font-size: 0.78rem;
             }
         }
 
@@ -4306,6 +4404,224 @@
             background: rgba(99, 102, 241, 0.25);
             border-color: rgba(99, 102, 241, 0.6);
         }
+
+        /* ═══════════════════════════════════════════════════════
+           V78: HEADER RESPONSIVE WRAP
+           ═══════════════════════════════════════════════════════ */
+        @media (max-width: 1200px) {
+            .header {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .header-left {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .stat-pill {
+                font-size: 0.7rem;
+                padding: 3px 8px;
+            }
+
+            .connection-status {
+                width: 100%;
+                justify-content: flex-end;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           V78: SIDEBAR HEALTH BARS
+           ═══════════════════════════════════════════════════════ */
+        .health-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .health-bar-track {
+            flex: 1;
+            height: 4px;
+            background: rgba(0, 0, 0, 0.06);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .health-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.5s ease, background 0.5s ease;
+            background: var(--accent-green);
+        }
+
+        .health-bar-fill.warn {
+            background: var(--accent-orange);
+        }
+
+        .health-bar-fill.crit {
+            background: var(--accent-red);
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           V78: CONSOLE DRAWER CLASSES
+           ═══════════════════════════════════════════════════════ */
+        .console-drawer-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: var(--bg-canvas);
+            border-top: 1px solid var(--border-light);
+            cursor: pointer;
+            user-select: none;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+
+        .console-drawer-bar:hover {
+            background: var(--bg-surface-hover);
+        }
+
+        .console-drawer-label {
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+
+        .console-drawer-badge {
+            display: none;
+            padding: 1px 6px;
+            border-radius: 8px;
+            font-size: 0.67rem;
+            font-weight: 700;
+            background: var(--bg-canvas);
+            color: var(--text-primary);
+        }
+
+        .console-drawer-content {
+            display: none;
+            max-height: 180px;
+            overflow-y: auto;
+            background: var(--bg-surface);
+            border-top: 1px solid var(--border-light);
+            flex-shrink: 0;
+        }
+
+        .console-drawer-body {
+            color: var(--text-tertiary);
+            font-size: 0.78rem;
+            padding: 12px;
+            font-family: var(--font-mono);
+        }
+
+        .console-drawer-btn {
+            font-size: 0.68rem;
+            padding: 2px 7px;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: background var(--transition-fast);
+        }
+
+        .console-drawer-btn:hover {
+            background: var(--bg-canvas);
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           V77: SKELETON LOADING STATES
+           ═══════════════════════════════════════════════════════ */
+        @keyframes skeletonShimmer {
+            0%   { background-position: -400px 0; }
+            100% { background-position: 400px 0; }
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg,
+                var(--bg-canvas) 25%,
+                rgba(0, 0, 0, 0.04) 37%,
+                var(--bg-canvas) 63%);
+            background-size: 800px 100%;
+            animation: skeletonShimmer 1.8s ease-in-out infinite;
+            border-radius: var(--radius-md);
+        }
+
+        .skeleton-card {
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .skeleton-line {
+            height: 14px;
+            border-radius: 7px;
+        }
+
+        .skeleton-line.w-60 { width: 60%; }
+        .skeleton-line.w-40 { width: 40%; }
+        .skeleton-line.w-80 { width: 80%; }
+        .skeleton-line.w-full { width: 100%; }
+        .skeleton-line.thick { height: 20px; border-radius: 10px; }
+
+        .skeleton-row {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .skeleton-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           V77: SCREEN TRANSITIONS
+           ═══════════════════════════════════════════════════════ */
+        .launcher-screen,
+        .dashboard-screen,
+        .shutdown-screen {
+            transition: opacity 0.35s ease, transform 0.35s ease;
+        }
+
+        .screen-enter {
+            animation: screenFadeIn 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+        }
+
+        .screen-exit {
+            animation: screenFadeOut 0.25s ease forwards;
+        }
+
+        @keyframes screenFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px) scale(0.99);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes screenFadeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-8px) scale(0.99);
+            }
+        }
     </style>
 </head>
 
@@ -4373,12 +4689,30 @@
 
             <div class="projects-label" id="projects-label">Recent Workspaces</div>
             <div class="projects-grid" id="projects-grid">
-                <div class="empty-state">
-                    <svg class="icon-svg" style="font-size:2.5rem;margin-bottom:12px;color:var(--text-tertiary);"
-                        viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                    </svg><br>
-                    Scanning Workspaces
+                <!-- V77: Skeleton loading placeholders -->
+                <div class="skeleton-card">
+                    <div class="skeleton skeleton-line thick w-60"></div>
+                    <div class="skeleton-row">
+                        <div class="skeleton skeleton-line w-40"></div>
+                        <div class="skeleton skeleton-dot"></div>
+                    </div>
+                    <div class="skeleton skeleton-line w-80" style="margin-top:auto"></div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="skeleton skeleton-line thick w-40"></div>
+                    <div class="skeleton-row">
+                        <div class="skeleton skeleton-line w-60"></div>
+                        <div class="skeleton skeleton-dot"></div>
+                    </div>
+                    <div class="skeleton skeleton-line w-full" style="margin-top:auto"></div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="skeleton skeleton-line thick w-80"></div>
+                    <div class="skeleton-row">
+                        <div class="skeleton skeleton-line w-40"></div>
+                        <div class="skeleton skeleton-dot"></div>
+                    </div>
+                    <div class="skeleton skeleton-line w-60" style="margin-top:auto"></div>
                 </div>
             </div>
 
@@ -4579,7 +4913,7 @@
                             </div>
                         </div>
                         <div class="changes-content" id="changes-content">
-                            <div class="empty-state">No files have been modified yet.</div>
+                            <div class="empty-state"><span class="empty-state-icon">📝</span>No files have been modified yet.<span class="empty-state-hint">Changes will appear here as the AI edits files</span></div>
                         </div>
                     </div>
                     <!-- TAB: TASKS -->
@@ -4610,7 +4944,7 @@
                             </span>
                         </div>
                         <div class="task-list" id="task-list">
-                            <div class="empty-state">Building directed acyclic graph...</div>
+                            <div class="empty-state"><span class="empty-state-icon">🔀</span>Building directed acyclic graph...<span class="empty-state-hint">Tasks will populate once the audit completes</span></div>
                         </div>
                     </div>
                     <!-- TAB: PHASES -->
@@ -4625,7 +4959,7 @@
                             </div>
                         </div>
                         <div class="phases-content" id="phases-content">
-                            <div class="empty-state">No phase plan yet &mdash; start a project to generate one.</div>
+                            <div class="empty-state"><span class="empty-state-icon">🗂️</span>No phase plan yet<span class="empty-state-hint">Start a project to generate a phased execution plan</span></div>
                         </div>
                     </div>
                     <!-- TAB: PREVIEW -->
@@ -4659,28 +4993,19 @@
                                     id="preview-port-info">Port: None</span>
                             </div>
                         </div>
-                        <!-- V54: Console Drawer -->
-                        <div id="console-drawer-bar" onclick="toggleConsoleDrawer()" style="display:flex;align-items:center;gap:8px;padding:6px 12px;
-                                   background:var(--surface-2,rgba(0,0,0,0.3));border-top:1px solid var(--border-dim,rgba(255,255,255,0.07));
-                                   cursor:pointer;user-select:none;font-size:0.75rem;color:var(--text-secondary);
-                                   flex-shrink:0;">
+                        <!-- V78: Console Drawer — uses CSS classes instead of inline styles -->
+                        <div id="console-drawer-bar" class="console-drawer-bar" onclick="toggleConsoleDrawer()">
                             <span id="console-drawer-chevron" style="font-size:0.7rem;opacity:0.6;">&#9656;</span>
-                            <span style="font-weight:600;letter-spacing:0.04em;">CONSOLE</span>
-                            <span id="console-drawer-badge" style="display:none;padding:1px 6px;border-radius:8px;font-size:0.67rem;
-                                       font-weight:700;background:var(--border);color:var(--text-primary);"></span>
+                            <span class="console-drawer-label">CONSOLE</span>
+                            <span id="console-drawer-badge" class="console-drawer-badge"></span>
                             <span style="flex:1;"></span>
-                            <button onclick="event.stopPropagation();copyConsoleDrawer()" style="font-size:0.68rem;padding:2px 7px;border:1px solid var(--border);border-radius:4px;
-                                       background:transparent;color:var(--text-secondary);cursor:pointer;"
+                            <button onclick="event.stopPropagation();copyConsoleDrawer()" class="console-drawer-btn"
                                 title="Copy all console output">Copy</button>
-                            <button onclick="event.stopPropagation();clearConsoleDrawer()" style="font-size:0.68rem;padding:2px 7px;border:1px solid var(--border);border-radius:4px;
-                                       background:transparent;color:var(--text-secondary);cursor:pointer;"
+                            <button onclick="event.stopPropagation();clearConsoleDrawer()" class="console-drawer-btn"
                                 title="Clear console">Clear</button>
                         </div>
-                        <div id="console-drawer" style="display:none;max-height:180px;overflow-y:auto;background:var(--surface-1,rgba(0,0,0,0.5));
-                                   border-top:1px solid var(--border-dim,rgba(255,255,255,0.05));flex-shrink:0;">
-                            <div id="console-drawer-body"
-                                style="color:var(--text-tertiary);font-size:0.78rem;padding:12px;">No console output
-                                yet.</div>
+                        <div id="console-drawer" class="console-drawer-content">
+                            <div id="console-drawer-body" class="console-drawer-body">No console output yet.</div>
                         </div>
                     </div>
                     <!-- TAB: TIMELINE -->
@@ -4690,7 +5015,25 @@
                                     style="margin-left:8px;color:var(--text-tertiary);font-weight:400;">0</span></span>
                         </div>
                         <div class="timeline-content" id="timeline-content">
-                            <div class="empty-state">Awaiting telemetry data...</div>
+                            <!-- V78: Skeleton loading for timeline -->
+                            <div style="padding:16px;display:flex;flex-direction:column;gap:16px;">
+                                <div style="display:flex;gap:20px;align-items:flex-start;">
+                                    <div class="skeleton" style="width:60px;height:14px;border-radius:7px;"></div>
+                                    <div class="skeleton" style="width:24px;height:24px;border-radius:50%;"></div>
+                                    <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+                                        <div class="skeleton skeleton-line w-60"></div>
+                                        <div class="skeleton skeleton-line w-80"></div>
+                                    </div>
+                                </div>
+                                <div style="display:flex;gap:20px;align-items:flex-start;">
+                                    <div class="skeleton" style="width:60px;height:14px;border-radius:7px;"></div>
+                                    <div class="skeleton" style="width:24px;height:24px;border-radius:50%;"></div>
+                                    <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+                                        <div class="skeleton skeleton-line w-40"></div>
+                                        <div class="skeleton skeleton-line w-60"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <!-- TAB: HISTORY -->
@@ -4704,7 +5047,23 @@
                             <button onclick="loadHistory()" class="mini-btn">Refresh</button>
                         </div>
                         <div class="history-content" id="history-content">
-                            <div class="empty-state">No DAG runs recorded yet.</div>
+                            <!-- V78: Skeleton loading for history -->
+                            <div style="padding:0;">
+                                <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 24px;border-bottom:1px solid var(--border-light);">
+                                    <div class="skeleton" style="width:24px;height:24px;border-radius:50%;flex-shrink:0;"></div>
+                                    <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+                                        <div class="skeleton skeleton-line thick w-60"></div>
+                                        <div class="skeleton skeleton-line w-40"></div>
+                                    </div>
+                                </div>
+                                <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 24px;border-bottom:1px solid var(--border-light);">
+                                    <div class="skeleton" style="width:24px;height:24px;border-radius:50%;flex-shrink:0;"></div>
+                                    <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+                                        <div class="skeleton skeleton-line thick w-40"></div>
+                                        <div class="skeleton skeleton-line w-60"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -4732,7 +5091,7 @@
                         </div>
                         <div id="filetree-root"
                             style="overflow:auto;flex:1;padding:4px 0;font-family:var(--font-mono);font-size:0.8rem;">
-                            <div class="empty-state">Switch to this tab to load the file tree.</div>
+                            <div class="empty-state"><span class="empty-state-icon">📁</span>Switch to this tab to load the file tree.<span class="empty-state-hint">The project's directory structure will appear here</span></div>
                         </div>
                     </div>
 
@@ -4753,7 +5112,7 @@
                         </div>
                         <!-- Issues content -->
                         <div id="health-content" style="overflow:auto;flex:1;padding:12px 16px;">
-                            <div class="empty-state">Loading health data…</div>
+                            <div class="empty-state"><span class="empty-state-icon">🩺</span>Loading health data…<span class="empty-state-hint">TypeScript errors, lint issues, and build health</span></div>
                         </div>
                     </div>
 
@@ -4766,7 +5125,7 @@
                             <button onclick="loadStats()" class="mini-btn">Refresh</button>
                         </div>
                         <div id="stats-content" style="overflow:auto;flex:1;padding:12px 16px;">
-                            <div class="empty-state">Loading stats…</div>
+                            <div class="empty-state"><span class="empty-state-icon">📊</span>Loading stats…<span class="empty-state-hint">Session metrics, model usage, and DAG progress</span></div>
                         </div>
                     </div>
 
@@ -4808,8 +5167,21 @@
                         <span class="chevron">▼</span>
                     </div>
                     <div class="sidebar-card-body">
-                        <div class="health-row"><span>CPU</span><span class="health-val" id="val-cpu">0%</span></div>
-                        <div class="health-row"><span>Memory</span><span class="health-val" id="val-mem">0%</span></div>
+                        <!-- V78: CPU/Memory with visual bars -->
+                        <div class="health-row">
+                            <span>CPU</span>
+                            <div class="health-bar-container">
+                                <div class="health-bar-track"><div class="health-bar-fill" id="bar-cpu" style="width:0%"></div></div>
+                                <span class="health-val" id="val-cpu">0%</span>
+                            </div>
+                        </div>
+                        <div class="health-row">
+                            <span>Memory</span>
+                            <div class="health-bar-container">
+                                <div class="health-bar-track"><div class="health-bar-fill" id="bar-mem" style="width:0%"></div></div>
+                                <span class="health-val" id="val-mem">0%</span>
+                            </div>
+                        </div>
                         <div class="health-row"><span>Container</span><span class="health-dot"
                                 id="health-docker"></span></div>
                         <div class="health-row"><span>Lite AI</span><span class="health-dot online"
@@ -5025,10 +5397,54 @@
 
             // ── Screen Management ──────────────────────────────
             function showScreen(screen) {
+                // V77: Animated screen transitions with fade+slide
+                const screens = {
+                    launcher:  $('launcher-screen'),
+                    dashboard: $('dashboard-screen'),
+                    shutdown:  $('shutdown-screen'),
+                };
+
+                // Exit animation on the current screen
+                const prevScreen = currentScreen;
                 currentScreen = screen;
-                $('launcher-screen').style.display = screen === 'launcher' ? 'flex' : 'none';
-                $('dashboard-screen').classList.toggle('active', screen === 'dashboard');
-                $('shutdown-screen').classList.toggle('active', screen === 'shutdown');
+
+                // If same screen, skip animation
+                if (prevScreen === screen) return;
+
+                // Fade out the old screen
+                const oldEl = screens[prevScreen];
+                if (oldEl && prevScreen !== screen) {
+                    oldEl.classList.add('screen-exit');
+                    oldEl.classList.remove('screen-enter');
+                    setTimeout(() => {
+                        oldEl.classList.remove('screen-exit');
+                        if (prevScreen === 'launcher') {
+                            oldEl.style.display = 'none';
+                        } else {
+                            oldEl.classList.remove('active');
+                        }
+                    }, 250); // matches screenFadeOut duration
+                }
+
+                // Fade in the new screen (after old exits)
+                setTimeout(() => {
+                    if (screen === 'launcher') {
+                        screens.launcher.style.display = 'flex';
+                    } else if (screen === 'dashboard') {
+                        screens.dashboard.classList.add('active');
+                    } else if (screen === 'shutdown') {
+                        screens.shutdown.classList.add('active');
+                    }
+
+                    const newEl = screens[screen];
+                    if (newEl) {
+                        newEl.classList.add('screen-enter');
+                        newEl.addEventListener('animationend', () => {
+                            newEl.classList.remove('screen-enter');
+                        }, { once: true });
+                    }
+                }, 200); // slight overlap for smooth crossfade
+
                 // V65: Toggle body class so #ollama-fab can be hidden via CSS on the launcher
                 document.body.classList.toggle('on-launcher', screen === 'launcher');
                 // V62: Refresh quota data when returning to launcher
@@ -7516,6 +7932,9 @@
                                     <span style="font-size:1.5rem;font-weight:800;color:var(--text-primary);font-family:var(--font-mono);">${budUsed}</span>
                                     <span style="font-size:0.78rem;color:var(--text-tertiary);">/ ${budLimit}</span>
                                 </div>
+                                <div style="font-size:0.65rem;color:var(--text-tertiary);margin-bottom:6px;font-style:italic;">
+                                    ${budgetRes.capacity_source === 'observed' ? `Observed (${budgetRes.capacity_observations} samples)` : 'Default estimate'}
+                                </div>
                                 <div style="height:6px;border-radius:3px;background:rgba(0,0,0,0.06);overflow:hidden;margin-bottom:8px;">
                                     <div style="width:${budPct}%;height:100%;border-radius:3px;background:${budPct > 90 ? '#FF3B30' : budPct > 70 ? '#FF9500' : '#007AFF'};transition:width 0.5s;"></div>
                                 </div>
@@ -7900,10 +8319,24 @@
                     const cpuEl = $('gauge-cpu');
                     if (cpuEl) cpuEl.style.setProperty('--pct', h.cpu_percent || 0);
                     if ($('val-cpu')) $('val-cpu').textContent = (h.cpu_percent || 0) + '%';
+                    // V78: Update CPU bar fill
+                    const barCpu = $('bar-cpu');
+                    if (barCpu) {
+                        const cpuPct = h.cpu_percent || 0;
+                        barCpu.style.width = cpuPct + '%';
+                        barCpu.className = 'health-bar-fill' + (cpuPct > 85 ? ' crit' : cpuPct > 60 ? ' warn' : '');
+                    }
                     // Memory gauge
                     const memEl = $('gauge-mem');
                     if (memEl) memEl.style.setProperty('--pct', h.memory_percent || 0);
                     if ($('val-mem')) $('val-mem').textContent = (h.memory_percent || 0) + '%';
+                    // V78: Update Memory bar fill
+                    const barMem = $('bar-mem');
+                    if (barMem) {
+                        const memPct = h.memory_percent || 0;
+                        barMem.style.width = memPct + '%';
+                        barMem.className = 'health-bar-fill' + (memPct > 85 ? ' crit' : memPct > 60 ? ' warn' : '');
+                    }
                     // Docker/Lite AI dots
                     const dk = $('health-docker');
                     if (dk) { dk.className = 'health-dot ' + (h.docker_status === 'running' ? 'online' : 'offline'); }
@@ -8756,7 +9189,8 @@
                 const label = document.getElementById('budget-label');
                 if (label) {
                     label.textContent = `${b.daily_used}/${b.daily_limit} req/day`;
-                    label.title = `${b.daily_pct}% of daily quota used · ${b.remaining} remaining`;
+                    const src = b.capacity_source === 'observed' ? `Observed from ${b.capacity_observations} exhaustion event(s)` : 'Default estimate (no exhaustion observed yet)';
+                    label.title = `${b.daily_pct}% of daily quota used · ${b.remaining} remaining\n${src}`;
                 }
                 // Highlight active worker button
                 const current = b.workers_current || b.effective_workers || 3;
@@ -9580,6 +10014,13 @@
                 // Shift+Enter falls through → browser adds newline naturally
             });
         });
+    </script>
+
+    <!-- V79: Service Worker registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(() => {});
+        }
     </script>
 </body>
 

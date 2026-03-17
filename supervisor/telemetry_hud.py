@@ -10,7 +10,7 @@ the file open in a split pane in VS Code.
 import json
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from . import config
@@ -33,7 +33,7 @@ def update_hud() -> str:
         hud_file = state_dir / "LIVE_HUD.md"
         
         # Gather data
-        mem = SessionMemory()
+        mem = SessionMemory(str(project_path))
         
         # 1. Core Vitals
         status = mem.last_agent_status
@@ -70,8 +70,8 @@ def update_hud() -> str:
 
         # Build Markdown
         lines = [
-            f"# 🧠 Supervisor V12 Flagship HUD",
-            f"> Last updated: {datetime.now().strftime('%H:%M:%S')} (Auto-refreshes)",
+            f"# 🧠 Supervisor {config.SUPERVISOR_VERSION_LABEL} HUD",
+            f"> Last updated: {datetime.now(timezone.utc).strftime('%H:%M:%S')} UTC (Auto-refreshes)",
             "",
             "## 🫀 Core Vitals",
             f"- **State:** {status_icon} `{status}`",
@@ -102,7 +102,7 @@ def update_hud() -> str:
                 "## ⏱️ Live Action Log",
             ])
             for e in reversed(events):
-                ts = datetime.fromtimestamp(e.get("timestamp", 0)).strftime('%H:%M:%S')
+                ts = datetime.fromtimestamp(e.get("timestamp", 0), tz=timezone.utc).strftime('%H:%M:%S')
                 etype = e.get("type", "unknown")
                 detail = e.get("detail", "")[:80]
                 lines.append(f"`[{ts}]` **{etype}** - {detail}")

@@ -92,7 +92,7 @@ class PolishEngine:
 
     def __init__(self, workspace_path: str = "."):
         self._workspace = Path(workspace_path)
-        self._memory_dir = self._workspace / ".ag-memory"
+        self._memory_dir = self._workspace / ".ag-supervisor"
         self._memory_dir.mkdir(parents=True, exist_ok=True)
 
         self._state_path = self._memory_dir / "polish_state.json"
@@ -416,7 +416,7 @@ class PolishEngine:
         Check if the user has dropped a feedback file for
         mid-execution injection.
 
-        The user can write to .ag-memory/user_injection.txt at any time.
+        The user can write to .ag-supervisor/user_injection.txt at any time.
         The engine reads it, processes it, and deletes the file.
 
         Returns the injection content, or None.

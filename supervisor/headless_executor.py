@@ -470,10 +470,7 @@ class OllamaLocalBrain:
             )
         return result or {"action": "wait", "reason": "LiteBrain decision unavailable — idling"}
 
-    async def close(self):
-        """Close the HTTP session."""
-        if self._session and not self._session.closed:
-            await self._session.close()
+    # V75: close() defined once at L263 — includes session=None reset.
 
 
 # ─────────────────────────────────────────────────────────────

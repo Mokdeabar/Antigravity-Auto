@@ -103,7 +103,7 @@ class UserResearchEngine:
 
     def __init__(self, workspace_path: str = "."):
         self._workspace = Path(workspace_path)
-        self._memory_dir = self._workspace / ".ag-memory"
+        self._memory_dir = self._workspace / ".ag-supervisor"
         self._memory_dir.mkdir(parents=True, exist_ok=True)
 
         self._store_path = self._memory_dir / "feedback_store.json"

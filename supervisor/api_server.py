@@ -32,7 +32,7 @@ import os
 
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from .instruction_queue import InstructionQueue
@@ -592,6 +592,14 @@ def create_app(state: SupervisorState) -> FastAPI:
             )
 
         _rate_limit_store[client_ip].append(now)
+
+        # V79: Evict stale IPs every 60s to prevent memory leak
+        if len(_rate_limit_store) > 100:
+            stale_ips = [ip for ip, ts_list in _rate_limit_store.items()
+                         if not ts_list or (now - max(ts_list)) > _RATE_LIMIT_WINDOW * 2]
+            for ip in stale_ips:
+                del _rate_limit_store[ip]
+
         return await call_next(request)
 
     # ── Global Exception Handler ──────────────────────────────
@@ -634,8 +642,12 @@ def create_app(state: SupervisorState) -> FastAPI:
         return JSONResponse(state.dag_progress)
 
     @app.post("/api/dag/retry")
-    async def retry_dag_task(body: dict):
+    async def retry_dag_task(request: Request):
         """V40: Manually retry a failed DAG task from the UI."""
+        try:
+            body = await request.json()
+        except Exception:
+            return JSONResponse({"error": "Invalid JSON body"}, status_code=400)
         task_id = body.get("task_id", "").strip()
         if not task_id:
             return JSONResponse({"error": "No task_id provided"}, status_code=400)
@@ -653,8 +665,12 @@ def create_app(state: SupervisorState) -> FastAPI:
             return JSONResponse({"error": f"Could not requeue task {task_id} (not failed or not found)"}, status_code=400)
 
     @app.post("/api/dag/cancel")
-    async def cancel_dag_task(body: dict):
+    async def cancel_dag_task(request: Request):
         """V70: Cancel a running DAG task from the UI."""
+        try:
+            body = await request.json()
+        except Exception:
+            return JSONResponse({"error": "Invalid JSON body"}, status_code=400)
         task_id = body.get("task_id", "").strip()
         if not task_id:
             return JSONResponse({"error": "No task_id provided"}, status_code=400)
@@ -722,7 +738,8 @@ def create_app(state: SupervisorState) -> FastAPI:
             plan_path = os.path.join(project_path, ".ag-supervisor", "phase_state.json")
             if not os.path.exists(plan_path):
                 return JSONResponse({"available": False, "phases": [], "current_phase": 1})
-            raw = open(plan_path, "r", encoding="utf-8").read()
+            with open(plan_path, "r", encoding="utf-8") as _f:
+                raw = _f.read()
             plan = _json.loads(raw)
             # Enrich each phase with computed completion stats
             for ph in plan.get("phases", []):
@@ -832,8 +849,12 @@ def create_app(state: SupervisorState) -> FastAPI:
         return JSONResponse({"status": "audit_loop_resumed", "msg": "Audit loop resumed."})
 
     @app.post("/api/mode")
-    async def set_execution_mode(body: dict):
+    async def set_execution_mode(request: Request):
         """V44: Toggle between auto and manual execution mode."""
+        try:
+            body = await request.json()
+        except Exception:
+            return JSONResponse({"error": "Invalid JSON body"}, status_code=400)
         mode = body.get("mode", "").strip().lower()
         if mode not in ("auto", "manual"):
             return JSONResponse({"error": "mode must be 'auto' or 'manual'"}, status_code=400)
@@ -852,7 +873,7 @@ def create_app(state: SupervisorState) -> FastAPI:
         return JSONResponse({"status": "mode_changed", "mode": mode, "previous": old_mode})
 
     @app.post("/api/quota-pause")
-    async def toggle_quota_pause(body: dict):
+    async def toggle_quota_pause(request: Request):
         """V44/V70: Cycle quota pause mode: off → pro → all → off.
 
         Modes:
@@ -860,6 +881,10 @@ def create_app(state: SupervisorState) -> FastAPI:
           'pro'  - Pause when pro/paid model quota is exhausted.
           'all'  - Pause when ALL available model quotas are exhausted.
         """
+        try:
+            body = await request.json()
+        except Exception:
+            body = {}
         # V70: Support explicit mode setting or cycle
         explicit_mode = body.get("mode")
         if explicit_mode in ("off", "pro", "all"):
@@ -2579,7 +2604,30 @@ KEY FILES AND ENDPOINTS:
                 index_path.read_text(encoding="utf-8", errors="replace"),
                 headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"},
             )
-        return HTMLResponse("<h1>Supervisor AI — V61 Command Centre</h1><p>UI not found.</p>")
+        return HTMLResponse("<h1>Supervisor AI — V79 Command Centre</h1><p>UI not found.</p>")
+
+    # V79: PWA — serve sw.js at root with correct scope header
+    @app.get("/sw.js")
+    async def serve_service_worker():
+        sw_path = _UI_DIR / "sw.js"
+        if sw_path.exists():
+            return Response(
+                sw_path.read_text(encoding="utf-8"),
+                media_type="application/javascript",
+                headers={"Service-Worker-Allowed": "/", "Cache-Control": "no-cache"},
+            )
+        return Response("// no sw", media_type="application/javascript")
+
+    # V79: PWA — serve manifest at root
+    @app.get("/manifest.json")
+    async def serve_manifest():
+        mf_path = _UI_DIR / "manifest.json"
+        if mf_path.exists():
+            return Response(
+                mf_path.read_text(encoding="utf-8"),
+                media_type="application/manifest+json",
+            )
+        return JSONResponse({})
 
     # Mount static files for CSS/JS/assets if they exist
     if _UI_DIR.exists():

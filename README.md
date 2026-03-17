@@ -18,7 +18,6 @@ Tell it what to build, and it plans, codes, tests, and deploys — hands-free.
 | **Python** | 3.11+ | Auto-installed by `Command Centre.bat` via `winget` if missing |
 | **Docker** | Latest | Auto-installed by `Command Centre.bat` via `winget` if missing (requires restart) |
 | **Gemini CLI** | latest | Auto-installed by `Command Centre.bat` via `npm install -g` if missing |
-| **Ollama** (optional) | latest | **V64: No longer required** — replaced by Gemini Lite Intelligence. Kept for legacy support only |
 
 > **Note**: `Command Centre.bat` automatically sets the PowerShell execution policy to `RemoteSigned` for the current user (no admin needed). This is required for the Gemini CLI to run scripts properly.
 
@@ -107,9 +106,12 @@ python -m supervisor -g "Test the supervisor" --dry-run
 3. **Tool Server** — File ops, shell, git, LSP, dev server — all via docker exec bridges
 4. **Agent Council** — Fast Council (single-pass Diagnostician+Fixer+Auditor) with Swarm Debate escalation on low-confidence diagnoses
 5. **Path Translator** — Bidirectional host↔container path mapping
-6. **Auto-Fix Engine** — Retries with enriched error context sent directly to Gemini (Ollama removed — context too large for local models)
+6. **Auto-Fix Engine** — Retries with enriched error context sent directly to Gemini
 7. **Auto-Preview** — Detects buildable projects, starts dev server automatically, auto-resyncs on every file change
 8. **DAG Planner** — Context-aware decomposition: reads existing project state, creates only tasks for what's missing/broken
+9. **Worker Pool** (V79) — Git checkpoint, file validation, and revert utilities for parallel workers
+10. **Prompt Builder** (V79) — Error compression and task tag extraction for DAG worker prompts
+11. **DAG Executor** (V79) — Timeout computation and progress updates extracted for modularity
 
 ### Recovery strategies
 
@@ -132,8 +134,6 @@ All tunables live in `supervisor/config.py`. Key environment variables:
 |---|---|---|
 | `GEMINI_CLI_MODEL` | `auto` | Model for Gemini CLI — `auto` routes to best Gemini 3+ model |
 | `MAX_CONCURRENT_WORKERS` | `3` | Default parallel DAG lanes (user-selectable 1–6 via header toggle) |
-| `OLLAMA_HOST` | `http://localhost:11434` | Ollama endpoint (passed to sandbox) |
-| `OLLAMA_MODEL` | `llama3.2:3b` | Local LLM for fast task routing (pre-warmed at boot, `keep_alive=5m`) |
 | `SANDBOX_MOUNT_MODE` | `copy` | `copy` (isolated, **default**) or `bind` (fast, opt-in) |
 | `COMMAND_CENTRE_PORT` | `8420` | Command Centre web UI port |
 | `SUPERVISOR_EXPERIMENTS_DIR` | `~/Desktop/Experiments` | Project discovery directory for Command Centre |
@@ -151,8 +151,7 @@ The Command Centre Glass Brain shows granular phase-by-phase logs. Each log entr
 | `[Gemini]` | Gemini CLI lifecycle | `🚀 [Gemini] Launching CLI on HOST: model=auto, cwd=…` |
 | `[Context]` | Sandbox context bridge | `📡 [Context] Sandbox state collected (4520 chars)` |
 | `[Sandbox]` | Docker container ops | `📦 [Sandbox] Files copied. Fixing ownership …` |
-| `[Ollama]` | Local LLM operations | `🧠 [Ollama] Model pre-warmed into VRAM: llava:latest` |
-| `[Task]` | Task classification | `🧠 [Task] Classifying task complexity via Ollama …` |
+| `[Task]` | Task classification | `🧠 [Task] Classifying task complexity …` |
 | `[Auto-Preview]` | Preview detection | `🖥️ [Auto-Preview] Buildable project detected — starting dev server …` |
 | `[Dev Server]` | Dev server lifecycle | `🖥️ [Dev Server] Running on port 3000 (attempt 1)` |
 | `[Sync]` | File sync | `📦 [Sync] Files synced to sandbox` |
@@ -186,10 +185,8 @@ During each Gemini CLI run, the Glass Brain shows:
 | Sandbox won't start | Run `docker ps -a` and `docker logs` |
 | Gemini CLI not found | Auto-discovery probes npm global dir, PATH, and npx. Check `npm ls -g @google/gemini-cli` |
 | Gemini CLI timeout | Increase `GEMINI_TIMEOUT` env var |
-| "Ollama unavailable" | Install Ollama or supervisor degrades gracefully |
-| Ollama slow on first query | `warm_up()` pre-loads at boot with `keep_alive=5m` — if still slow, check GPU drivers |
 | Rate limit errors | Supervisor auto-switches Gemini 3+ models with escalating cooldowns (30s→2m→10m→30m) |
-| Daily budget warnings | `DailyBudgetTracker` warns at 80%/90%; quota pause handles exhaustion |
+| Daily budget warnings | `DailyBudgetTracker` warns at 80%/90%; V79: smart quota tracks actual capacity |
 | Stale scheduled jobs | `cleanup_stale_jobs()` runs at boot — pruned automatically |
 | EACCES in sandbox | `chown -R sandbox:sandbox /workspace` runs after `docker cp` |
 | Tasks tab empty | DAG now preserved when tasks remain pending/failed |

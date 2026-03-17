@@ -730,7 +730,7 @@ class PhaseManager:
                 _md_lines.append(f"**Focus:** {ph.get('focus','')}\n\n")
                 _md_lines.append(f"**Exit Criteria:** {ph.get('exit_criteria','')}\n\n")
                 for t in ph.get("tasks", []):
-                    _chk = "x" if t.get("status") == "complete" else " "
+                    _chk = "x" if t.get("status") == "done" else " "
                     _md_lines.append(f"- [{_chk}] {t.get('title','?')}\n")
             (self._plan_dir / "project_plan.md").write_text(
                 "".join(_md_lines), encoding="utf-8"

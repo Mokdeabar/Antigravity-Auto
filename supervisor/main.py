@@ -399,107 +399,24 @@ def _clear_preview_port(project_path: str) -> None:
 # ─────────────────────────────────────────────────────────────
 
 def _git_checkpoint(project_path: str) -> bool:
-    """
-    Create a git baseline before DAG execution.
-
-    Commits all current files so that broken worker output can be
-    reverted to this clean state. Returns True if checkpoint succeeded.
-    """
-    import subprocess as _sp
-    try:
-        _cwd = project_path
-
-        # Ensure git is initialized
-        git_dir = Path(project_path) / ".git"
-        if not git_dir.exists():
-            _sp.run(["git", "init"], cwd=_cwd, capture_output=True, timeout=10)
-            _sp.run(
-                ["git", "config", "user.email", "supervisor@ag.local"],
-                cwd=_cwd, capture_output=True, timeout=5,
-            )
-            _sp.run(
-                ["git", "config", "user.name", "AG Supervisor"],
-                cwd=_cwd, capture_output=True, timeout=5,
-            )
-            logger.info("🔀  [Git] Initialized repo at %s", project_path)
-
-        # Stage everything and commit as baseline
-        _sp.run(["git", "add", "-A"], cwd=_cwd, capture_output=True, timeout=30)
-        result = _sp.run(
-            ["git", "commit", "-m", "AG Supervisor: DAG baseline checkpoint",
-             "--allow-empty"],
-            cwd=_cwd, capture_output=True, text=True, timeout=15,
-        )
-        logger.info("🔀  [Git] Baseline checkpoint created (exit=%d)", result.returncode)
-        return True
-    except Exception as exc:
-        logger.debug("🔀  [Git] Checkpoint failed (non-fatal): %s", exc)
-        return False
+    """V79: Proxy → supervisor.worker_pool.git_checkpoint"""
+    from .worker_pool import git_checkpoint
+    return git_checkpoint(project_path)
 
 
 def _validate_worker_files(
     project_path: str,
     changed_files: list[str],
 ) -> tuple[bool, list[str]]:
-    """
-    Validate files changed by a worker for syntax errors.
-
-    Returns (is_valid, error_messages).
-    Python files: checked via ast.parse()
-    JS/TS files: checked via basic syntax validation
-    """
-    errors: list[str] = []
-    for rel_path in changed_files:
-        full_path = Path(project_path) / rel_path
-        if not full_path.exists():
-            continue
-
-        try:
-            content = full_path.read_text(encoding="utf-8")
-        except Exception:
-            continue
-
-        if rel_path.endswith(".py"):
-            try:
-                import ast as _ast
-                _ast.parse(content)
-            except SyntaxError as se:
-                errors.append(
-                    f"{rel_path}:{se.lineno}: SyntaxError: {se.msg}"
-                )
-        elif rel_path.endswith((".js", ".ts", ".jsx", ".tsx")):
-            # Basic JS validation: check for unclosed braces/brackets
-            opens = content.count('{') + content.count('[') + content.count('(')
-            closes = content.count('}') + content.count(']') + content.count(')')
-            if abs(opens - closes) > 2:  # Small tolerance for template literals
-                errors.append(
-                    f"{rel_path}: Unbalanced brackets (open={opens}, close={closes})"
-                )
-
-    return (len(errors) == 0, errors)
+    """V79: Proxy → supervisor.worker_pool.validate_worker_files"""
+    from .worker_pool import validate_worker_files
+    return validate_worker_files(project_path, changed_files)
 
 
 def _revert_worker_files(project_path: str, files: list[str]) -> bool:
-    """Revert specific files to the last git checkpoint."""
-    import subprocess as _sp
-    try:
-        if not files:
-            return True
-        cmd = ["git", "checkout", "HEAD", "--"] + files
-        result = _sp.run(
-            cmd, cwd=project_path, capture_output=True, text=True, timeout=15,
-        )
-        if result.returncode == 0:
-            logger.info(
-                "🔀  [Git] Reverted %d files to checkpoint: %s",
-                len(files), ", ".join(files[:5]),
-            )
-            return True
-        logger.debug("🔀  [Git] Revert failed: %s", result.stderr[:200])
-        return False
-    except Exception as exc:
-        logger.debug("🔀  [Git] Revert error: %s", exc)
-        return False
+    """V79: Proxy → supervisor.worker_pool.revert_worker_files"""
+    from .worker_pool import revert_worker_files
+    return revert_worker_files(project_path, files)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -709,25 +626,9 @@ async def _update_dag_progress(planner, depth: int, running: list[str] | None = 
 
 
 async def _compute_chunk_timeout(local_brain, description: str) -> int:
-    """
-    V41: Instant per-chunk timeout using description length heuristic.
-
-    DAG chunks are already decomposed atomic tasks — Ollama classification
-    added ~22s of latency per node with zero value (always returned 3600s).
-    Simple heuristic: short descriptions = simpler tasks, long = complex.
-
-    Returns timeout in seconds, clamped to [180, GEMINI_TIMEOUT_SECONDS].
-    Floor is 180s because even atomic tasks need time for Gemini to read
-    project files, plan changes, and write code.
-    """
-    desc_len = len(description)
-    if desc_len < 150:
-        timeout = 180   # Simple, focused task — 3 min minimum
-    elif desc_len < 400:
-        timeout = 300   # Medium complexity — 5 min
-    else:
-        timeout = config.GEMINI_TIMEOUT_SECONDS  # Full timeout for detailed tasks
-    return min(timeout, config.GEMINI_TIMEOUT_SECONDS)
+    """V79: Proxy → supervisor.dag_executor.compute_chunk_timeout"""
+    from .dag_executor import compute_chunk_timeout
+    return await compute_chunk_timeout(local_brain, description)
 
 
 async def _execute_single_chunk(
@@ -744,6 +645,7 @@ async def _execute_single_chunk(
     sandbox=None,
     tools=None,
     project_path: str = "",
+    task_intel=None,
 ):
     """
     Execute a single DAG node. Handles recursive sub-decomposition,
@@ -796,6 +698,22 @@ async def _execute_single_chunk(
             f"Check @PROGRESS.md for {completed_count} completed prerequisite steps.\n\n"
             f"NOW DO THIS NEXT STEP:\n{node.description}"
         )
+
+    # V77: TaskIntelligence per-task guidance — use the DAG-level instance
+    # (threaded from _pool_worker) instead of creating a new one per task.
+    try:
+        if task_intel:
+            _tag = _extract_tag(node.description)
+            _retry_guidance = task_intel.get_retry_guidance(_tag)
+            # V77: Improved file extraction — regex matches filenames with extensions
+            # (e.g. App.tsx, index.css, package.json) not just paths with '/'
+            import re as _re_files
+            _files_in_desc = _re_files.findall(r'\b[\w./-]+\.(?:tsx?|jsx?|css|scss|html|json|py|md)\b', node.description)
+            _file_risk = task_intel.get_file_risk_warnings(_files_in_desc)
+            if _retry_guidance or _file_risk:
+                focused_prompt = (_retry_guidance + _file_risk + "\n" + focused_prompt)
+    except Exception:
+        pass  # Non-fatal — proceed without intelligence guidance
 
     logger.info(
         "💉  [DAG→Gemini] Node %s prompt (%d chars): %s",
@@ -2408,78 +2326,9 @@ _FILE_LINE_PATTERN = _re_compress.compile(
 )
 
 def _compress_errors_for_retry(errors: list[str], max_per_error: int = 1500) -> list[str]:
-    """
-    Compress raw error strings to extract only actionable information.
-
-    For each error:
-      1. First line (error name + message)
-      2. File:line references from stack traces
-      3. Up to 5 lines of surrounding context per reference
-      4. Capped at max_per_error chars total
-
-    Returns a list of compressed error strings.
-    """
-    compressed = []
-    for raw in errors:
-        raw_str = str(raw)
-        lines = raw_str.splitlines()
-
-        if not lines:
-            compressed.append("(empty error)")
-            continue
-
-        parts = []
-
-        # Always include the first non-empty line (error name/message)
-        first_line = ""
-        for line in lines:
-            stripped = line.strip()
-            if stripped:
-                first_line = stripped
-                break
-        parts.append(first_line)
-
-        # Extract file:line references and their surrounding context
-        seen_refs = set()
-        for i, line in enumerate(lines):
-            match = _FILE_LINE_PATTERN.search(line)
-            if match:
-                # Get the matched file and line number
-                groups = match.groups()
-                file_ref = next((g for g in groups[::2] if g), None)
-                line_ref = next((g for g in groups[1::2] if g), None)
-                ref_key = f"{file_ref}:{line_ref}" if file_ref and line_ref else line.strip()
-
-                if ref_key in seen_refs:
-                    continue
-                seen_refs.add(ref_key)
-
-                # Include this line and up to 2 lines before/after for context
-                start = max(0, i - 2)
-                end = min(len(lines), i + 3)
-                context = "\n".join(lines[start:end]).strip()
-                if context and context != first_line:
-                    parts.append(context)
-
-                # Cap at 5 file references per error
-                if len(seen_refs) >= 5:
-                    break
-
-        # If no file references found, include up to first 10 non-empty lines
-        if not seen_refs:
-            meaningful = [l for l in lines[1:] if l.strip()][:10]
-            if meaningful:
-                parts.append("\n".join(meaningful))
-
-        result = "\n---\n".join(parts)
-
-        # Final cap
-        if len(result) > max_per_error:
-            result = result[:max_per_error - 20] + "\n... (truncated)"
-
-        compressed.append(result)
-
-    return compressed
+    """V79: Proxy → supervisor.prompt_builder.compress_errors_for_retry"""
+    from .prompt_builder import compress_errors_for_retry
+    return compress_errors_for_retry(errors, max_per_error)
 
 
 async def _diagnose_and_retry(
@@ -2600,78 +2449,9 @@ async def _diagnose_and_retry(
 
 
 def _extract_tag(description: str) -> str:
-    """Extract category tag from a task description for tX-TAG naming.
-
-    Scans for explicit tags like [FUNC], [UI/UX], [PERF] first, then
-    falls back to keyword matching. Returns: FUNC, UIUX, PERF, or FIX.
-    """
-    _d = description.upper()
-
-    # ── Explicit tags (highest priority) ──
-    if "[UI/UX]" in _d or "[UIUX]" in _d:
-        return "UIUX"
-    if "[PERF]" in _d:
-        return "PERF"
-    if "[FUNC]" in _d:
-        return "FUNC"
-    if "[FIX]" in _d or "[BUG]" in _d:
-        return "FIX"
-
-    # ── UI/UX keywords ──
-    _uiux_keywords = (
-        "STYLING", "CSS", "ANIMATION", "TRANSITION", "HOVER", "MICRO-INTERACTION",
-        "LAYOUT", "TYPOGRAPHY", "FONT", "COLOR", "COLOUR", "GRADIENT", "SHADOW",
-        "BORDER-RADIUS", "GLASSMORPHISM", "GLASS-MORPHISM", "DARK MODE", "LIGHT MODE",
-        "THEME", "RESPONSIVE", "BREAKPOINT", "MOBILE", "TABLET", "GRID LAYOUT",
-        "FLEXBOX", "SPACING", "PADDING", "MARGIN", "ICON", "SVG ICON", "CUSTOM SVG",
-        "SKELETON", "LOADING STATE", "EMPTY STATE", "ERROR STATE", "TOAST",
-        "MODAL", "DIALOG", "DROPDOWN", "TOOLTIP", "POPOVER", "CAROUSEL",
-        "SCROLL-DRIVEN", "@STARTING-STYLE", "OKLCH", "CONTAINER QUER",
-        "ANCHOR POSITION", "@SCOPE", "VIEW TRANSITION", "TEXT-WRAP",
-        "CONTENT-VISIBILITY", "LIGHT-DARK(", "COLOR-MIX(", "SCROLL ANIMATION",
-        "PARALLAX", "REVEAL", "FADE-IN", "SLIDE-IN", "STAGGER", "EASE",
-        "CUBIC-BEZIER", "KEYFRAME", "@KEYFRAME", "DESIGN SYSTEM", "DESIGN TOKEN",
-        "AWWWARDS", "VISUAL", "AESTHETIC", "POLISH", "UI COMPONENT", "UX",
-        "NAVIGATION", "NAVBAR", "SIDEBAR", "FOOTER", "HEADER", "HERO",
-        "CARD", "BUTTON STYLE", "INPUT STYLE", "FORM STYLE", "SELECT STYLE",
-        "CHART", "RADAR", "HEATMAP", "BADGE", "CHIP", "TAG STYLE", "AVATAR",
-        "PROGRESS BAR", "STEPPER", "TAB", "ACCORDION",
-    )
-    for _kw in _uiux_keywords:
-        if _kw in _d:
-            return "UIUX"
-
-    # ── Performance / Lighthouse / A11y / SEO keywords ──
-    _perf_keywords = (
-        "LIGHTHOUSE", "PERFORMANCE", "SEO", "A11Y", "ACCESSIBILITY", "WCAG",
-        "ARIA", "ALT TEXT", "CONTRAST", "KEYBOARD NAV", "FOCUS TRAP", "SCREEN READER",
-        "SEMANTIC", "LANDMARK", "HEADING ORDER", "SKIP LINK", "TAB ORDER",
-        "FCP", "LCP", "TBT", "CLS", "SPEED INDEX", "RENDER-BLOCKING",
-        "CODE SPLIT", "TREE SHAKE", "LAZY LOAD", "PRELOAD", "PRECONNECT",
-        "PREFETCH", "WEBP", "AVIF", "IMAGE OPTIM", "COMPRESS", "MINIF",
-        "BUNDLE SIZE", "CACHE", "SERVICE WORKER", "HTTP/2", "HTTP/3", "BROTLI",
-        "GZIP", "CDN", "FONT-DISPLAY", "CRITICAL CSS", "ABOVE-FOLD",
-        "CONTENT-SECURITY-POLICY", "CSP", "HSTS", "COOP", "TRUSTED TYPES",
-        "SOURCE MAP", "ROBOTS.TXT", "SITEMAP", "CANONICAL", "META DESCRIPTION",
-        "STRUCTURED DATA", "JSON-LD", "OPEN GRAPH", "OG:", "TWITTER CARD",
-        "RESOURCE HINT", "DEFER", "ASYNC SCRIPT", "WEB WORKER", "WILL-CHANGE",
-        "PAINT", "REFLOW", "DOM SIZE", "MEMORY", "LEAK",
-    )
-    for _kw in _perf_keywords:
-        if _kw in _d:
-            return "PERF"
-
-    # ── Bug fix keywords ──
-    _fix_keywords = (
-        "FIX", "BUG", "ERROR", "CRASH", "BROKEN", "UNDEFINED", "REFERENCEERROR",
-        "SYNTAXERROR", "TYPEERROR", "IMPORT", "MISSING IMPORT", "DEAD CODE",
-        "REGRESSION", "PATCH", "HOTFIX",
-    )
-    for _kw in _fix_keywords:
-        if _kw in _d:
-            return "FIX"
-
-    return "FUNC"  # Default to FUNC for feature/implementation tasks
+    """V79: Proxy → supervisor.prompt_builder.extract_tag"""
+    from .prompt_builder import extract_tag
+    return extract_tag(description)
 
 
 async def _decompose_user_instructions(
@@ -4036,6 +3816,14 @@ async def _execute_dag_recursive(
         logger.info("🛑  [DAG] Stop already requested — skipping execution entirely.")
         return TaskResult(status="stopped", output="Stopped before execution")
 
+    # V76: Initialize TaskIntelligence for result recording.
+    _task_intel = None
+    try:
+        from .task_intelligence import TaskIntelligence as _TI
+        _task_intel = _TI(project_path or effective_project)
+    except Exception:
+        pass  # Non-fatal
+
     # ── Initialize planner ──
     # V41: Reuse existing planner from state if available (e.g. on resume_dag re-entry).
     # Previously a new planner was always created, discarding in-memory completed state.
@@ -4451,20 +4239,40 @@ async def _execute_dag_recursive(
 
             # V58: Layer 3 pre-task snapshot — record line counts of source files.
             # The regression guard reads this after the task to detect content loss.
+            # V75: For large repos, use FileIndex cached list instead of rglob.
             try:
                 if effective_project:
                     from pathlib import Path as _PL3_pre
                     _snap: dict = {}
                     _src_exts = {'.ts', '.tsx', '.js', '.jsx', '.py', '.md', '.css', '.scss', '.html'}
-                    for _sf in _PL3_pre(effective_project).rglob("*"):
-                        if (_sf.is_file() and _sf.suffix.lower() in _src_exts
-                                and ".ag-supervisor" not in str(_sf)
-                                and "node_modules" not in str(_sf)
-                                and ".git" not in str(_sf)):
-                            try:
-                                _snap[str(_sf)] = len(_sf.read_text(encoding='utf-8',errors='replace').splitlines())
-                            except Exception:
-                                pass
+                    _skip_dirs = {".ag-supervisor", "node_modules", ".git", "__pycache__",
+                                  "dist", "build", ".next", ".vite", "coverage"}
+                    _use_cached = False
+                    try:
+                        from .file_index import get_file_index
+                        _fidx = get_file_index(effective_project)
+                        if _fidx.is_large_repo() and _fidx._scanned:
+                            _use_cached = True
+                            _proj_root = _PL3_pre(effective_project)
+                            for _rel in _fidx._files:
+                                _sf = _proj_root / _rel
+                                if _sf.suffix.lower() in _src_exts:
+                                    try:
+                                        _snap[str(_sf)] = len(
+                                            _sf.read_text(encoding='utf-8', errors='replace').splitlines()
+                                        )
+                                    except Exception:
+                                        pass
+                    except Exception:
+                        pass
+                    if not _use_cached:
+                        for _sf in _PL3_pre(effective_project).rglob("*"):
+                            if (_sf.is_file() and _sf.suffix.lower() in _src_exts
+                                    and not _skip_dirs.intersection(_sf.parts)):
+                                try:
+                                    _snap[str(_sf)] = len(_sf.read_text(encoding='utf-8', errors='replace').splitlines())
+                                except Exception:
+                                    pass
                     node._pre_task_line_snap = _snap
             except Exception:
                 node._pre_task_line_snap = {}
@@ -4548,6 +4356,7 @@ async def _execute_dag_recursive(
                     sandbox=sandbox,
                     tools=tools,
                     project_path=project_path,
+                    task_intel=_task_intel,  # V77: Thread DAG-level instance
                 )
 
                 # V57: P2 — If git was stashed, decide whether to keep or pop.
@@ -4667,6 +4476,20 @@ async def _execute_dag_recursive(
 
             if chunk_result.success or chunk_result.status == "partial":
                 planner.mark_complete(node.task_id)  # also calls _save_state() internally
+
+                # V76: Record successful result in TaskIntelligence
+                try:
+                    if _task_intel:
+                        _tag = _extract_tag(node.description)
+                        _task_intel.record_result(
+                            task_id=node.task_id,
+                            category=_tag,
+                            files_changed=chunk_result.files_changed or [],
+                            success=True,
+                            duration_s=chunk_result.duration_s,
+                        )
+                except Exception:
+                    pass
 
                 # V68: Release semaphore early — AI work is done.
                 # Free the worker slot so another task can start while
@@ -5419,6 +5242,21 @@ async def _execute_dag_recursive(
                             f"Auto-fix failed: {node.task_id}",
                             str(chunk_result.errors[:1]),
                         )
+
+                    # V76: Record failed result in TaskIntelligence
+                    try:
+                        if _task_intel:
+                            _tag = _extract_tag(node.description)
+                            _task_intel.record_result(
+                                task_id=node.task_id,
+                                category=_tag,
+                                files_changed=chunk_result.files_changed or [],
+                                success=False,
+                                errors=chunk_result.errors[:5],
+                                duration_s=chunk_result.duration_s,
+                            )
+                    except Exception:
+                        pass
 
                     # Try replanning for this node
                     try:
@@ -6918,6 +6756,14 @@ async def _execute_dag_recursive(
         # Always keep nodes visible — just mark DAG as no longer running
         _dag_progress["active"] = False
 
+    # V76: Persist TaskIntelligence data collected during this DAG execution.
+    try:
+        if _task_intel:
+            _task_intel.save()
+            logger.info("📊  [TaskIntel] Saved task intelligence data.")
+    except Exception as _ti_exc:
+        logger.debug("📊  [TaskIntel] Save error (non-fatal): %s", _ti_exc)
+
     return agg_result
 
 
@@ -6975,7 +6821,7 @@ async def run(goal: str, project_path: str | None = None, dry_run: bool = False,
     R = config.ANSI_RESET
 
     print(f"\n{B}{G}{'='*60}{R}")
-    print(f"{B}{G}  🌐 SUPERVISOR AI V44 — COMMAND CENTRE{R}")
+    print(f"{B}{G}  🌐 SUPERVISOR AI {config.SUPERVISOR_VERSION_LABEL} — COMMAND CENTRE{R}")
     print(f"{B}{G}{'='*60}{R}")
     print(f"{C}  Goal: {goal}{R}")
     print(f"{C}  Project: {project_path or 'N/A'}{R}")
@@ -7952,6 +7798,9 @@ async def run(goal: str, project_path: str | None = None, dry_run: bool = False,
             await _stop_early_cleanup(state, sandbox, effective_project)
             return
 
+        # V75: Ensure planner is defined for both code paths (used in checkpoint at L8334)
+        planner = None
+
         if is_complex:
             # ── DAG Decomposition Pipeline ──
 
@@ -8056,6 +7905,9 @@ async def run(goal: str, project_path: str | None = None, dry_run: bool = False,
                             depth=0,
                             max_depth=3,
                             state=state,
+                            sandbox=sandbox,
+                            tools=tools,
+                            project_path=str(effective_project),
                         )
                         if main_result.success or main_result.status == "partial":
                             state.record_activity("success", f"Goal succeeded on retry {_retry_attempt}")
@@ -8076,7 +7928,7 @@ async def run(goal: str, project_path: str | None = None, dry_run: bool = False,
         # ── Monitoring loop ──
         state.status = "monitoring"
         state.record_activity("system", "Entering monitoring loop")
-        print(f"\n  {G}✅ Entering V44 monitoring loop …{R}\n")
+        print(f"\n  {G}✅ Entering {config.SUPERVISOR_VERSION_LABEL} monitoring loop …{R}\n")
         logger.info("✅  Entering monitoring loop (poll every %.1fs)",
                      config.POLL_INTERVAL_SECONDS)
 
@@ -8105,7 +7957,8 @@ async def run(goal: str, project_path: str | None = None, dry_run: bool = False,
                 # Break early if there's urgent work to do
                 if (getattr(state, 'restart_dev_server_requested', '')
                         or getattr(state, 'stop_requested', False)
-                        or getattr(state, '_preview_retry_needed', False)):
+                        or getattr(state, '_preview_retry_needed', False)
+                        or (hasattr(state, 'queue') and state.queue.size > 0)):
                     break
             loop_count += 1
             state.loop_count = loop_count
@@ -8182,6 +8035,16 @@ async def run(goal: str, project_path: str | None = None, dry_run: bool = False,
                             # wipe just those packages so npm is forced to fully reinstall them.
                             import re as _re_nm
                             _surgical_pkgs: list[str] = []
+
+                            # V75 FIX: Read dev server log — _dsl_txt was undefined here
+                            try:
+                                _dsl_reinstall = await sandbox.exec_command(
+                                    "cat /workspace/.ag-supervisor/dev_server.log 2>/dev/null | tail -50",
+                                    timeout=5,
+                                )
+                                _dsl_txt = _dsl_reinstall.stdout or ""
+                            except Exception:
+                                _dsl_txt = ""
 
                             # Match any "Cannot find module '/workspace/node_modules/PKG/internal/path'"
                             # Covers: scoped (@scope/pkg) and unscoped (vite, rollup, esbuild…)
@@ -9753,12 +9616,21 @@ async def run(goal: str, project_path: str | None = None, dry_run: bool = False,
             except Exception:
                 pass
 
+        # V75: Explicitly close the persistent PTY process
+        async def _do_close_pty() -> None:
+            try:
+                from .retry_policy import get_quota_probe
+                get_quota_probe()._pty_close()
+            except Exception:
+                pass
+
         await asyncio.gather(
             _do_copy_out(),
             _do_destroy(),
             _cleanup_shadows(),
             _do_volumes(),
             _do_close_brain(),
+            _do_close_pty(),
             return_exceptions=True,
         )
 

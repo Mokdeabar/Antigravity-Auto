@@ -23,7 +23,7 @@ from typing import List
 
 logger = logging.getLogger("supervisor.episodic_memory")
 
-_MEMORY_DIR = Path(__file__).resolve().parent.parent / ".ag-memory"
+_MEMORY_DIR = Path(__file__).resolve().parent.parent / ".ag-supervisor"
 _DB_PATH = _MEMORY_DIR / "failures.db"
 
 
@@ -84,9 +84,9 @@ class EpisodicMemory:
         self._conn.commit()
 
     def _ensure_gitignore(self):
-        """Ensure .ag-memory is gitignored so it survives hard resets."""
+        """Ensure .ag-supervisor is gitignored so it survives hard resets."""
         gitignore = self._db_path.parent.parent / ".gitignore"
-        marker = ".ag-memory/"
+        marker = ".ag-supervisor/"
         try:
             if gitignore.exists():
                 content = gitignore.read_text(encoding="utf-8")

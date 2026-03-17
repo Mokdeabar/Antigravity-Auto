@@ -342,38 +342,27 @@ class SessionMemory:
     # Time-Travel Engine (Snapshots)
     # ────────────────────────────────────────────────
 
-    def snapshot_state(self, context_snapshot) -> str | None:
+    def snapshot_state(self, context: dict | None = None) -> str | None:
         """
         V12 Flagship: Time-Travel Engine.
-        Serialize a ContextSnapshot right before taking action.
+        Serialize a context snapshot right before taking action.
         Saves to .ag-supervisor/snapshots/<timestamp>.json.
         Returns the filename if successful.
+
+        V75: Accepts a generic dict (or None). The old ContextSnapshot
+        class no longer exists in the headless architecture.
         """
         try:
             timestamp = int(time.time())
             filename = f"snapshot_{timestamp}.json"
             filepath = self._snapshots_dir / filename
-            
-            # Extract lightweight serialized copy of the dataclass
-            # Avoid complex objects that won't dump to JSON
+
             payload = {
                 "timestamp": timestamp,
-                "agent_status": context_snapshot.agent_status,
-                "confidence": context_snapshot.confidence,
-                "chat_messages": [
-                    {"role": m.role, "type": m.message_type, "content": m.content[:500]} 
-                    for m in context_snapshot.chat_messages[-5:]
-                ],
-                "diff_reports": [
-                    {"file": d.filename, "add": d.additions, "del": d.deletions} 
-                    for d in context_snapshot.diff_reports
-                ],
-                "terminal_output": context_snapshot.terminal_output[-20:],
-                "files_mentioned": context_snapshot.progress.files_mentioned,
-                "errors_seen": context_snapshot.progress.errors_seen
+                **(context or {}),
             }
-            
-            filepath.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+            filepath.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
             
             # Limit total snapshots to 10
             snapshots = sorted(self._snapshots_dir.glob("snapshot_*.json"))

@@ -352,6 +352,14 @@ class TaskIntelligence:
         except Exception as exc:
             logger.debug("📈  [Intelligence] Persist error: %s", exc)
 
+    def save(self) -> None:
+        """Public API to persist intelligence data to disk.
+
+        Called by main.py at the end of DAG execution to ensure
+        all recorded results are flushed to task_intelligence.json.
+        """
+        self._persist()
+
     def _load(self) -> None:
         """Load persisted intelligence data from disk."""
         if not self._data_path.exists():
@@ -387,6 +395,104 @@ class TaskIntelligence:
         except Exception as exc:
             logger.debug("📈  [Intelligence] Load error: %s", exc)
 
+    def get_retry_guidance(self, category: str) -> str:
+        """
+        Return per-task remediation guidance for a category based on failure history.
+
+        Instead of giving up on failing categories, this provides increasingly
+        specific instructions to make tasks more likely to succeed:
+          - >50% failure: Very aggressive atomic step guidance
+          - >30% failure: Detailed validation guidance
+          - <=30% failure: No special guidance needed
+
+        Returns empty string if insufficient data or category is healthy.
+        """
+        cat = category.upper().strip()
+        # Also try extracting from task-id-style strings (e.g., "t5-UIUX")
+        if cat not in self._category_stats:
+            for suffix in ("FUNC", "UIUX", "PERF"):
+                if suffix in cat:
+                    cat = suffix
+                    break
+        if cat not in self._category_stats:
+            return ""
+
+        stats = self._category_stats[cat]
+        if stats.total < 5:
+            return ""  # Not enough data
+
+        # Identify the most common error pattern for targeted advice
+        top_err = ""
+        if stats.common_errors:
+            top_err = max(stats.common_errors, key=stats.common_errors.get)
+
+        if stats.failure_rate > 50:
+            guidance = (
+                f"⚠️ CRITICAL: {cat} tasks have a {stats.failure_rate:.0f}% historical failure rate. "
+                "To maximize success:\n"
+                "1. Before writing ANY code, first READ the existing file contents carefully.\n"
+                "2. Make ONE small change at a time.\n"
+                "3. After each change, run the relevant test/build command to verify.\n"
+                "4. If the change breaks something, REVERT it and try a different approach.\n"
+                "5. Do NOT batch multiple changes — each must be independently verified.\n"
+            )
+            if top_err:
+                guidance += f"6. Most common error pattern: '{top_err}' — watch for this specifically.\n"
+            return guidance
+
+        if stats.failure_rate > 30:
+            guidance = (
+                f"⚠️ {cat} tasks have a {stats.failure_rate:.0f}% failure rate. "
+                "Break this into VERY small atomic steps. "
+                "Add an explicit verification command after each file modification. "
+                "Do NOT skip validation.\n"
+            )
+            if top_err:
+                guidance += f"Common error to watch for: '{top_err}'.\n"
+            return guidance
+
+        return ""
+
+    def get_file_risk_warnings(self, files: list[str]) -> str:
+        """
+        Return warnings for files whose extension has historically high failure rates.
+
+        Args:
+            files: List of file paths mentioned in a task description.
+
+        Returns:
+            Warning string for problematic file types, or empty string.
+        """
+        if not files or not self._file_stats:
+            return ""
+
+        warnings = []
+        seen_exts: set[str] = set()
+        for f in files:
+            ext = PurePosixPath(f).suffix.lower()
+            if not ext or ext in seen_exts:
+                continue
+            seen_exts.add(ext)
+
+            fstats = self._file_stats.get(ext)
+            if not fstats or fstats.get("total", 0) < 3:
+                continue
+
+            fail_rate = (fstats["failures"] / fstats["total"]) * 100
+            if fail_rate > 25:
+                warnings.append(
+                    f"{ext} files have a {fail_rate:.0f}% historical failure rate"
+                )
+
+        if not warnings:
+            return ""
+
+        return (
+            "⚠️ FILE RISK: " + "; ".join(warnings) + ". "
+            "Pay extra attention to syntax and imports when modifying these files.\n"
+        )
+
     def save(self) -> None:
         """Public save — call on shutdown to ensure final data is persisted."""
         self._persist()
+

@@ -114,7 +114,7 @@ class TelemetryIngester:
     def __init__(self, local_manager=None, workspace_path: str = "."):
         self._manager = local_manager
         self._workspace = Path(workspace_path)
-        self._hotfix_dir = self._workspace / ".ag-memory"
+        self._hotfix_dir = self._workspace / ".ag-supervisor"
         self._hotfix_dir.mkdir(parents=True, exist_ok=True)
 
         # Error tracking: {signature_hash: [(timestamp, attempt_num), ...]}

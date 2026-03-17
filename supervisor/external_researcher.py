@@ -21,7 +21,7 @@ from urllib.parse import quote_plus
 
 logger = logging.getLogger("supervisor.external_researcher")
 
-_MEMORY_DIR = Path(__file__).resolve().parent.parent / ".ag-memory"
+_MEMORY_DIR = Path(__file__).resolve().parent.parent / ".ag-supervisor"
 _RAG_DIR = _MEMORY_DIR / "rag_store"
 
 # Maximum chunks to store per document. Prevents bloat from massive pages.

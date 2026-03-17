@@ -15,7 +15,7 @@ Execution Flow:
   4. On failure: reflect via V17, then replan remainder (MAX_REPLAN_COUNT=3)
   5. Workspace hash validation before every node execution
 
-State persists to `.ag-memory/epic_state.json` so the agent can resume
+State persists to `.ag-supervisor/epic_state.json` so the agent can resume
 after crashes.
 """
 
@@ -33,7 +33,7 @@ from typing import Any, Dict, List, Tuple
 
 logger = logging.getLogger("supervisor.temporal_planner")
 
-_MEMORY_DIR = Path(__file__).resolve().parent.parent / ".ag-memory"
+_MEMORY_DIR = Path(__file__).resolve().parent.parent / ".ag-supervisor"
 _EPIC_STATE_PATH = _MEMORY_DIR / "epic_state.json"
 MAX_REPLAN_COUNT = 3  # V60: used as a fallback default; instances compute dynamically
 
@@ -453,6 +453,13 @@ class TemporalPlanner:
         if not basenames:
             return 0
 
+        # V75: Word-boundary matching — prevents false positives on short
+        # filenames like 'index.ts' or 'app.tsx' matching unrelated descriptions.
+        import re as _re_fc
+        _bn_pattern = _re_fc.compile(
+            r'\b(' + '|'.join(_re_fc.escape(bn) for bn in basenames) + r')\b'
+        )
+
         injected = 0
         for node in self._nodes.values():
             if node.status not in ("pending",):
@@ -463,13 +470,14 @@ class TemporalPlanner:
                 continue  # Already dependent
 
             desc_lower = node.description.lower()
-            if any(bn in desc_lower for bn in basenames):
+            if _bn_pattern.search(desc_lower):
                 node.dependencies.append(completed_task_id)
                 injected += 1
+                _match = _bn_pattern.search(desc_lower)
                 logger.info(
                     "[FileConflict] Injected dep %s → %s (shared file: %s)",
                     completed_task_id, node.task_id,
-                    next((bn for bn in basenames if bn in desc_lower), "?"),
+                    _match.group(1) if _match else "?",
                 )
 
         if injected:
@@ -594,20 +602,28 @@ class TemporalPlanner:
                         "Read the full project state: @PROJECT_STATE.md\n"
                     )
 
-                # File tree (small, keep inline)
-                _all_files = sorted(
-                    str(f.relative_to(_ws))
-                    for f in _ws.rglob("*")
-                    if f.is_file()
-                    and "node_modules" not in str(f)
-                    and ".git" not in str(f)
-                    and "__pycache__" not in str(f)
-                )
-                if _all_files:
-                    _project_context += (
-                        "\nEXISTING FILES IN PROJECT:\n"
-                        + "\n".join(f"  - {f}" for f in _all_files[:80]) + "\n"
+                # V75: Use FileIndex for structured file context (replaces old rglob + 80-file cap)
+                try:
+                    from .file_index import get_file_index
+                    _fidx = get_file_index(self._workspace)
+                    _tier1 = _fidx.get_tier1_context()
+                    if _tier1:
+                        _project_context += f"\nPROJECT STRUCTURE:\n{_tier1}\n"
+                except Exception:
+                    # Fallback: old rglob approach (no FileIndex available)
+                    _all_files = sorted(
+                        str(f.relative_to(_ws))
+                        for f in _ws.rglob("*")
+                        if f.is_file()
+                        and "node_modules" not in str(f)
+                        and ".git" not in str(f)
+                        and "__pycache__" not in str(f)
                     )
+                    if _all_files:
+                        _project_context += (
+                            "\nEXISTING FILES IN PROJECT:\n"
+                            + "\n".join(f"  - {f}" for f in _all_files[:200]) + "\n"
+                        )
 
                 # DAG history (small, keep inline)
                 _hist = _ws / "dag_history.jsonl"
@@ -634,6 +650,68 @@ class TemporalPlanner:
             except Exception:
                 pass  # Non-critical — decompose without context
 
+            # V76: Write completed tasks to @-file for dedup (token-efficient).
+            # Gemini reads the file via @ reference instead of inline injection.
+            _completed_ref = ""
+            try:
+                _completed_path = _ws / ".ag-supervisor" / "_COMPLETED_TASKS.md"
+                _completed_path.parent.mkdir(parents=True, exist_ok=True)
+                _completed_lines: list[str] = []
+                _hist = _ws / "dag_history.jsonl"
+                if not _hist.exists():
+                    _hist = _ws / ".ag-supervisor" / "dag_history.jsonl"
+                if _hist.exists():
+                    for _hline in _hist.read_text(encoding="utf-8").strip().split("\n"):
+                        try:
+                            _hentry = json.loads(_hline)
+                            for _ndata in _hentry.get("nodes", {}).values():
+                                if _ndata.get("status") == "complete":
+                                    _hdesc = _ndata.get("description", "")
+                                    if _hdesc:
+                                        _completed_lines.append(
+                                            f"- [COMPLETE] {_ndata.get('task_id', '?')}: "
+                                            f"{_hdesc[:200]}"
+                                        )
+                        except Exception:
+                            continue
+                if _completed_lines:
+                    _completed_path.write_text(
+                        "# ALREADY COMPLETED TASKS\n"
+                        "DO NOT re-create tasks for any of the following.\n"
+                        "These have already been implemented and verified.\n\n"
+                        + "\n".join(_completed_lines),
+                        encoding="utf-8",
+                    )
+                    _completed_ref = (
+                        "\n\nREAD @.ag-supervisor/_COMPLETED_TASKS.md for the full list "
+                        f"of {len(_completed_lines)} previously completed tasks. "
+                        "DO NOT create duplicate tasks for any of them.\n"
+                    )
+                    logger.info(
+                        "📋  [Planner] Wrote %d completed tasks to _COMPLETED_TASKS.md "
+                        "for decomposition dedup.",
+                        len(_completed_lines),
+                    )
+            except Exception as _ct_exc:
+                logger.debug("📋  [Planner] Completed tasks file error (non-fatal): %s", _ct_exc)
+
+            # V76: TaskIntelligence insights — inject category success rates
+            # so Gemini can decompose failing categories more carefully.
+            _intel_block = ""
+            try:
+                from .task_intelligence import TaskIntelligence
+                _ti = TaskIntelligence(str(_ws))
+                _insights = _ti.get_insights()
+                if _insights:
+                    _intel_block = (
+                        "\n\nTASK INTELLIGENCE (historical success/failure data):\n"
+                        + _insights + "\n"
+                        "Use this data to calibrate task granularity: break high-failure "
+                        "categories into smaller, more testable sub-tasks.\n"
+                    )
+            except Exception:
+                pass
+
             _context_instruction = ""
             if _project_context:
                 _context_instruction = (
@@ -650,6 +728,8 @@ class TemporalPlanner:
                 f"{self.DECOMPOSITION_PROMPT}\n\n"
                 f"EPIC:\n{text[:100000]}\n"
                 f"{_project_context}"
+                f"{_completed_ref}"
+                f"{_intel_block}"
                 f"{_context_instruction}\n"
                 "Output strict JSON only. No markdown, no explanation.\n"
                 "There is NO hard cap on task count. For full applications, aim for 50-95 tasks "
@@ -893,11 +973,12 @@ class TemporalPlanner:
                 adj.setdefault(dep, []).append(node.task_id)
                 in_degree[node.task_id] += 1
 
-        queue = [tid for tid, deg in in_degree.items() if deg == 0]
+        from collections import deque as _deque
+        queue = _deque(tid for tid, deg in in_degree.items() if deg == 0)
         visited = 0
 
         while queue:
-            tid = queue.pop(0)
+            tid = queue.popleft()  # V75: O(1) vs list.pop(0) O(n)
             visited += 1
             for child in adj.get(tid, []):
                 in_degree[child] -= 1

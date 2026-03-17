@@ -20,7 +20,7 @@ import logging
 import os
 import time
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Optional
 
 from . import config
 
@@ -483,7 +483,8 @@ def _action_context_compact() -> str:
     """Compact session memory history."""
     try:
         from .session_memory import SessionMemory
-        memory = SessionMemory()
+        from . import config as _cfg
+        memory = SessionMemory(_cfg.get_project_path())
         memory.compact_history()
         return "Compaction completed"
     except Exception as exc:
@@ -546,41 +547,7 @@ def _action_rate_limit_report() -> str:
         return f"Rate limit report failed: {exc}"
 
 
-def _action_self_improvement() -> str:
-    """Ask Gemini for self-improvement suggestions (async wrapper)."""
-    try:
-        import asyncio
-        from .gemini_advisor import request_self_improvement
-
-        # Collect recent error summary from session memory
-        issue_summary = ""
-        try:
-            from .session_memory import SessionMemory
-            memory = SessionMemory()
-            recent = memory.get_recent_events(20)
-            errors = [e for e in recent if "error" in str(e).lower() or "fail" in str(e).lower()]
-            if errors:
-                issue_summary = "\n".join(str(e)[:200] for e in errors[-5:])
-        except Exception:
-            pass
-
-        # Run async function in a new loop if needed
-        try:
-            loop = asyncio.get_running_loop()
-            # Already in async context, schedule it
-            future = asyncio.ensure_future(request_self_improvement(issue_summary))
-            # Can't await here since we're in a sync function
-            # The future will run in the background
-            return "Self-improvement analysis scheduled"
-        except RuntimeError:
-            # No running loop, create one
-            result = asyncio.run(request_self_improvement(issue_summary))
-            if result:
-                return f"Suggestions logged: {result[:100]}"
-            return "No suggestions generated"
-    except Exception as exc:
-        return f"Self-improvement failed: {exc}"
-
+# V40: _action_self_improvement REMOVED — supervisor does not modify itself.
 
 def _action_workspace_index() -> str:
     """Run the Omniscient Eye AST scan dynamically in the background."""
@@ -607,56 +574,7 @@ def _action_telemetry_hud_update() -> str:
     except Exception as exc:
         return f"HUD update failed: {exc}"
 
-def _action_metacognitive_review() -> str:
-    """V14: Read logs and proactively prompt the Architect for optimisations."""
-    try:
-        from .agent_council import AgentCouncil  # type: ignore
-        import asyncio
-        
-        # V14.1 Concurrency Lock
-        from .session_memory import SessionMemory
-        mem = SessionMemory()
-        snap = mem.get_latest_snapshot()
-        if snap and snap.get("agent_status") == "WORKING":
-            return "Skipped: Metacognitive review deferred. Supervisor is currently WORKING."
-        
-        from . import config
-        project_path = config.get_project_path()
-        if not project_path:
-            return "Skipped: No project path set."
-
-        hud_path = project_path / ".ag-supervisor" / "LIVE_HUD.md"
-        hud_data = hud_path.read_text(encoding="utf-8") if hud_path.exists() else "No HUD data."
-        
-        council = AgentCouncil()
-        
-        async def run_architect_metacognition():
-            try:
-                res = await council._call_architect(
-                    {"issue_type": "METACOGNITION", "trigger": "Proactive internal review schedule hit.",
-                     "screenshot_path": "", "goal": "Identify inefficiencies in Antigravity supervisor.",
-                     "consecutive_count": 1}, 
-                    "System running fine, looking to optimize.",
-                    hud_data,
-                    "Target self-evolution of prompt engineering, error handlers, or performance parameters."
-                )
-                if res and res.get("recommended_action") == "EVOLVE":
-                    from .self_evolver import self_evolve
-                    self_evolve("Proactive Metacognition Request: " + res.get("design", ""), headless=True)
-            except Exception as e:
-                logger.error("Metacognitive Architect failure: %s", e)
-                
-        # Launch non-blocking
-        try:
-            loop = asyncio.get_running_loop()
-            asyncio.ensure_future(run_architect_metacognition())
-            return "Metacognitive Review Dispatched."
-        except RuntimeError:
-            asyncio.run(run_architect_metacognition())
-            return "Metacognitive Review Executed."
-            
-    except Exception as exc:
-        return f"Metacognitive review failed: {exc}"
+# V40: _action_metacognitive_review REMOVED — calls self_evolve() which modifies supervisor code.
 
 async def _action_memory_consolidation() -> str:
     """V18: Promote recurring episodic lessons into global environmental axioms."""
@@ -696,7 +614,7 @@ def _action_hotfix_watcher():
         if hotfix_path.exists():
             # Check if system is idle (no active EPIC)
             from . import config
-            state_path = workspace / ".ag-memory" / "temporal_state.json"
+            state_path = workspace / ".ag-supervisor" / "temporal_state.json"
             if state_path.exists():
                 return "Hotfix detected but an EPIC is already in progress. Queued."
 
@@ -748,70 +666,6 @@ async def _action_telemetry_poll():
 # V29: Qualitative Synthesis + Infinite Polish Actions
 # ─────────────────────────────────────────────────────────────
 
-def _action_feature_request_watcher():
-    """Check for FEATURE_EPIC.md and signal the system."""
-    try:
-        from pathlib import Path
-        workspace = Path(os.getenv("PROJECT_CWD", "."))
-        epic_path = workspace / "FEATURE_EPIC.md"
-
-        if epic_path.exists():
-            state_path = workspace / ".ag-memory" / "temporal_state.json"
-            if state_path.exists():
-                return "Feature epic detected but an EPIC is already in progress. Queued."
-
-            content = epic_path.read_text(encoding="utf-8")[:200]
-            logger.info("🔬 FEATURE_EPIC.md detected — signaling feature build.")
-            return f"FEATURE_READY: {content}"
-
-        return "No feature epic pending."
-    except Exception as exc:
-        return f"Feature request watcher error: {exc}"
-
-
-def _action_feature_pipeline():
-    """Run the full qualitative synthesis pipeline."""
-    try:
-        import asyncio
-        from .user_research_engine import UserResearchEngine
-        workspace = os.getenv("PROJECT_CWD", ".")
-        engine = UserResearchEngine(workspace_path=workspace)
-
-        async def _run():
-            result = await engine.run_pipeline()
-            if result.get("epics_generated", 0) > 0:
-                logger.info(
-                    "🔬 Feature pipeline generated %d epic(s)",
-                    result["epics_generated"],
-                )
-                return f"FEATURE_PIPELINE: {result['epics_generated']} epic(s) generated"
-            return f"Feature pipeline: {result.get('clusters_updated', 0)} clusters, no new epics."
-
-        try:
-            loop = asyncio.get_running_loop()
-            future = asyncio.ensure_future(_run())
-            return "Feature pipeline dispatched (async)"
-        except RuntimeError:
-            return asyncio.run(_run())
-    except Exception as exc:
-        return f"Feature pipeline error: {exc}"
-
-
-def _action_user_injection_monitor():
-    """Monitor for live user feedback injections during polish loops."""
-    try:
-        from .polish_engine import PolishEngine
-        workspace = os.getenv("PROJECT_CWD", ".")
-        engine = PolishEngine(workspace_path=workspace)
-
-        if not engine.is_active:
-            return "No active polish session."
-
-        injection = engine.check_user_injection()
-        if injection:
-            logger.info("✍️ User injection received during polish: %s", injection[:80])
-            return f"USER_INJECTION: {injection[:200]}"
-
-        return f"Polish active (iteration {engine.iterations}), no injection."
-    except Exception as exc:
-        return f"User injection monitor error: {exc}"
+# V40: _action_feature_request_watcher, _action_feature_pipeline,
+# _action_user_injection_monitor REMOVED — Qualitative Synthesis
+# and Infinite Polish engines were stripped for lean execution.

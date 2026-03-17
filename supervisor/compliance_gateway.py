@@ -80,6 +80,20 @@ class ComplianceGateway:
         self._workspace = Path(workspace_path)
         self._cve_attempts: Dict[str, int] = {}  # CVE-ID → attempt count
 
+    @staticmethod
+    def _has_python_files(cwd_path: Path, max_depth: int = 3) -> bool:
+        """Bounded check for .py files — avoids walking entire large repos."""
+        _skip = {"node_modules", ".git", "__pycache__", ".venv", "venv", "dist", "build", ".next"}
+        for root, dirs, files in os.walk(cwd_path):
+            depth = str(root).replace(str(cwd_path), "").count(os.sep)
+            if depth >= max_depth:
+                dirs.clear()
+                continue
+            dirs[:] = [d for d in dirs if d not in _skip]
+            if any(f.endswith(".py") for f in files):
+                return True
+        return False
+
     # ────────────────────────────────────────────────
     # Gate 1: SAST Scan
     # ────────────────────────────────────────────────
@@ -94,7 +108,7 @@ class ComplianceGateway:
 
         # Detect project type
         has_package_json = (cwd_path / "package.json").exists()
-        has_python = any(cwd_path.rglob("*.py"))
+        has_python = self._has_python_files(cwd_path)
 
         violations = []
 
@@ -400,6 +414,39 @@ class ComplianceGateway:
     # Full Compliance Pipeline
     # ────────────────────────────────────────────────
 
+    @staticmethod
+    def _get_changed_since(project_path: str, since_sha: str) -> set[str]:
+        """Get files changed since a given git SHA.
+
+        Returns set of changed file paths, or empty set if git is unavailable.
+        """
+        try:
+            result = subprocess.run(
+                ["git", "-C", project_path, "diff", "--name-only", f"{since_sha}..HEAD"],
+                capture_output=True, text=True, timeout=10,
+            )
+            if result.returncode == 0:
+                return set(result.stdout.strip().split("\n")) if result.stdout.strip() else set()
+        except Exception:
+            pass
+        return set()
+
+    @staticmethod
+    def _get_head_sha(project_path: str) -> str:
+        """Get current HEAD SHA."""
+        try:
+            result = subprocess.run(
+                ["git", "-C", project_path, "rev-parse", "HEAD"],
+                capture_output=True, text=True, timeout=5,
+            )
+            if result.returncode == 0:
+                return result.stdout.strip()
+        except Exception:
+            pass
+        return ""
+
+    _COMPLIANCE_EXTS = {".py", ".js", ".ts", ".jsx", ".tsx", ".json"}
+
     async def run_full_audit(
         self,
         diff_text: str,
@@ -409,7 +456,37 @@ class ComplianceGateway:
         """
         Run all three compliance gates sequentially.
         Returns (passes_all, combined_report).
+
+        V76: Incremental compliance — skip full scan if no security-relevant
+        files have changed since the last compliance check.
         """
+        # V76: Check for changes since last compliance check
+        _sha_file = Path(cwd) / ".ag-supervisor" / "compliance_last_sha"
+        try:
+            if _sha_file.exists():
+                _sha_data = json.loads(_sha_file.read_text(encoding="utf-8"))
+                _last_sha = _sha_data.get("sha", "")
+                _last_result = _sha_data.get("result", "All compliance gates passed.")
+                _last_pass = _sha_data.get("passed", True)
+
+                if _last_sha:
+                    _changed = self._get_changed_since(cwd, _last_sha)
+                    # Only re-scan if security-relevant files changed
+                    _security_changed = {
+                        f for f in _changed
+                        if Path(f).suffix.lower() in self._COMPLIANCE_EXTS
+                        or f == "package.json"
+                    }
+                    if not _security_changed:
+                        logger.info(
+                            "🛡️ Compliance: no security-relevant changes since last check "
+                            "(%s) — using cached result.",
+                            _last_sha[:8],
+                        )
+                        return _last_pass, f"[CACHED] {_last_result}"
+        except Exception as _sha_exc:
+            logger.debug("🛡️ Compliance SHA check error (running full scan): %s", _sha_exc)
+
         reports = []
 
         # Gate 1: SAST
@@ -432,8 +509,27 @@ class ComplianceGateway:
         if not fin_ok:
             reports.append(f"[GATE 3 — FINANCIAL] FAILED\n{fin_report}")
 
-        if reports:
-            return False, "\n\n".join(reports)
+        _passes = not reports
+        _result = "\n\n".join(reports) if reports else "All compliance gates passed."
 
-        logger.info("🛡️ All compliance gates passed.")
-        return True, "All compliance gates passed."
+        if _passes:
+            logger.info("🛡️ All compliance gates passed.")
+
+        # V76: Persist SHA + result for incremental checks
+        try:
+            _head_sha = self._get_head_sha(cwd)
+            if _head_sha:
+                _sha_file.parent.mkdir(parents=True, exist_ok=True)
+                _sha_file.write_text(
+                    json.dumps({
+                        "sha": _head_sha,
+                        "passed": _passes,
+                        "result": _result[:500],
+                    }),
+                    encoding="utf-8",
+                )
+        except Exception:
+            pass
+
+        return _passes, _result
+

@@ -15,6 +15,5 @@ __all__ = [
     "scheduler",
     "retry_policy",
     "agent_council",
-    "self_evolver",
     "loop_detector",
 ]

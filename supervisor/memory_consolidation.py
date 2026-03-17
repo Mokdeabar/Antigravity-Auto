@@ -3,7 +3,7 @@ memory_consolidation.py — V18 Long-Term Semantic Memory
 
 Scans the episodic failures.db for recurring semantic lessons that appear
 across multiple distinct objective_hashes. Promotes them into universal
-environmental rules written to `.ag-memory/global_axioms.md`.
+environmental rules written to `.ag-supervisor/global_axioms.md`.
 
 Safeguards:
 - Hard cap of 10 axioms to prevent lost-in-the-middle syndrome.
@@ -22,7 +22,7 @@ from typing import List
 
 logger = logging.getLogger("supervisor.memory_consolidation")
 
-_MEMORY_DIR = Path(__file__).resolve().parent.parent / ".ag-memory"
+_MEMORY_DIR = Path(__file__).resolve().parent.parent / ".ag-supervisor"
 _AXIOMS_PATH = _MEMORY_DIR / "global_axioms.md"
 _DEP_HASH_PATH = _MEMORY_DIR / ".dep_hash"
 MAX_AXIOMS = 10

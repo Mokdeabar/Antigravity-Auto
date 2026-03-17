@@ -114,21 +114,21 @@ def set_gemini_stop(value: bool) -> None:
 # CLI call to keep quota data fresh for pause/resume decisions.
 # ─────────────────────────────────────────────────────────────
 
-_post_call_count = 0  # V74: Counter for probe frequency optimization
+_post_call_counter = __import__('itertools').count(1)  # V75: Thread-safe atomic counter
 
 
 def _post_call_probe(model: str = "") -> None:
     """
     V73: Record usage and run /stats probe after a successful Gemini call.
     V74: Stats probe runs every 5th call to reduce ~1s overhead per call.
+    V75: Uses itertools.count for thread safety (shared by async + sync paths).
 
     Called after every ask_gemini / stream_gemini / call_gemini_with_file.
     Runs in a background thread to avoid blocking the async event loop.
     All errors are swallowed — probe failures must never break calls.
     """
-    global _post_call_count
-    _post_call_count += 1
-    _run_stats = (_post_call_count % 5 == 1)  # Run on 1st, 6th, 11th, etc.
+    _count = next(_post_call_counter)
+    _run_stats = (_count % 5 == 1)  # Run on 1st, 6th, 11th, etc.
 
     import threading
     def _probe_bg():
@@ -150,11 +150,11 @@ def _post_call_probe_sync(model: str = "") -> None:
     """
     V73: Synchronous version of _post_call_probe for sync call paths.
     V74: Stats probe runs every 5th call (shared counter with async version).
+    V75: Uses shared itertools.count — thread-safe without locks.
     Runs inline since we're already in a blocking context.
     """
-    global _post_call_count
-    _post_call_count += 1
-    _run_stats = (_post_call_count % 5 == 1)
+    _count = next(_post_call_counter)
+    _run_stats = (_count % 5 == 1)
 
     try:
         from .retry_policy import get_daily_budget, get_quota_probe
@@ -246,11 +246,13 @@ def _probe_and_cache_model(preferred: str) -> str:
             cached_time = datetime.fromisoformat(data["timestamp"])
             age_hours = (datetime.now(timezone.utc) - cached_time).total_seconds() / 3600
             if age_hours < ttl_hours and data.get("model"):
+                model = data.get("model") # Define 'model' from cache
                 # V73: Before returning cached model, check if the failover
                 # chain has a higher-priority model available (e.g. from a
                 # recovery promotion). The chain's active model takes priority.
+                # V75: Reuse 'preferred' param instead of re-calling chain.
                 chain = get_failover_chain()
-                chain_active = chain.get_active_model()
+                chain_active = preferred  # Already resolved by caller
                 if chain_active and chain_active != model:
                     # Chain promoted a better model — prefer it over stale cache.
                     # chain._models is ordered by priority (0 = highest).

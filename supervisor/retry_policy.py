@@ -31,14 +31,23 @@ def _get_pacific_tz():
     try:
         return ZoneInfo("America/Los_Angeles")
     except Exception:
-        import subprocess, sys
-        logger = logging.getLogger("supervisor.retry_policy")
-        logger.warning("⚠️  tzdata missing — auto-installing…")
-        subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", "-q", "tzdata"],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        )
-        return ZoneInfo("America/Los_Angeles")
+        try:
+            import subprocess, sys
+            logger = logging.getLogger("supervisor.retry_policy")
+            logger.warning("⚠️  tzdata missing — auto-installing…")
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install", "-q", "tzdata"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+            return ZoneInfo("America/Los_Angeles")
+        except Exception:
+            # V75: If pip is broken or offline, fall back to UTC-8 (PST).
+            # This is imprecise (ignores DST) but prevents a crash.
+            logging.getLogger("supervisor.retry_policy").warning(
+                "⚠️  Could not install tzdata — using UTC-8 fallback for Pacific time"
+            )
+            from datetime import timezone as _tz, timedelta as _td
+            return _tz(_td(hours=-8))
 
 from . import config
 
@@ -944,10 +953,10 @@ class RateLimitTracker:
             else:
                 # Adaptive: more recent limits → longer wait
                 recent = [e for e in self._events if now - e["timestamp"] < 300]
-                if len(recent) >= 3:
-                    wait_seconds = min(config.RATE_LIMIT_MAX_WAIT_S, wait_seconds * 2)
-                elif len(recent) >= 5:
+                if len(recent) >= 5:
                     wait_seconds = config.RATE_LIMIT_MAX_WAIT_S
+                elif len(recent) >= 3:
+                    wait_seconds = min(config.RATE_LIMIT_MAX_WAIT_S, wait_seconds * 2)
 
         # Set cooldown
         self._per_model_cooldown[model] = now + wait_seconds
@@ -1094,6 +1103,13 @@ class DailyBudgetTracker:
         self._quota_paused: bool = False
         self._quota_resume_at: float = 0.0  # epoch when quota resumes
 
+        # V79: Observed capacity tracking — CLI calls from 100% to exhaustion
+        # Each entry: {"date": "YYYY-MM-DD", "calls": int, "bucket": str}
+        self._capacity_observations: list[dict] = []
+        # Calls in the current reset period (since last 100% reset)
+        self._period_call_count: int = 0
+        self._period_start_date: str = ""
+
         self._load_state()
         self._check_day_rollover()
 
@@ -1117,11 +1133,15 @@ class DailyBudgetTracker:
                 self._quota_paused = False
                 self._quota_resume_at = 0.0
                 logger.info("📊  Quota pause lifted — new day, new quota.")
+            # V79: New reset period starts
+            self._period_call_count = 0
+            self._period_start_date = today
 
     def record_request(self) -> None:
         """Record a Gemini CLI invocation."""
         self._check_day_rollover()
         self._request_count += 1
+        self._period_call_count += 1  # V79: Track calls in current period
 
         pct = (self._request_count / self.daily_limit) * 100
 
@@ -1142,6 +1162,46 @@ class DailyBudgetTracker:
         # V44: Save on every request for persistence across restarts.
         # IO cost is negligible (~200 bytes) vs the Gemini CLI call it follows.
         self._save_state()
+
+    def record_exhaustion(self, bucket: str = "all") -> None:
+        """V79: Record that quota was exhausted — captures observed capacity.
+
+        Called when a 429 (RESOURCE_EXHAUSTED) is received. The number of
+        calls made since the last reset gives the true daily capacity.
+        """
+        if self._period_call_count < 5:
+            return  # Too few calls — not a meaningful observation
+
+        _PT = _get_pacific_tz()
+        today = datetime.now(_PT).strftime("%Y-%m-%d")
+        observation = {
+            "date": today,
+            "calls": self._period_call_count,
+            "bucket": bucket,
+        }
+        self._capacity_observations.append(observation)
+        # Keep last 30 observations
+        if len(self._capacity_observations) > 30:
+            self._capacity_observations = self._capacity_observations[-30:]
+
+        logger.info(
+            "📊  [V79] Observed capacity: %d calls to exhaustion (%s bucket). "
+            "Running average: %d calls/day.",
+            self._period_call_count, bucket,
+            self.get_observed_daily_limit(),
+        )
+        self._save_state()
+
+    def get_observed_daily_limit(self) -> int:
+        """V79: Return the average observed daily capacity, or the hard cap if no data.
+
+        Averages the last 30 observed exhaustion events (calls from reset
+        to 429). If no observations exist, falls back to AI_ULTRA_DAILY.
+        """
+        if not self._capacity_observations:
+            return self.daily_limit  # Fallback to hardcoded 2000
+        total = sum(obs["calls"] for obs in self._capacity_observations)
+        return max(1, round(total / len(self._capacity_observations)))
 
     def set_workers(self, count: int) -> int:
         """
@@ -1192,9 +1252,10 @@ class DailyBudgetTracker:
 
         return {
             "daily_used": self._request_count,
-            "daily_limit": self.daily_limit,
-            "daily_pct": round((self._request_count / self.daily_limit) * 100, 1),
-            "remaining": self.daily_limit - self._request_count,
+            "daily_limit": self.get_observed_daily_limit(),  # V79: Use observed capacity
+            "daily_limit_hard": self.daily_limit,  # Hard cap (AI_ULTRA_DAILY)
+            "daily_pct": round((self._request_count / max(1, self.get_observed_daily_limit())) * 100, 1),
+            "remaining": max(0, self.get_observed_daily_limit() - self._request_count),
             "workers_current": self.get_effective_workers(),
             "workers_max": 6,
             "effective_workers": self.get_effective_workers(),
@@ -1202,6 +1263,10 @@ class DailyBudgetTracker:
             "quota_resume_at": self._quota_resume_at,
             "quota_resets_at_exact": _exact_resets_at,
             "seconds_until_reset": self.seconds_until_reset(),
+            # V79: Capacity tracking metadata
+            "capacity_observations": len(self._capacity_observations),
+            "capacity_source": "observed" if self._capacity_observations else "default",
+            "period_calls": self._period_call_count,
         }
 
     def _load_state(self) -> None:
@@ -1216,6 +1281,10 @@ class DailyBudgetTracker:
                 self._warned_90 = data.get("warned_90", False)
                 self._quota_paused = data.get("quota_paused", False)
                 self._quota_resume_at = data.get("quota_resume_at", 0.0)
+                # V79: Load capacity observations
+                self._capacity_observations = data.get("capacity_observations", [])
+                self._period_call_count = data.get("period_call_count", 0)
+                self._period_start_date = data.get("period_start_date", "")
                 logger.debug("📊  Budget state loaded: %d/%d today", self._request_count, self.daily_limit)
         except Exception:
             pass
@@ -1231,6 +1300,10 @@ class DailyBudgetTracker:
                 "warned_90": self._warned_90,
                 "quota_paused": self._quota_paused,
                 "quota_resume_at": self._quota_resume_at,
+                # V79: Capacity observation history
+                "capacity_observations": self._capacity_observations[-30:],
+                "period_call_count": self._period_call_count,
+                "period_start_date": self._period_start_date,
                 "saved_at": time.time(),
             }
             self._state_path.write_text(
@@ -1277,14 +1350,17 @@ class DailyBudgetTracker:
         )
         return (tomorrow_pt - now_pt).total_seconds()
 
-    def pause_for_quota(self, cooldown_seconds: float | None = None) -> None:
+    def pause_for_quota(self, cooldown_seconds: float | None = None, bucket: str = "all") -> None:
         """
         Pause all tasks until quota resets.
 
         Args:
             cooldown_seconds: If provided, pause for this exact duration.
                               If None, pause until midnight PT + 60s buffer.
+            bucket: V79: Which quota bucket was exhausted (for capacity tracking).
         """
+        # V79: Record the exhaustion event to track true daily capacity
+        self.record_exhaustion(bucket=bucket)
         if cooldown_seconds is None:
             cooldown_seconds = self.seconds_until_reset() + 60  # 60s buffer
 

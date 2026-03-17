@@ -9,7 +9,7 @@ V34: Removed open_browser.ps1 generation — no longer needed in headless archit
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from . import config
@@ -65,7 +65,7 @@ def bootstrap_workspace(project_path: str, goal: str) -> None:
 
 ---
 
-*Generated at: {datetime.now().isoformat()}*
+*Generated at: {datetime.now(timezone.utc).isoformat()}*
 """
     mandate_path.write_text(mandate_content, encoding="utf-8")
     logger.info("📄  Wrote SUPERVISOR_MANDATE.md to: %s", mandate_path)
@@ -215,7 +215,7 @@ The host OS is **Windows**. All projects must run natively on Windows without WS
 - Emit `LOCAL_ACTION: clear_vite_cache` if you modify `tailwind.config.*` or `postcss.config.*`.
 - Emit `DAG_INJECT: {{"tasks": [...]}}` if you discover additional work that should be queued as sub-tasks.
 
-*Generated: {datetime.now().isoformat()}*
+*Generated: {datetime.now(timezone.utc).isoformat()}*
 """
     gemini_md_path.write_text(gemini_md_content, encoding="utf-8")
     logger.info("📄  Wrote GEMINI.md to: %s", gemini_md_path)
